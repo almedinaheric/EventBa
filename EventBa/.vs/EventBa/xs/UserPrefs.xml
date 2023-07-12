@@ -1,0 +1,26 @@
+﻿<Properties StartupConfiguration="{EC3C28B8-7371-4B85-A8E0-A1190964FCC5}|Default">
+  <MonoDevelop.Ide.ItemProperties.EventBa.Model FirstBuild="True" />
+  <MonoDevelop.Ide.ItemProperties.EventBa.API PreferredExecutionTarget="/Applications/Google Chrome.app" FirstBuild="True" />
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore />
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+  <MonoDevelop.Ide.ItemProperties.docker-compose PreferredExecutionTarget="MonoDevelop.Default" />
+  <MonoDevelop.Ide.ItemProperties.EventBa.Services FirstBuild="True" />
+  <MonoDevelop.Ide.Workbench>
+    <Pads>
+      <Pad Id="ProjectPad">
+        <State name="__root__">
+          <Node name="EventBa" expanded="True">
+            <Node name="docker-compose" expanded="True" />
+            <Node name="EventBa.API" expanded="True" />
+            <Node name="EventBa.Model" expanded="True" />
+            <Node name="EventBa.Services" expanded="True" />
+          </Node>
+        </State>
+      </Pad>
+    </Pads>
+  </MonoDevelop.Ide.Workbench>
+  <MultiItemStartupConfigurations />
+</Properties>

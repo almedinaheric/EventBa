@@ -1,0 +1,35 @@
+name: dockercompose7737676472149025835
+services:
+  eventba.api:
+    build:
+      context: /Users/almedinaheric/Desktop/EventBa/EventBa
+      dockerfile: EventBa.API/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: https://+:443;http://+:80
+    image: eventba
+    networks:
+      default: null
+    ports:
+    - mode: ingress
+      target: 80
+      protocol: tcp
+    - mode: ingress
+      target: 443
+      protocol: tcp
+    volumes:
+    - type: bind
+      source: /Users/almedinaheric/.aspnet/https
+      target: /root/.aspnet/https
+      read_only: true
+      bind:
+        create_host_path: true
+    - type: bind
+      source: /Users/almedinaheric/.microsoft/usersecrets
+      target: /root/.microsoft/usersecrets
+      read_only: true
+      bind:
+        create_host_path: true
+networks:
+  default:
+    name: dockercompose7737676472149025835_default

@@ -1,0 +1,8 @@
+version: '3.4'
+
+services:
+  eventba.api:
+    image: ${DOCKER_REGISTRY-}eventba
+    build:
+      context: .
+      dockerfile: EventBa.API/Dockerfile
