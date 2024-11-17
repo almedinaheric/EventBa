@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace EventBa.Services.Database;
+﻿namespace EventBa.Services.Database;
 
 public partial class Category
 {

@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using EventBa.Services.Database.Enums;
+﻿using EventBa.Model.Enums;
 
 namespace EventBa.Services.Database;
 

@@ -30,7 +30,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\EventBa.Services\EventBa.Services.csproj" />
+        <ProjectReference Include="..\EventBa.Models\EventBa.Models.csproj" />
+        <ProjectReference Include="..\EventBa.Services\EventBa.Services.csproj" />
     </ItemGroup>
 
 </Project>

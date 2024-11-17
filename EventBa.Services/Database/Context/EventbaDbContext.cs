@@ -1,4 +1,4 @@
-﻿using EventBa.Services.Database.Enums;
+﻿using EventBa.Model.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace EventBa.Services.Database.Context;

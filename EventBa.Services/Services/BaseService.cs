@@ -21,7 +21,7 @@ namespace EventBa.Services.Services
     /// <typeparam name="TSearch">The type representing the search filters for complex querying and pagination (e.g., UserSearchObject).</typeparam>
     /// <typeparam name="TInsert">The type used for inserting a new entity (e.g., UserInsertDto).</typeparam>
     /// <typeparam name="TUpdate">The type used for updating an existing entity (e.g., UserUpdateDto).</typeparam>
-    public class BaseService<T, TDb, TSearch, TInsert, TUpdate> : IBaseService<T, TSearch, TInsert, TUpdate>
+    public abstract class BaseService<T, TDb, TSearch, TInsert, TUpdate> : IBaseService<T, TSearch, TInsert, TUpdate>
         where TDb : class where T : class where TSearch : BaseSearchObject where TInsert : class where TUpdate : class
     {
         protected EventbaDbContext _context;

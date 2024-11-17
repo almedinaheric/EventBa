@@ -1,4 +1,4 @@
-namespace EventBa.Services.Database.Enums;
+namespace EventBa.Model.Enums;
 
 public enum ImageType
 {
