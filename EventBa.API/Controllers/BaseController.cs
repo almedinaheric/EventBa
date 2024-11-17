@@ -39,7 +39,7 @@ namespace EventBa.API.Controllers
 
         // GetById method to retrieve a single entity by ID
         [HttpGet("{id}")]
-        public async Task<T> GetById(int id)
+        public async Task<T> GetById(Guid id)
         {
             return await _service.GetById(id);
         }
@@ -53,14 +53,14 @@ namespace EventBa.API.Controllers
 
         // Update method
         [HttpPut("{id}")]
-        public async Task<T> Update(int id, [FromBody] TUpdate update)
+        public async Task<T> Update(Guid id, [FromBody] TUpdate update)
         {
             return await _service.Update(id, update);
         }
 
         // Delete method to remove an entity by ID
         [HttpDelete("{id}")]
-        public async Task<T> Delete(int id)
+        public async Task<T> Delete(Guid id)
         {
             return await _service.Delete(id);
         }

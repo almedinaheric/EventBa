@@ -66,7 +66,7 @@ namespace EventBa.Services.Services
         /// If the entity is not found, a KeyNotFoundException is thrown with a message that includes the entity type and ID.
         /// Otherwise, the entity is mapped to the T type and returned.
         /// </summary>
-        public virtual async Task<T> GetById(int id)
+        public virtual async Task<T> GetById(Guid id)
         {
             var entity = await _context.Set<TDb>().FindAsync(id);
             if (entity == null)
@@ -102,7 +102,7 @@ namespace EventBa.Services.Services
         /// If the entity is not found, a KeyNotFoundException is thrown.
         /// If found, the method maps the TUpdate DTO to the entity, saves the changes, and returns the updated entity mapped to the T type.
         /// </summary>
-        public virtual async Task<T> Update(int id, TUpdate update)
+        public virtual async Task<T> Update(Guid id, TUpdate update)
         {
             var set = _context.Set<TDb>();
             var entity = await set.FindAsync(id);
@@ -119,7 +119,7 @@ namespace EventBa.Services.Services
         /// If found, the entity is removed from the database and the changes are saved.
         /// The deleted entity is mapped to the T type and returned.
         /// </summary>
-        public virtual async Task<T> Delete(int id)
+        public virtual async Task<T> Delete(Guid id)
         {
             var set = _context.Set<TDb>();
             var entity = await set.FindAsync(id);

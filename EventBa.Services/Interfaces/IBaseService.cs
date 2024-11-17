@@ -10,9 +10,9 @@ namespace EventBa.Services.Interfaces
     {
         Task<T> Insert(TInsert insert);
         Task<List<T>> Get(TSearch search = null);
-        Task<T> GetById(int id);
+        Task<T> GetById(Guid id);
         Task<PagedResult<T>> GetPage(TSearch search = null); 
-        Task<T> Update(int id, TUpdate update);
-        Task<T> Delete(int id);
+        Task<T> Update(Guid id, TUpdate update);
+        Task<T> Delete(Guid id);
     }
 }
