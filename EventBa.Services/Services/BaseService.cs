@@ -24,10 +24,10 @@ namespace EventBa.Services.Services
     public class BaseService<T, TDb, TSearch, TInsert, TUpdate> : IBaseService<T, TSearch, TInsert, TUpdate>
         where TDb : class where T : class where TSearch : BaseSearchObject where TInsert : class where TUpdate : class
     {
-        protected EventBaContext _context;
+        protected EventbaDbContext _context;
         protected IMapper _mapper { get; set; }
 
-        public BaseService(EventBaContext context, IMapper mapper)
+        public BaseService(EventbaDbContext context, IMapper mapper)
         {
             _context = context;
             _mapper = mapper;
