@@ -1,0 +1,6 @@
+﻿services:
+  eventba.api:
+    image: eventba.api
+    build:
+      context: .
+      dockerfile: EventBa.API/Dockerfile
