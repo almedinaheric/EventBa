@@ -1,9 +1,8 @@
-namespace EventBa.Models.Enums
+namespace EventBa.Model.Enums;
+
+public enum ImageType
 {
-    public enum ImageType
-    {
-        PROFILE_IMAGE,
-        EVENT_COVER,
-        EVENT_GALLERY
-    }
+    ProfileImage,
+    EventCover,
+    EventGallery
 }

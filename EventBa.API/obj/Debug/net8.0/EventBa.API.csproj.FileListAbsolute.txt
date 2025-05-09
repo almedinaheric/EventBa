@@ -170,6 +170,7 @@
 /Users/almedinaheric/EventBa/EventBa.API/obj/Debug/net8.0/EventBa.API.csproj.CoreCompileInputs.cache
 /Users/almedinaheric/EventBa/EventBa.API/obj/Debug/net8.0/EventBa.API.MvcApplicationPartsAssemblyInfo.cs
 /Users/almedinaheric/EventBa/EventBa.API/obj/Debug/net8.0/EventBa.API.MvcApplicationPartsAssemblyInfo.cache
+/Users/almedinaheric/EventBa/EventBa.API/obj/Debug/net8.0/EventBa.API.sourcelink.json
 /Users/almedinaheric/EventBa/EventBa.API/obj/Debug/net8.0/staticwebassets.build.json
 /Users/almedinaheric/EventBa/EventBa.API/obj/Debug/net8.0/staticwebassets.development.json
 /Users/almedinaheric/EventBa/EventBa.API/obj/Debug/net8.0/staticwebassets/msbuild.EventBa.API.Microsoft.AspNetCore.StaticWebAssets.props

@@ -1568,7 +1568,8 @@
           "Microsoft.ML.Recommender": "0.22.1",
           "Newtonsoft.Json": "13.0.3",
           "Npgsql.EntityFrameworkCore.PostgreSQL": "9.0.4",
-          "RabbitMQ.Client": "7.1.2"
+          "RabbitMQ.Client": "7.1.2",
+          "Swashbuckle.AspNetCore": "6.6.2"
         },
         "compile": {
           "bin/placeholder/EventBa.Services.dll": {}

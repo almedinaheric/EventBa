@@ -9,6 +9,7 @@
 /Users/almedinaheric/EventBa/EventBa.Services/obj/Debug/net8.0/EventBa.Services.AssemblyInfoInputs.cache
 /Users/almedinaheric/EventBa/EventBa.Services/obj/Debug/net8.0/EventBa.Services.AssemblyInfo.cs
 /Users/almedinaheric/EventBa/EventBa.Services/obj/Debug/net8.0/EventBa.Services.csproj.CoreCompileInputs.cache
+/Users/almedinaheric/EventBa/EventBa.Services/obj/Debug/net8.0/EventBa.Services.sourcelink.json
 /Users/almedinaheric/EventBa/EventBa.Services/obj/Debug/net8.0/EventBa..A214D287.Up2Date
 /Users/almedinaheric/EventBa/EventBa.Services/obj/Debug/net8.0/EventBa.Services.dll
 /Users/almedinaheric/EventBa/EventBa.Services/obj/Debug/net8.0/refint/EventBa.Services.dll

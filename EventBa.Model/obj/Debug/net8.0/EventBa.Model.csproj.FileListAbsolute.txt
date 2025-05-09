@@ -5,6 +5,7 @@
 /Users/almedinaheric/EventBa/EventBa.Model/obj/Debug/net8.0/EventBa.Model.AssemblyInfoInputs.cache
 /Users/almedinaheric/EventBa/EventBa.Model/obj/Debug/net8.0/EventBa.Model.AssemblyInfo.cs
 /Users/almedinaheric/EventBa/EventBa.Model/obj/Debug/net8.0/EventBa.Model.csproj.CoreCompileInputs.cache
+/Users/almedinaheric/EventBa/EventBa.Model/obj/Debug/net8.0/EventBa.Model.sourcelink.json
 /Users/almedinaheric/EventBa/EventBa.Model/obj/Debug/net8.0/EventBa.Model.dll
 /Users/almedinaheric/EventBa/EventBa.Model/obj/Debug/net8.0/refint/EventBa.Model.dll
 /Users/almedinaheric/EventBa/EventBa.Model/obj/Debug/net8.0/EventBa.Model.pdb

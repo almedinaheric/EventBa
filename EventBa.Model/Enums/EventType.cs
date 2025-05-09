@@ -1,8 +1,7 @@
-namespace EventBa.Models.Enums
+namespace EventBa.Model.Enums;
+
+public enum EventType
 {
-    public enum EventType
-    {
-        PUBLIC,
-        PRIVATE
-    }
+    Public,
+    Private
 }

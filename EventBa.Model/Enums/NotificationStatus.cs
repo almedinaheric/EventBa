@@ -1,9 +1,8 @@
-namespace EventBa.Models.Enums
+namespace EventBa.Model.Enums;
+
+public enum NotificationStatus
 {
-    public enum NotificationStatus
-    {
-        SENT,
-        READ,
-        ARCHIVED
-    }
+    Sent,
+    Read,
+    Archived
 }

@@ -1,10 +1,9 @@
-namespace EventBa.Models.Enums
+namespace EventBa.Model.Enums;
+
+public enum PaymentStatus
 {
-    public enum PaymentStatus
-    {
-        PENDING,
-        PAID,
-        REFUNDED,
-        FAILED
-    }
+    Pending,
+    Paid,
+    Refunded,
+    Failed
 }

@@ -1,9 +1,8 @@
-namespace EventBa.Models.Enums
+namespace EventBa.Model.Enums;
+
+public enum EventStatus
 {
-    public enum EventStatus
-    {
-        UPCOMING,
-        PAST,
-        CANCELED
-    }
+    Upcoming,
+    Past,
+    Cancelled
 }

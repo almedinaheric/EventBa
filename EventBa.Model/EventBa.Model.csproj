@@ -4,14 +4,7 @@
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <RootNamespace>EventBa.Models</RootNamespace>
+        <RootNamespace>EventBa.Model</RootNamespace>
     </PropertyGroup>
-
-    <ItemGroup>
-      <Folder Include="Helpers\" />
-      <Folder Include="Requests\" />
-      <Folder Include="Responses\" />
-      <Folder Include="SearchObjects\" />
-    </ItemGroup>
 
 </Project>
