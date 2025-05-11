@@ -10,8 +10,7 @@ import '../widgets/primary_button.dart';
 import 'package:provider/provider.dart';
 
 class LoginScreen extends StatefulWidget {
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
+  const LoginScreen({super.key});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -33,22 +32,22 @@ class _LoginScreenState extends State<LoginScreen> {
     final password = _passwordController.text;
 
     setState(() {
-      _isLoading = true;
+      _isLoading = false;
     });
 
     Authorization.email = email;
     Authorization.password = password;
 
     try {
-      var userProvider = Provider.of<UserProvider>(context, listen: false);
-
-      var user = await userProvider.getProfile();
+      //await Provider.of<UserProvider>(context, listen: false).getProfile();
+      //Provider.of<UserProvider>(context, listen: false).getProfile();
 
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const HomeScreen()),
       );
     } catch (e) {
+      print(e);
       _showError("Login failed. Please check your credentials.");
     } finally {
       setState(() {
@@ -167,11 +166,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  PrimaryButton(
-                    text: "Log In",
-                    onPressed: _onLoginPressed,
-                    width: size.width * 0.9,
-                  ),
+                  _isLoading
+                      ? const CircularProgressIndicator()
+                      : PrimaryButton(
+                          text: "Log In",
+                          onPressed: _onLoginPressed,
+                          width: size.width * 0.9,
+                        ),
                 ],
               ),
               TextLinkButton(

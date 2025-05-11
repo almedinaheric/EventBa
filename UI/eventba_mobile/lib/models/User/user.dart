@@ -14,17 +14,16 @@ class User {
   DateTime updatedAt;
   String firstName;
   String lastName;
-
   String fullName;
   String email;
   String? bio;
   String? phoneNumber;
   Role role;
   ImageModel? profileImage;
-  List<CategoryModel>? interests;
-  List<BasicUser>? followers;
-  List<BasicUser>? following;
-  List<BasicEvent>? favoriteEvents;
+  List<CategoryModel> interests;
+  List<BasicUser> followers;
+  List<BasicUser> following;
+  List<BasicEvent> favoriteEvents;
 
   User({
     required this.id,
@@ -38,10 +37,10 @@ class User {
     this.phoneNumber,
     required this.role,
     this.profileImage,
-    this.interests,
-    this.followers,
-    this.following,
-    this.favoriteEvents,
+    this.interests = const [],
+    this.followers = const [],
+    this.following = const [],
+    this.favoriteEvents = const [],
   });
 
   factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);

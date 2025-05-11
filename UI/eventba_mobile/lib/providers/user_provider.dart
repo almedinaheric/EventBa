@@ -8,21 +8,34 @@ import 'base_provider.dart';
 class UserProvider extends BaseProvider<User> {
   UserProvider() : super("User");
 
+  User? _user;
+  User? get user => _user;
+
+  Future<User> getProfile() async {
+    try {
+      final uri = Uri.parse(baseUrl).resolve('User/profile');
+      final headers = createHeaders();
+
+      final response = await http.get(uri, headers: headers);
+
+      print("GET /User/profile status: ${response.statusCode}");
+      print("Response body: ${response.body}");
+
+      if (response.statusCode == 200) {
+        _user = User.fromJson(jsonDecode(response.body));
+        notifyListeners();
+        return _user!;
+      } else {
+        throw Exception("Failed to load user profile: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Exception in getProfile: $e");
+      rethrow;
+    }
+  }
+
   @override
   User fromJson(data) {
     return User.fromJson(data);
-  }
-
-  Future<User> getProfile() async {
-    final uri = Uri.parse(baseUrl).resolve('/User/profile');
-    final headers = createHeaders();
-
-    final response = await http.get(uri, headers: headers);
-
-    if (response.statusCode == 200) {
-      return User.fromJson(jsonDecode(response.body));
-    } else {
-      throw Exception("Failed to load user profile: ${response.statusCode}");
-    }
   }
 }

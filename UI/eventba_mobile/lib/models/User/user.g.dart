@@ -21,17 +21,21 @@ User _$UserFromJson(Map<String, dynamic> json) => User(
           ? null
           : ImageModel.fromJson(json['profileImage'] as Map<String, dynamic>),
       interests: (json['interests'] as List<dynamic>?)
-          ?.map((e) => CategoryModel.fromJson(e as Map<String, dynamic>))
-          .toList(),
+              ?.map((e) => CategoryModel.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
       followers: (json['followers'] as List<dynamic>?)
-          ?.map((e) => BasicUser.fromJson(e as Map<String, dynamic>))
-          .toList(),
+              ?.map((e) => BasicUser.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
       following: (json['following'] as List<dynamic>?)
-          ?.map((e) => BasicUser.fromJson(e as Map<String, dynamic>))
-          .toList(),
+              ?.map((e) => BasicUser.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
       favoriteEvents: (json['favoriteEvents'] as List<dynamic>?)
-          ?.map((e) => BasicEvent.fromJson(e as Map<String, dynamic>))
-          .toList(),
+              ?.map((e) => BasicEvent.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
     );
 
 Map<String, dynamic> _$UserToJson(User instance) => <String, dynamic>{

@@ -7,13 +7,17 @@ part of 'image_model.dart';
 // **************************************************************************
 
 ImageModel _$ImageModelFromJson(Map<String, dynamic> json) => ImageModel(
-      id: json['id'] as String,
-      data: json['data'] as String,
-      contentType: json['contentType'] as String,
+      id: json['id'] as String?,
+      data: json['data'] as String?,
+      contentType: json['contentType'] as String?,
       userId: json['userId'] as String?,
       eventId: json['eventId'] as String?,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      createdAt: json['createdAt'] == null
+          ? null
+          : DateTime.parse(json['createdAt'] as String),
+      updatedAt: json['updatedAt'] == null
+          ? null
+          : DateTime.parse(json['updatedAt'] as String),
     );
 
 Map<String, dynamic> _$ImageModelToJson(ImageModel instance) =>
@@ -23,6 +27,6 @@ Map<String, dynamic> _$ImageModelToJson(ImageModel instance) =>
       'contentType': instance.contentType,
       'userId': instance.userId,
       'eventId': instance.eventId,
-      'createdAt': instance.createdAt.toIso8601String(),
-      'updatedAt': instance.updatedAt.toIso8601String(),
+      'createdAt': instance.createdAt?.toIso8601String(),
+      'updatedAt': instance.updatedAt?.toIso8601String(),
     };

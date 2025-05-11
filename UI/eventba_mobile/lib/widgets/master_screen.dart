@@ -44,17 +44,41 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
     switch (widget.appBarType) {
       case AppBarType.titleLeftIconRight:
         return AppBar(
-          leading: const Padding(
-            padding: EdgeInsets.all(8.0),
-            child: Text("EventBa"),
+          automaticallyImplyLeading: false,
+          titleSpacing: 0, // ensures title can start from the left
+          title: const Row(
+            children: [
+              SizedBox(width: 24), // manual padding from the left
+              Text.rich(
+                TextSpan(
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                    color: Color.fromARGB(255, 18, 14, 91),
+                  ),
+                  children: [
+                    TextSpan(text: 'Event'),
+                    TextSpan(
+                      text: 'Ba',
+                      style: TextStyle(
+                        color: Color.fromARGB(255, 49, 101, 223),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
           actions: [
             IconButton(
-              icon: const Icon(Icons.notifications),
+              iconSize: 32,
+              icon: const Icon(Icons.notifications_outlined),
               onPressed: widget.onRightButtonPressed,
             ),
+            const SizedBox(width: 16), // manual padding from the left
           ],
         );
+
       case AppBarType.titleCenterIconRight:
         return AppBar(
           centerTitle: true,
@@ -88,20 +112,19 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: _buildAppBar(),
-      body: widget.child,
+      body: widget.child, // Delegate body content to the child screen
       bottomNavigationBar: BottomAppBar(
         shape: const CircularNotchedRectangle(),
-        notchMargin: 6.0,
         child: SizedBox(
           height: 60,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildNavItem(Icons.home, 0),
-              _buildNavItem(Icons.favorite, 1),
-              const SizedBox(width: 40),
-              _buildNavItem(Icons.confirmation_number, 3),
-              _buildNavItem(Icons.person, 4),
+              _buildNavItem(Icons.home_outlined, 0),
+              _buildNavItem(Icons.favorite_border, 1),
+              const SizedBox(width: 0),
+              _buildNavItem(Icons.confirmation_num_outlined, 3),
+              _buildNavItem(Icons.person_outlined, 4),
             ],
           ),
         ),
@@ -111,9 +134,10 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
           // Handle '+' tap
           print("FAB tapped");
         },
-        child: const Icon(Icons.add),
-        backgroundColor: Colors.deepPurple,
+        shape: const CircleBorder(),
+        backgroundColor: const Color(0xFF5B7CF6),
         elevation: 6,
+        child: const Icon(Icons.add),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
@@ -125,7 +149,8 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
       onPressed: () => _onBottomNavTap(index),
       icon: Icon(
         icon,
-        color: isSelected ? Colors.deepPurple : Colors.grey,
+        size: 32,
+        color: isSelected ? const Color(0xFF5B7CF6) : Colors.grey,
       ),
     );
   }
