@@ -87,6 +87,8 @@ public class UserService :
     
     public async Task<UserResponseDto> GetUserAsync()
     {
+        Console.WriteLine("GetUserAsync method called");
+
         var userIdClaim = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.Email)?.Value;
 
         if (userIdClaim == null)
