@@ -1,13 +1,13 @@
-import 'package:eventba_mobile/models/Category/category_model.dart';
-import 'package:eventba_mobile/models/Event/basic_event.dart';
-import 'package:eventba_mobile/models/Image/image_model.dart';
-import 'package:eventba_mobile/models/Role/role.dart';
-import 'package:eventba_mobile/models/User/basic_user.dart';
+import 'package:eventba_mobile/models/basic_user/basic_user.dart';
+import 'package:eventba_mobile/models/category/category_model.dart';
+import 'package:eventba_mobile/models/event/basic_event.dart';
+import 'package:eventba_mobile/models/image/image_model.dart';
+import 'package:eventba_mobile/models/role/role.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'user.g.dart';
 
-@JsonSerializable()
+@JsonSerializable(explicitToJson: true)
 class User {
   String id;
   DateTime createdAt;

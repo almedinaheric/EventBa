@@ -1,4 +1,4 @@
-import 'Meta/meta.dart';
+import 'meta/meta.dart';
 
 class SearchResult<T> {
   List<T> result = [];

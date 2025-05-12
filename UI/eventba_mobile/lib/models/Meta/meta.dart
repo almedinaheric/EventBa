@@ -1,6 +1,6 @@
 import 'package:json_annotation/json_annotation.dart';
 
-part 'meta.g.dart'; // Reference to generated file
+part 'meta.g.dart';
 
 @JsonSerializable()
 class Meta {

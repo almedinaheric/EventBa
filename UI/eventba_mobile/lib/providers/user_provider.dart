@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:eventba_mobile/models/User/user.dart';
+import 'package:eventba_mobile/models/user/user.dart';
 import 'package:http/http.dart' as http;
 
 import 'base_provider.dart';
@@ -15,12 +15,7 @@ class UserProvider extends BaseProvider<User> {
     try {
       final uri = Uri.parse(baseUrl).resolve('User/profile');
       final headers = createHeaders();
-
       final response = await http.get(uri, headers: headers);
-
-      print("GET /User/profile status: ${response.statusCode}");
-      print("Response body: ${response.body}");
-
       if (response.statusCode == 200) {
         _user = User.fromJson(jsonDecode(response.body));
         notifyListeners();

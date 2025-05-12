@@ -1,5 +1,5 @@
-import 'package:eventba_mobile/models/Enums/event_status.dart';
-import 'package:eventba_mobile/models/Image/image_model.dart';
+import 'package:eventba_mobile/models/enums/event_status.dart';
+import 'package:eventba_mobile/models/image/image_model.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'basic_event.g.dart';

@@ -32,7 +32,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final password = _passwordController.text;
 
     setState(() {
-      _isLoading = false;
+      _isLoading = true;
     });
 
     Authorization.email = email;
@@ -40,7 +40,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       //await Provider.of<UserProvider>(context, listen: false).getProfile();
-      //Provider.of<UserProvider>(context, listen: false).getProfile();
 
       Navigator.pushReplacement(
         context,
@@ -159,7 +158,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => ForgotPasswordScreen(),
+                            builder: (context) => const ForgotPasswordScreen(),
                           ),
                         );
                       },
@@ -182,7 +181,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => SignUpScreen(),
+                      builder: (context) => const SignUpScreen(),
                     ),
                   );
                 },

@@ -19,7 +19,6 @@ public class UserController : BaseCRUDController<UserResponseDto, UserSearchObje
         _userService = service;
     }
 
-    [HttpPost("register")]
     [AllowAnonymous]
     public override async Task<UserResponseDto> Insert([FromBody] UserInsertRequestDto insert)
     {

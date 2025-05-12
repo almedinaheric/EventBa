@@ -30,7 +30,7 @@ class CustomTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     final textFieldWidth = width ?? MediaQuery.of(context).size.width * 0.9;
 
-    return Container(
+    return SizedBox(
       width: textFieldWidth,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

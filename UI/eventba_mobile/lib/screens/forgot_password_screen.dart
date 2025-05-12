@@ -5,6 +5,8 @@ import '../widgets/custom_text_field.dart';
 import '../widgets/primary_button.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
+  const ForgotPasswordScreen({super.key});
+
   @override
   State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
 }
@@ -22,9 +24,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
     // Proceed with your password reset logic
     // For now, we're just showing a message after form validation
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content:
-            const Text('Password reset link has been sent to your email')));
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Password reset link has been sent to your email')));
   }
 
   void _showError(String message) {
@@ -95,7 +96,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => LoginScreen(),
+                        builder: (context) => const LoginScreen(),
                       ),
                     );
                   },

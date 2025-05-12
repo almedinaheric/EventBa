@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:eventba_mobile/widgets/master_screen.dart';
+import 'package:eventba_mobile/widgets/event_card.dart'; // Ensure this is imported
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -33,7 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 24),
           _buildSectionHeader('Public events'),
           const SizedBox(height: 8),
-          _buildHorizontalEventList(1),
+          _buildHorizontalEventList(3), // Modify the number here for testing
         ],
       ),
     );
@@ -85,69 +86,20 @@ class _HomeScreenState extends State<HomeScreen> {
         itemCount: count,
         separatorBuilder: (_, __) => const SizedBox(width: 12),
         itemBuilder: (context, index) {
-          return _buildEventCard(isPaid: true);
+          return _buildEventCard(
+              isPaid: index.isEven); // Example for alternating paid/free
         },
       ),
     );
   }
 
   Widget _buildEventCard({bool isPaid = false}) {
-    return Container(
-      width: 220,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        image: const DecorationImage(
-          image: AssetImage(
-              'assets/images/default_event_cover_image.png'), // Placeholder
-          fit: BoxFit.cover,
-        ),
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            top: 8,
-            right: 8,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: isPaid ? Colors.blue : Colors.green,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                isPaid ? 'PAID' : 'FREE',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
-              ),
-            ),
-          ),
-          const Positioned(
-            bottom: 8,
-            left: 8,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Event Name',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  'Location | Date',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+    return EventCard(
+      imageUrl: 'assets/images/default_event_cover_image.png',
+      eventName: 'Event Name ${isPaid ? "Paid" : "Free"}',
+      location: 'Location ${isPaid ? "NY" : "LA"}',
+      date: 'Date ${isPaid ? "2025-06-15" : "2025-06-20"}',
+      isPaid: isPaid, // Set based on event type
     );
   }
 
