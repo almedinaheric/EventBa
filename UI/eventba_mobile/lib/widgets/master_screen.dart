@@ -1,3 +1,10 @@
+// master_screen.dart
+import 'package:eventba_mobile/screens/event_creation_screen.dart';
+import 'package:eventba_mobile/screens/favorite_events_screen.dart';
+import 'package:eventba_mobile/screens/home_screen.dart';
+import 'package:eventba_mobile/screens/notifications_screen.dart';
+import 'package:eventba_mobile/screens/profile_screen.dart';
+import 'package:eventba_mobile/screens/tickets_screen.dart';
 import 'package:flutter/material.dart';
 
 enum AppBarType {
@@ -14,6 +21,8 @@ class MasterScreenWidget extends StatefulWidget {
   final VoidCallback? onLeftButtonPressed;
   final IconData? rightIcon;
   final IconData? leftIcon;
+  final bool showBottomNavBar;
+  final int initialIndex;
 
   const MasterScreenWidget({
     required this.child,
@@ -23,6 +32,8 @@ class MasterScreenWidget extends StatefulWidget {
     this.onLeftButtonPressed,
     this.rightIcon,
     this.leftIcon,
+    this.showBottomNavBar = true,
+    this.initialIndex = 0,
     super.key,
   });
 
@@ -31,13 +42,77 @@ class MasterScreenWidget extends StatefulWidget {
 }
 
 class _MasterScreenWidgetState extends State<MasterScreenWidget> {
-  int _selectedIndex = 0;
+  late int _selectedIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedIndex = widget.initialIndex;
+  }
 
   void _onBottomNavTap(int index) {
-    if (index == 2) return; // '+' button is custom handled
+    if (index == 2) {
+      Navigator.pushReplacement(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (context, animation1, animation2) =>
+              const EventCreationScreen(),
+          transitionDuration: Duration.zero,
+        ),
+      );
+      return;
+    }
+
+    if (_selectedIndex == index) return;
+
     setState(() => _selectedIndex = index);
-    print(index);
-    // Add navigation logic here Navigator.pushNamed()
+
+    Widget screen;
+    switch (index) {
+      case 0:
+        screen = const HomeScreen();
+        break;
+      case 1:
+        screen = const FavoriteEventsScreen();
+        break;
+      case 3:
+        screen = const TicketsScreen();
+        break;
+      case 4:
+        screen = const ProfileScreen();
+        break;
+      default:
+        return;
+    }
+
+    Navigator.pushReplacement(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation1, animation2) => MasterScreenWidget(
+          appBarType: index == 0
+              ? AppBarType.titleLeftIconRight
+              : AppBarType.titleCenterIconRight,
+          title: index == 0 ? null : _getTitleForIndex(index),
+          showBottomNavBar: true,
+          initialIndex: index,
+          child: screen,
+        ),
+        transitionDuration: Duration.zero,
+      ),
+    );
+  }
+
+  String _getTitleForIndex(int index) {
+    switch (index) {
+      case 1:
+        return 'Favorite Events';
+      case 3:
+        return 'Tickets';
+      case 4:
+        return 'Profile';
+      default:
+        return '';
+    }
   }
 
   PreferredSizeWidget _buildAppBar() {
@@ -45,25 +120,23 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
       case AppBarType.titleLeftIconRight:
         return AppBar(
           automaticallyImplyLeading: false,
-          titleSpacing: 0, // ensures title can start from the left
+          titleSpacing: 0,
           title: const Row(
             children: [
-              SizedBox(width: 24), // manual padding from the left
+              SizedBox(width: 24),
               Text.rich(
                 TextSpan(
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w800,
-                    color: Color.fromARGB(255, 18, 14, 91),
+                    color: Color(0xFF120E5B),
                   ),
                   children: [
                     TextSpan(text: 'Event'),
                     TextSpan(
                       text: 'Ba',
-                      style: TextStyle(
-                        color: Color.fromARGB(255, 49, 101, 223),
-                      ),
-                    ),
+                      style: TextStyle(color: Color(0xFF4776E6)),
+                    )
                   ],
                 ),
               ),
@@ -73,36 +146,51 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
             IconButton(
               iconSize: 32,
               icon: const Icon(Icons.notifications_outlined),
-              onPressed: widget.onRightButtonPressed,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const NotificationsScreen()),
+                );
+              },
             ),
-            const SizedBox(width: 16), // manual padding from the left
+            const SizedBox(width: 16),
           ],
         );
 
       case AppBarType.titleCenterIconRight:
         return AppBar(
+          automaticallyImplyLeading: false,
           centerTitle: true,
-          title: Text(widget.title ?? ''),
+          title: Text(
+            widget.title ?? '',
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
           actions: [
-            IconButton(
-              icon: Icon(widget.rightIcon ?? Icons.more_vert),
-              onPressed: widget.onRightButtonPressed,
-            ),
+            if (widget.rightIcon != null)
+              IconButton(
+                icon: Icon(widget.rightIcon),
+                onPressed: widget.onRightButtonPressed,
+              ),
           ],
         );
       case AppBarType.iconsSideTitleCenter:
         return AppBar(
           leading: IconButton(
-            icon: Icon(widget.leftIcon ?? Icons.menu),
-            onPressed: widget.onLeftButtonPressed,
+            icon: Icon(widget.leftIcon ?? Icons.arrow_back),
+            onPressed:
+                widget.onLeftButtonPressed ?? () => Navigator.pop(context),
           ),
           centerTitle: true,
-          title: Text(widget.title ?? ''),
+          title: Text(widget.title ?? '',
+              style:
+                  const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
           actions: [
-            IconButton(
-              icon: Icon(widget.rightIcon ?? Icons.settings),
-              onPressed: widget.onRightButtonPressed,
-            ),
+            if (widget.rightIcon != null)
+              IconButton(
+                icon: Icon(widget.rightIcon),
+                onPressed: widget.onRightButtonPressed,
+              ),
           ],
         );
     }
@@ -110,36 +198,53 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: _buildAppBar(),
-      body: widget.child, // Delegate body content to the child screen
-      bottomNavigationBar: BottomAppBar(
-        shape: const CircularNotchedRectangle(),
-        child: SizedBox(
-          height: 60,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildNavItem(Icons.home_outlined, 0),
-              _buildNavItem(Icons.favorite_border, 1),
-              const SizedBox(width: 0),
-              _buildNavItem(Icons.confirmation_num_outlined, 3),
-              _buildNavItem(Icons.person_outlined, 4),
-            ],
-          ),
+    return Stack(
+      children: [
+        Scaffold(
+          appBar: _buildAppBar(),
+          body: widget.child,
+          resizeToAvoidBottomInset:
+              false, // Allow content to resize for keyboard
+          bottomNavigationBar: widget.showBottomNavBar
+              ? BottomAppBar(
+                  shape: const CircularNotchedRectangle(),
+                  child: SizedBox(
+                    height: 60,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildNavItem(Icons.home_outlined, 0),
+                        _buildNavItem(Icons.favorite_border, 1),
+                        const SizedBox(width: 0),
+                        _buildNavItem(Icons.confirmation_num_outlined, 3),
+                        _buildNavItem(Icons.person_outlined, 4),
+                      ],
+                    ),
+                  ),
+                )
+              : null,
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Handle '+' tap
-          print("FAB tapped");
-        },
-        shape: const CircleBorder(),
-        backgroundColor: const Color(0xFF5B7CF6),
-        elevation: 6,
-        child: const Icon(Icons.add),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+        // Position FAB independently of Scaffold to prevent it from moving when error messages appear
+        if (widget.showBottomNavBar)
+          Positioned(
+            bottom: 84, // Adjust this value to position correctly
+            left: 0,
+            right: 0,
+            child: Center(
+              child: FloatingActionButton(
+                onPressed: () => _onBottomNavTap(2),
+                shape: const CircleBorder(),
+                backgroundColor: const Color(0xFF4776E6),
+                elevation: 6,
+                child: const Icon(
+                  Icons.add,
+                  size: 32,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 
@@ -150,7 +255,7 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
       icon: Icon(
         icon,
         size: 32,
-        color: isSelected ? const Color(0xFF5B7CF6) : Colors.grey,
+        color: isSelected ? const Color(0xFF4776E6) : const Color(0xFF363B3E),
       ),
     );
   }

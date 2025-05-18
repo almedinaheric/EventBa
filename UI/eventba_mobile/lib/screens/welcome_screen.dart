@@ -34,7 +34,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                         TextSpan(text: 'Event'),
                         TextSpan(
                           text: 'Ba',
-                          style: TextStyle(color: Color(0xFF3165DF)),
+                          style: TextStyle(color: Color(0xFF4776E6)),
                         ),
                       ],
                     ),
@@ -46,18 +46,18 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.w800,
-                        color: Color(0xFF120E5B),
+                        color: Color(0xFF4776E6),
                       ),
                       children: [
                         TextSpan(text: 'Explore Events '),
                         TextSpan(
                           text: 'and \n',
-                          style: TextStyle(color: Color(0xFF3165DF)),
+                          style: TextStyle(color: Color(0xFF120E5B)),
                         ),
                         TextSpan(text: 'Get Your Ticket \n'),
                         TextSpan(
                           text: 'Now!',
-                          style: TextStyle(color: Color(0xFF3165DF)),
+                          style: TextStyle(color: Color(0xFF120E5B)),
                         ),
                       ],
                     ),

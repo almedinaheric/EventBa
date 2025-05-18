@@ -17,7 +17,7 @@ class PrimaryButton extends StatelessWidget {
     final size = MediaQuery.of(context).size;
     final buttonWidth = width ?? size.width * 0.9;
     return Material(
-      color: const Color(0xFF3165DF),
+      color: const Color(0xFF4776E6),
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onPressed,

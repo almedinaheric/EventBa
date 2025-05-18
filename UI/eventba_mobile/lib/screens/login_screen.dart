@@ -3,6 +3,7 @@ import 'package:eventba_mobile/screens/forgot_password_screen.dart';
 import 'package:eventba_mobile/screens/home_screen.dart';
 import 'package:eventba_mobile/screens/signup_screen.dart';
 import 'package:eventba_mobile/utils/authorization.dart';
+import 'package:eventba_mobile/widgets/master_screen.dart';
 import 'package:eventba_mobile/widgets/text_link_button.dart';
 import 'package:flutter/material.dart';
 import '../widgets/custom_text_field.dart';
@@ -39,14 +40,18 @@ class _LoginScreenState extends State<LoginScreen> {
     Authorization.password = password;
 
     try {
-      //await Provider.of<UserProvider>(context, listen: false).getProfile();
+      await Provider.of<UserProvider>(context, listen: false).getProfile();
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        MaterialPageRoute(
+          builder: (context) => const MasterScreenWidget(
+            initialIndex: 0,
+            child: HomeScreen(),
+          ),
+        ),
       );
     } catch (e) {
-      print(e);
       _showError("Login failed. Please check your credentials.");
     } finally {
       setState(() {
@@ -84,6 +89,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: const Color(0xFFDFE6FF),
       body: SafeArea(
         child: Padding(
@@ -191,5 +197,12 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 }

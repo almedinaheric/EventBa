@@ -29,7 +29,7 @@ class TextLinkButton extends StatelessWidget {
           TextSpan(
             text: linkText,
             style: const TextStyle(
-              color: Color(0xFF3165DF),
+              color: Color(0xFF4776E6),
               decoration: TextDecoration.underline,
             ),
             recognizer: TapGestureRecognizer()..onTap = onTap,

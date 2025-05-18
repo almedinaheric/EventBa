@@ -47,7 +47,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   TextSpan(text: 'Event'),
                   TextSpan(
                     text: 'Ba',
-                    style: TextStyle(color: Color(0xFF3165DF)),
+                    style: TextStyle(color: Color(0xFF4776E6)),
                   ),
                 ],
               ),
