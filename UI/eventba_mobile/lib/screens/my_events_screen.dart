@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'event_details_screen.dart';
+import 'my_event_details_screen.dart';
 
 class MyEventsScreen extends StatelessWidget {
   const MyEventsScreen({super.key});
@@ -7,8 +7,27 @@ class MyEventsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final events = [
-      {"title": "Music Festival", "date": "June 10, 2025"},
-      {"title": "Art Expo", "date": "July 5, 2025"},
+      {
+        "title": "Music Festival",
+        "date": "June 10, 2025",
+        "location": "Main Hall, City Center",
+        "status": "upcoming",
+        "attendees": 150,
+      },
+      {
+        "title": "Art Expo",
+        "date": "July 5, 2025",
+        "location": "Art Gallery Downtown",
+        "status": "upcoming",
+        "attendees": 75,
+      },
+      {
+        "title": "Tech Conference",
+        "date": "May 1, 2025",
+        "location": "Convention Center",
+        "status": "finished",
+        "attendees": 200,
+      },
     ];
 
     return Scaffold(
@@ -19,17 +38,38 @@ class MyEventsScreen extends StatelessWidget {
         itemBuilder: (context, index) {
           final event = events[index];
           return Card(
+            margin: const EdgeInsets.only(bottom: 12),
             child: ListTile(
-              title: Text(event["title"]!),
-              subtitle: Text(event["date"]!),
-              trailing: const Icon(Icons.arrow_forward_ios),
+              title: Text(event["title"]! as String),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(event["date"]! as String),
+                  Text(event["location"]! as String),
+                  Text("${event["attendees"]} attendees"),
+                ],
+              ),
+              trailing: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: event["status"] == "upcoming" ? Colors.green : Colors.grey,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  event["status"]! as String,
+                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                ),
+              ),
               onTap: () {
                 Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          EventDetailsScreen(eventTitle: event["title"]!),
-                    ));
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => MyEventDetailsScreen(
+                      eventTitle: event["title"]! as String,
+                      eventData: event,
+                    ),
+                  ),
+                );
               },
             ),
           );
@@ -38,3 +78,4 @@ class MyEventsScreen extends StatelessWidget {
     );
   }
 }
+

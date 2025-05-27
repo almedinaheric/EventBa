@@ -1,7 +1,13 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:eventba_mobile/widgets/master_screen.dart';
 import 'package:eventba_mobile/widgets/primary_button.dart';
 import 'package:eventba_mobile/widgets/custom_text_field.dart';
+
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 
 class EventCreationScreen extends StatefulWidget {
   const EventCreationScreen({super.key});
@@ -12,6 +18,7 @@ class EventCreationScreen extends StatefulWidget {
 
 class _EventCreationScreenState extends State<EventCreationScreen> {
   final _formKey = GlobalKey<FormState>();
+  final ImagePicker _picker = ImagePicker();
 
   final List<String> _categories = [
     'Music',
@@ -22,8 +29,9 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
     // add more categories as needed
   ];
 
+  // Controllers
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _categoryController = TextEditingController();
+  String? _selectedCategory; // Changed from controller to variable for dropdown
   final TextEditingController _venueController = TextEditingController();
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _startTimeController = TextEditingController();
@@ -34,6 +42,10 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
   final TextEditingController _vipCountController = TextEditingController();
   final TextEditingController _ecoPriceController = TextEditingController();
   final TextEditingController _ecoCountController = TextEditingController();
+
+  // Image handling
+  XFile? _mainImage;
+  List<XFile> _additionalImages = [];
 
   bool _isPaid = false;
 
@@ -68,10 +80,8 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
 
-    return MasterScreenWidget(
-      appBarType: AppBarType.titleCenterIconRight,
-      title: "Create Event",
-      child: SingleChildScrollView(
+    return Scaffold(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
@@ -92,26 +102,62 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
                   setState(() {
                     _isNameValid = text.trim().isNotEmpty;
                     _nameErrorMessage =
-                        _isNameValid ? null : 'Event name is required';
+                    _isNameValid ? null : 'Event name is required';
                   });
                 },
               ),
               const SizedBox(height: 12),
 
-              CustomTextField(
-                controller: _categoryController,
-                label: 'Event category',
-                hint: 'Choose category',
-                isValid: _isCategoryValid,
-                errorMessage: _categoryErrorMessage,
-                width: screenWidth * 0.9,
-                onChanged: (text) {
-                  setState(() {
-                    _isCategoryValid = text.trim().isNotEmpty;
-                    _categoryErrorMessage =
+              // Changed from CustomTextField to Dropdown
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Event category',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 16,
+                      color: Colors.black,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  DropdownButtonFormField<String>(
+                    value: _selectedCategory,
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: const Color(0xFFF9FBFF),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      errorText: _isCategoryValid ? null : _categoryErrorMessage,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                    ),
+                    hint: const Text('Choose category'),
+                    items: _categories.map((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                    onChanged: (newValue) {
+                      setState(() {
+                        _selectedCategory = newValue;
+                        _isCategoryValid = newValue != null;
+                        _categoryErrorMessage =
                         _isCategoryValid ? null : 'Category is required';
-                  });
-                },
+                      });
+                    },
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Category is required';
+                      }
+                      return null;
+                    },
+                  ),
+                ],
               ),
               const SizedBox(height: 12),
 
@@ -126,7 +172,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
                   setState(() {
                     _isVenueValid = text.trim().isNotEmpty;
                     _venueErrorMessage =
-                        _isVenueValid ? null : 'Venue is required';
+                    _isVenueValid ? null : 'Venue is required';
                   });
                 },
               ),
@@ -144,7 +190,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
                   setState(() {
                     _isDateValid = text.trim().isNotEmpty;
                     _dateErrorMessage =
-                        _isDateValid ? null : 'Date is required';
+                    _isDateValid ? null : 'Date is required';
                   });
                 },
               ),
@@ -187,7 +233,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
                         setState(() {
                           _isEndTimeValid = text.trim().isNotEmpty;
                           _endTimeErrorMessage =
-                              _isEndTimeValid ? null : 'End time is required';
+                          _isEndTimeValid ? null : 'End time is required';
                         });
                       },
                     ),
@@ -208,7 +254,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
                   setState(() {
                     _isDescriptionValid = text.trim().isNotEmpty;
                     _descriptionErrorMessage =
-                        _isDescriptionValid ? null : 'Description is required';
+                    _isDescriptionValid ? null : 'Description is required';
                   });
                 },
               ),
@@ -262,7 +308,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
                         errorMessage: _vipPriceErrorMessage,
                         width: double.infinity,
                         keyboardType:
-                            TextInputType.numberWithOptions(decimal: true),
+                        TextInputType.numberWithOptions(decimal: true),
                         onChanged: (text) {
                           setState(() {
                             _isVipPriceValid = text.trim().isNotEmpty &&
@@ -312,7 +358,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
                         errorMessage: _ecoPriceErrorMessage,
                         width: double.infinity,
                         keyboardType:
-                            TextInputType.numberWithOptions(decimal: true),
+                        TextInputType.numberWithOptions(decimal: true),
                         onChanged: (text) {
                           setState(() {
                             _isEcoPriceValid = text.trim().isNotEmpty &&
@@ -369,32 +415,97 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          height: 160,
-          width: screenWidth * 0.9,
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade300),
-            borderRadius: BorderRadius.circular(12),
+        GestureDetector(
+          onTap: _pickMainImage,
+          child: Container(
+            height: 160,
+            width: screenWidth * 0.9,
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey.shade300),
+              borderRadius: BorderRadius.circular(12),
+              image: _mainImage != null
+                  ? DecorationImage(
+                image: FileImage(File(_mainImage!.path)),
+                fit: BoxFit.cover,
+              )
+                  : null,
+            ),
+            child: _mainImage == null
+                ? const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.add, size: 40),
+                  SizedBox(height: 8),
+                  Text('Add main image'),
+                ],
+              ),
+            )
+                : null,
           ),
-          child: const Center(child: Icon(Icons.add, size: 40)),
         ),
         const SizedBox(height: 12),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: List.generate(3, (index) {
-            return Container(
-              width: (screenWidth * 0.9 - 24) / 3,
-              height: 80,
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade300),
-                borderRadius: BorderRadius.circular(12),
+            return GestureDetector(
+              onTap: () => _pickAdditionalImage(index),
+              child: Container(
+                width: (screenWidth * 0.9 - 24) / 3,
+                height: 80,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(12),
+                  image: index < _additionalImages.length
+                      ? DecorationImage(
+                    image: FileImage(File(_additionalImages[index].path)),
+                    fit: BoxFit.cover,
+                  )
+                      : null,
+                ),
+                child: index >= _additionalImages.length
+                    ? const Center(child: Icon(Icons.add))
+                    : null,
               ),
-              child: const Center(child: Icon(Icons.add)),
             );
           }),
         )
       ],
     );
+  }
+
+  Future<void> _pickMainImage() async {
+    try {
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      if (image != null) {
+        setState(() {
+          _mainImage = image;
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to pick image: ${e.toString()}')),
+      );
+    }
+  }
+
+  Future<void> _pickAdditionalImage(int index) async {
+    try {
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      if (image != null) {
+        setState(() {
+          if (index < _additionalImages.length) {
+            _additionalImages[index] = image;
+          } else {
+            _additionalImages.add(image);
+          }
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to pick image: ${e.toString()}')),
+      );
+    }
   }
 
   Widget _buildPriceTypeButton(bool isPaidButton, String label) {
@@ -442,7 +553,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
     if (picked != null) {
       setState(() {
         _dateController.text =
-            "${picked.start.toLocal().toString().split(' ')[0]} - ${picked.end.toLocal().toString().split(' ')[0]}";
+        "${picked.start.toLocal().toString().split(' ')[0]} - ${picked.end.toLocal().toString().split(' ')[0]}";
         _isDateValid = true;
         _dateErrorMessage = null;
       });
@@ -482,7 +593,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
       _isNameValid = _nameController.text.trim().isNotEmpty;
       _nameErrorMessage = _isNameValid ? null : 'Event name is required';
 
-      _isCategoryValid = _categoryController.text.trim().isNotEmpty;
+      _isCategoryValid = _selectedCategory != null;
       _categoryErrorMessage = _isCategoryValid ? null : 'Category is required';
 
       _isVenueValid = _venueController.text.trim().isNotEmpty;
@@ -493,14 +604,14 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
 
       _isStartTimeValid = _startTimeController.text.trim().isNotEmpty;
       _startTimeErrorMessage =
-          _isStartTimeValid ? null : 'Start time is required';
+      _isStartTimeValid ? null : 'Start time is required';
 
       _isEndTimeValid = _endTimeController.text.trim().isNotEmpty;
       _endTimeErrorMessage = _isEndTimeValid ? null : 'End time is required';
 
       _isDescriptionValid = _descriptionController.text.trim().isNotEmpty;
       _descriptionErrorMessage =
-          _isDescriptionValid ? null : 'Description is required';
+      _isDescriptionValid ? null : 'Description is required';
 
       if (!_isPaid) {
         _isCapacityValid = _capacityController.text.trim().isNotEmpty &&
@@ -528,7 +639,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
             double.tryParse(_ecoPriceController.text.trim()) != null &&
             double.parse(_ecoPriceController.text.trim()) >= 0;
         _ecoPriceErrorMessage =
-            _isEcoPriceValid ? null : 'Economy price required and must be ≥ 0';
+        _isEcoPriceValid ? null : 'Economy price required and must be ≥ 0';
 
         _isEcoCountValid = _ecoCountController.text.trim().isNotEmpty &&
             int.tryParse(_ecoCountController.text.trim()) != null &&
@@ -549,9 +660,9 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
         (!_isPaid
             ? _isCapacityValid
             : (_isVipPriceValid &&
-                _isVipCountValid &&
-                _isEcoPriceValid &&
-                _isEcoCountValid));
+            _isVipCountValid &&
+            _isEcoPriceValid &&
+            _isEcoCountValid));
 
     if (allValid) {
       // Your submit logic here
@@ -569,7 +680,6 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
   @override
   void dispose() {
     _nameController.dispose();
-    _categoryController.dispose();
     _venueController.dispose();
     _dateController.dispose();
     _startTimeController.dispose();

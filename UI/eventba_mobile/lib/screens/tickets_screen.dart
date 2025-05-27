@@ -112,9 +112,10 @@ class _TicketsScreenState extends State<TicketsScreen> {
                             onTap: () {
                               Navigator.push(
                                 context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      const TicketDetailsScreen(),
+                                PageRouteBuilder(
+                                  pageBuilder: (_, __, ___) => const TicketDetailsScreen(),
+                                  transitionDuration: Duration.zero,
+                                  reverseTransitionDuration: Duration.zero,
                                 ),
                               );
                             },
@@ -129,9 +130,10 @@ class _TicketsScreenState extends State<TicketsScreen> {
                             onTap: () {
                               Navigator.push(
                                 context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      const TicketDetailsScreen(),
+                                PageRouteBuilder(
+                                  pageBuilder: (_, __, ___) => const TicketDetailsScreen(),
+                                  transitionDuration: Duration.zero,
+                                  reverseTransitionDuration: Duration.zero,
                                 ),
                               );
                             },
@@ -146,9 +148,10 @@ class _TicketsScreenState extends State<TicketsScreen> {
                             onTap: () {
                               Navigator.push(
                                 context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      const TicketDetailsScreen(),
+                                PageRouteBuilder(
+                                  pageBuilder: (_, __, ___) => const TicketDetailsScreen(),
+                                  transitionDuration: Duration.zero,
+                                  reverseTransitionDuration: Duration.zero,
                                 ),
                               );
                             },

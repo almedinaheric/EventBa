@@ -1,9 +1,10 @@
+import 'package:eventba_mobile/screens/category_events_screen.dart';
+import 'package:eventba_mobile/screens/event_details_screen.dart';
 import 'package:eventba_mobile/screens/private_events_screen.dart';
 import 'package:eventba_mobile/screens/public_events_screen.dart';
 import 'package:eventba_mobile/screens/recommended_events_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:eventba_mobile/widgets/text_link_button.dart';
-import 'package:eventba_mobile/widgets/master_screen.dart';
 import 'package:eventba_mobile/widgets/event_card.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -17,57 +18,69 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body: ListView(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      children: [
-        _buildSearchBar(),
-        const SizedBox(height: 20),
-        _buildSectionHeader(
-          'Recommended',
-          onViewAllTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (_) => const RecommendedEventsScreen()),
-            );
-          },
-        ),
-        const SizedBox(height: 12),
-        _buildRecommendedEventGrid(),
-        const SizedBox(height: 20),
-        _buildSectionHeader(
-          'Search by category',
-          showViewAll: false,
-        ),
-        const SizedBox(height: 12),
-        _buildCategoryChips(),
-        const SizedBox(height: 20),
-        _buildSectionHeader(
-          'Public events',
-          onViewAllTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const PublicEventsScreen()),
-            );
-          },
-        ),
-        const SizedBox(height: 12),
-        _buildPublicEventGrid(),
-        const SizedBox(height: 20),
-        _buildSectionHeader(
-          'Private events',
-          onViewAllTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const PrivateEventsScreen()),
-            );
-          },
-        ),
-        const SizedBox(height: 12),
-        _buildPrivateEventGrid(),
-        const SizedBox(height: 20), // Space for bottom navbar
-      ],
-    ));
+      body: ListView(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        children: [
+          _buildSearchBar(),
+          const SizedBox(height: 20),
+          _buildSectionHeader(
+            'Recommended',
+            onViewAllTap: () {
+              Navigator.push(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (_, __, ___) => const RecommendedEventsScreen(),
+                  transitionDuration: Duration.zero,
+                  reverseTransitionDuration: Duration.zero,
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+          _buildRecommendedEventGrid(),
+          const SizedBox(height: 20),
+          _buildSectionHeader(
+            'Search by category',
+            showViewAll: false,
+          ),
+          const SizedBox(height: 12),
+          _buildCategoryChips(),
+          const SizedBox(height: 20),
+          _buildSectionHeader(
+            'Public events',
+            onViewAllTap: () {
+              Navigator.push(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (_, __, ___) => const PublicEventsScreen(),
+                  transitionDuration: Duration.zero,
+                  reverseTransitionDuration: Duration.zero,
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+          _buildPublicEventGrid(),
+          const SizedBox(height: 20),
+          _buildSectionHeader(
+            'Private events',
+            onViewAllTap: () {
+              Navigator.push(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (_, __, ___) => const PrivateEventsScreen(),
+                  transitionDuration: Duration.zero,
+                  reverseTransitionDuration: Duration.zero,
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+          _buildPrivateEventGrid(),
+          const SizedBox(height: 20),
+        ],
+      ),
+    );
   }
 
   Widget _buildSearchBar() {
@@ -89,10 +102,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildSectionHeader(
-    String title, {
-    bool showViewAll = true,
-    VoidCallback? onViewAllTap,
-  }) {
+      String title, {
+        bool showViewAll = true,
+        VoidCallback? onViewAllTap,
+      }) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -113,7 +126,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildRecommendedEventGrid() {
-    return const SizedBox(
+    return SizedBox(
       height: 160,
       child: Row(
         children: [
@@ -125,9 +138,22 @@ class _HomeScreenState extends State<HomeScreen> {
               date: '27-06-2025',
               height: 160,
               isPaid: false,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  PageRouteBuilder(
+                    pageBuilder: (_, __, ___) => const EventDetailsScreen(
+                      eventTitle: 'Koncert Mirze Selimovica',
+                    ),
+                    transitionDuration: Duration.zero,
+                    reverseTransitionDuration: Duration.zero,
+                  ),
+                );
+              },
+
             ),
           ),
-          SizedBox(width: 10),
+          const SizedBox(width: 10),
           Expanded(
             child: EventCard(
               imageUrl: 'assets/images/default_event_cover_image.png',
@@ -157,7 +183,7 @@ class _HomeScreenState extends State<HomeScreen> {
             isPaid: false,
           ),
         ),
-        SizedBox(height: 10), // Space between the two cards
+        SizedBox(height: 10),
         SizedBox(
           height: 160,
           child: EventCard(
@@ -263,24 +289,40 @@ class _HomeScreenState extends State<HomeScreen> {
         runSpacing: 8,
         children: categories
             .map(
-              (cat) => Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFF5B7CF6),
-                  borderRadius: BorderRadius.circular(20),
+              (category) => GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (_, __, ___) => CategoryEventsScreen(categoryName: category),
+                  transitionDuration: Duration.zero,
+                  reverseTransitionDuration: Duration.zero,
                 ),
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Text(
-                    cat,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                    ),
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFF5B7CF6),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
                   ),
+                ],
+              ),
+              child: Text(
+                category,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-            )
+            ),
+          ),
+        )
             .toList(),
       ),
     );

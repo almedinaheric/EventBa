@@ -1,5 +1,5 @@
 import 'package:eventba_mobile/widgets/master_screen.dart';
-import 'package:eventba_mobile/widgets/organizer_card.dart';
+import 'package:eventba_mobile/widgets/organizer_section.dart';
 import 'package:eventba_mobile/widgets/ticket_qr_code.dart';
 import 'package:eventba_mobile/widgets/ticket_info_field.dart';
 import 'package:eventba_mobile/widgets/ticket_type_badge.dart';
@@ -14,11 +14,13 @@ class TicketDetailsScreen extends StatefulWidget {
 
 class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
   bool showQR = false;
+  bool isFollowing = false; // Track follow state
 
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     return MasterScreenWidget(
+      initialIndex: -1,
       appBarType: AppBarType.iconsSideTitleCenter,
       title: "Ticket details",
       leftIcon: Icons.arrow_back,
@@ -59,6 +61,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                   value: "Event name",
                                 ),
                               ),
+                              Spacer(flex: 1),
                               Expanded(
                                 child: TicketInfoField(
                                   label: "Location",
@@ -75,6 +78,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                   value: "20.6.2023",
                                 ),
                               ),
+                              Spacer(flex: 1),
                               Expanded(
                                 child: TicketInfoField(
                                   label: "Time",
@@ -86,32 +90,16 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                         ],
                       ),
 
-                      const Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "Organizer",
-                            style: TextStyle(
-                              fontWeight: FontWeight.w400,
-                              fontSize: 16,
-                              color: Colors.grey,
-                            ),
-                          ),
-                          SizedBox(height: 8), // small spacing
-                          OrganizerCard(
-                            imageUrl: 'assets/images/profile_placeholder.png',
-                            name: "Dylan Malik",
-                          ),
-                          SizedBox(height: 24),
-                          Divider(
-                            color: Color(
-                                0xFFE0E0E0), // customize color if you want
-                            thickness: 1, // line thickness
-                            height: 1, // space the divider occupies vertically
-                          ),
-                          SizedBox(height: 16),
-                        ],
-                      ),
+                      const OrganizerSection(
+                                  organizerId: 1,
+                                  bio: "hey",
+                                  imageUrl: 'assets/images/profile_placeholder.png',
+                                  name: "Dylan Malik",
+                                ),
+
+
+
+                      SizedBox(height: 16),
 
                       const Text(
                         "You have purchased 2 tickets for this event. To view the QR code for each ticket, simply click on the blue button below.",

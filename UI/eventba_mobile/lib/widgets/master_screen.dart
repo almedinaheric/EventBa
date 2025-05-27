@@ -1,4 +1,3 @@
-// master_screen.dart
 import 'package:eventba_mobile/screens/event_creation_screen.dart';
 import 'package:eventba_mobile/screens/favorite_events_screen.dart';
 import 'package:eventba_mobile/screens/home_screen.dart';
@@ -51,29 +50,22 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
   }
 
   void _onBottomNavTap(int index) {
-    if (index == 2) {
-      Navigator.pushReplacement(
-        context,
-        PageRouteBuilder(
-          pageBuilder: (context, animation1, animation2) =>
-              const EventCreationScreen(),
-          transitionDuration: Duration.zero,
-        ),
-      );
-      return;
-    }
-
     if (_selectedIndex == index) return;
 
     setState(() => _selectedIndex = index);
 
     Widget screen;
     switch (index) {
+      case -1:
+        return;
       case 0:
         screen = const HomeScreen();
         break;
       case 1:
         screen = const FavoriteEventsScreen();
+        break;
+      case 2:
+        screen = const EventCreationScreen();
         break;
       case 3:
         screen = const TicketsScreen();
@@ -106,6 +98,8 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
     switch (index) {
       case 1:
         return 'Favorite Events';
+      case 2:
+        return 'Creaete Event';
       case 3:
         return 'Tickets';
       case 4:
@@ -149,8 +143,11 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                      builder: (context) => const NotificationsScreen()),
+                  PageRouteBuilder(
+                    pageBuilder: (_, __, ___) => const NotificationsScreen(),
+                    transitionDuration: Duration.zero,
+                    reverseTransitionDuration: Duration.zero,
+                  ),
                 );
               },
             ),

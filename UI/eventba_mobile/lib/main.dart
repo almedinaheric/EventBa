@@ -1,5 +1,8 @@
 import 'package:eventba_mobile/providers/user_provider.dart';
+import 'package:eventba_mobile/screens/event_questions_screen.dart';
+import 'package:eventba_mobile/screens/home_screen.dart';
 import 'package:eventba_mobile/screens/splash_screen.dart';
+import 'package:eventba_mobile/screens/ticket_scanner_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -28,6 +31,11 @@ class MyApp extends StatelessWidget {
           visualDensity: VisualDensity.adaptivePlatformDensity,
           fontFamily: 'Poppins'),
       home: const SplashScreen(),
+      routes: {
+        '/ticket-scanner': (context) =>const TicketScannerScreen(),
+        //'/edit-event': (context) => EditEventScreen(),
+        '/event-questions': (context) => const EventQuestionsScreen(),
+      },
     );
   }
 }
