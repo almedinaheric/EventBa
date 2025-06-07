@@ -50,14 +50,10 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
   }
 
   void _onBottomNavTap(int index) {
-    if (_selectedIndex == index) return;
-
     setState(() => _selectedIndex = index);
 
     Widget screen;
     switch (index) {
-      case -1:
-        return;
       case 0:
         screen = const HomeScreen();
         break;

@@ -20,7 +20,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     return MasterScreenWidget(
-      initialIndex: -1,
+      initialIndex: 3,
       appBarType: AppBarType.iconsSideTitleCenter,
       title: "Ticket details",
       leftIcon: Icons.arrow_back,
@@ -141,6 +141,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
               color: Colors.black.withOpacity(0.5),
               child: Center(
                 child: TicketQRCode(
+                  ticketCode: "ASD839HLK",
                   onClose: () {
                     setState(() {
                       showQR = false;

@@ -1,24 +1,47 @@
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:eventba_mobile/screens/followers_screen.dart';
 import 'package:eventba_mobile/screens/following_screen.dart';
 import 'package:eventba_mobile/screens/my_events_screen.dart';
 import 'package:eventba_mobile/screens/support_screen.dart';
-import 'package:flutter/material.dart';
 import 'profile_details_screen.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  File? _image;
+
+  Future<void> _pickImage() async {
+    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      setState(() {
+        _image = File(pickedFile.path);
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF7F8FA),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // Profile Picture and Name
-            const CircleAvatar(
-              radius: 60,
-              backgroundImage: AssetImage('assets/images/profile_placeholder.png'),
+            // Avatar and name
+            GestureDetector(
+              onTap: _pickImage,
+              child: CircleAvatar(
+                radius: 60,
+                backgroundImage: _image != null ? FileImage(_image!) : const AssetImage('assets/images/profile_placeholder.png') as ImageProvider,
+              ),
             ),
             const SizedBox(height: 16),
             const Text(
@@ -26,76 +49,101 @@ class ProfileScreen extends StatelessWidget {
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: Colors.blue,
+                color: Color(0xFF363B3E),
               ),
             ),
             const SizedBox(height: 24),
 
-            // Stats Row
+            // Followers / Following / Events
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 _buildStatColumn(context, "20", "Followers", () {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => const FollowersScreen()));
+                  Navigator.push(
+                    context,
+                    PageRouteBuilder(
+                      pageBuilder: (_, __, ___) => const FollowersScreen(),
+                      transitionDuration: Duration.zero,
+                      reverseTransitionDuration: Duration.zero,
+                    ),
+                  );
                 }),
                 _buildStatColumn(context, "10", "Following", () {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => const FollowingScreen()));
+                  Navigator.push(
+                    context,
+                    PageRouteBuilder(
+                      pageBuilder: (_, __, ___) => const FollowingScreen(),
+                      transitionDuration: Duration.zero,
+                      reverseTransitionDuration: Duration.zero,
+                    ),
+                  );
                 }),
                 _buildStatColumn(context, "10", "Events", () {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => const MyEventsScreen()));
+                  Navigator.push(
+                    context,
+                    PageRouteBuilder(
+                      pageBuilder: (_, __, ___) => const MyEventsScreen(),
+                      transitionDuration: Duration.zero,
+                      reverseTransitionDuration: Duration.zero,
+                    ),
+                  );
                 }),
               ],
             ),
             const SizedBox(height: 32),
 
-            // About Section
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(12),
+            // Profile actions
+            _buildSectionCard(context, "Account", [
+              _buildListTile(
+                context,
+                "Edit Profile Details",
+                Icons.person,
+                    () {
+                  Navigator.push(
+                    context,
+                    PageRouteBuilder(
+                      pageBuilder: (_, __, ___) => const ProfileDetailsScreen(),
+                      transitionDuration: Duration.zero,
+                      reverseTransitionDuration: Duration.zero,
+                    ),
+                  );
+                },
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    "About",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s...",
-                    style: TextStyle(fontSize: 14, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 8),
-                  TextButton(
-                    onPressed: () {
-                      // Show full bio
-                    },
-                    child: const Text("Read more..."),
-                  ),
-                ],
+              _buildListTile(
+                context,
+                "My Events",
+                Icons.event,
+                    () {
+                  Navigator.push(
+                    context,
+                    PageRouteBuilder(
+                      pageBuilder: (_, __, ___) => const MyEventsScreen(),
+                      transitionDuration: Duration.zero,
+                      reverseTransitionDuration: Duration.zero,
+                    ),
+                  );
+                },
               ),
-            ),
-            const SizedBox(height: 24),
+            ]),
+            const SizedBox(height: 16),
 
-            // Action Buttons
-            _buildTile(context, "Edit Profile Details", Icons.person, () {
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const ProfileDetailsScreen()));
-            }),
-            _buildTile(context, "My Events", Icons.event, () {
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const MyEventsScreen()));
-            }),
-            _buildTile(context, "Support / Ask Question", Icons.support_agent, () {
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const SupportScreen()));
-            }),
+            _buildSectionCard(context, "Help", [
+              _buildListTile(
+                context,
+                "Support",
+                Icons.support_agent,
+                    () {
+                  Navigator.push(
+                    context,
+                    PageRouteBuilder(
+                      pageBuilder: (_, __, ___) => const SupportScreen(),
+                      transitionDuration: Duration.zero,
+                      reverseTransitionDuration: Duration.zero,
+                    ),
+                  );
+                },
+              ),
+            ]),
           ],
         ),
       ),
@@ -112,7 +160,7 @@ class ProfileScreen extends StatelessWidget {
             style: const TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: Colors.blue,
+              color: Color(0xFF4776E6),
             ),
           ),
           const SizedBox(height: 4),
@@ -128,16 +176,53 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTile(BuildContext context, String title, IconData icon, VoidCallback onTap) {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      elevation: 2,
-      child: ListTile(
-        leading: Icon(icon, color: Colors.blue),
-        title: Text(title),
-        trailing: const Icon(Icons.arrow_forward_ios),
-        onTap: onTap,
+  Widget _buildSectionCard(BuildContext context, String title, List<Widget> children) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              title,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          ...children,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildListTile(BuildContext context, String title, IconData icon, VoidCallback onTap) {
+    return ListTile(
+      leading: Icon(icon, color: const Color(0xFF4776E6)),
+      title: Text(
+        title,
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+      ),
+      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+      onTap: onTap,
+      dense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
     );
   }
 }

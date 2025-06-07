@@ -14,7 +14,6 @@ class CategoryEventsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MasterScreenWidget(
-      initialIndex: -1,
       appBarType: AppBarType.iconsSideTitleCenter,
       title: "$categoryName Events",
       leftIcon: Icons.arrow_back,

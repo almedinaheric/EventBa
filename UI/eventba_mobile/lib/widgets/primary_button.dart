@@ -21,10 +21,10 @@ class PrimaryButton extends StatelessWidget {
     final size = MediaQuery.of(context).size;
     final buttonWidth = width ?? size.width * 0.9;
 
-    final Color primaryColor = const Color(0xFF4776E6);
+    const Color primaryColor = Color(0xFF4776E6);
     final Color textColor = outlined ? primaryColor : Colors.white;
     final Color backgroundColor = outlined ? Colors.transparent : primaryColor;
-    final BorderSide borderSide = BorderSide(color: primaryColor, width: 1);
+    const BorderSide borderSide = BorderSide(color: primaryColor, width: 1);
     final EdgeInsetsGeometry padding = small
         ? const EdgeInsets.symmetric(vertical: 8, horizontal: 8)
         : const EdgeInsets.symmetric(vertical: 16, horizontal: 24);

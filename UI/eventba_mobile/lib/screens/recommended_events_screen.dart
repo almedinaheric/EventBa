@@ -8,7 +8,6 @@ class RecommendedEventsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MasterScreenWidget(
-      initialIndex: -1,
       appBarType: AppBarType.iconsSideTitleCenter,
       title: "Recommended events",
       leftIcon: Icons.arrow_back,

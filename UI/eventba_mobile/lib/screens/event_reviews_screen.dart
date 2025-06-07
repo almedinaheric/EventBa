@@ -1,3 +1,4 @@
+import 'package:eventba_mobile/widgets/master_screen.dart';
 import 'package:flutter/material.dart';
 
 class EventReviewsScreen extends StatelessWidget {
@@ -22,9 +23,15 @@ class EventReviewsScreen extends StatelessWidget {
       },
     ];
 
-    return Scaffold(
-      appBar: AppBar(title: Text("$eventTitle Reviews")),
-      body: ListView.builder(
+    return MasterScreenWidget(
+      initialIndex: 4,
+      appBarType: AppBarType.iconsSideTitleCenter,
+      title: "Reviews",
+      leftIcon: Icons.arrow_back,
+      onLeftButtonPressed: () {
+        Navigator.pop(context); // Back button functionality
+      },
+      child: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: reviews.length,
         itemBuilder: (context, index) {

@@ -1,9 +1,9 @@
 import 'package:eventba_mobile/widgets/primary_button.dart';
 import 'package:eventba_mobile/screens/organizer_profile_screen.dart';
+import 'package:eventba_mobile/widgets/user_card.dart';
 import 'package:flutter/material.dart';
 
 class OrganizerSection extends StatefulWidget {
-  // You can optionally pass organizer data here if needed
   const OrganizerSection({
     super.key,
     this.imageUrl = 'assets/images/profile_placeholder.png',
@@ -40,44 +40,17 @@ class _OrganizerSectionState extends State<OrganizerSection> {
         const SizedBox(height: 12),
         Row(
           children: [
-            // Use OrganizerCard widget here for avatar + name + navigation
-            GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => OrganizerProfileScreen(
-                      organizerId: widget.organizerId,
-                      name: widget.name,
-                      avatarUrl: widget.imageUrl,
-                      bio: widget.bio,
-                    ),
-                  ),
-                );
-              },
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    backgroundImage: AssetImage(widget.imageUrl),
-                    radius: 24,
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    widget.name,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF4776E6),
-                    ),
-                  ),
-                ],
-              ),
+            UserCard(
+              imageUrl: widget.imageUrl,
+              name: widget.name,
+              userId: widget.organizerId,
+              bio: widget.bio,
             ),
 
             const Spacer(),
 
             SizedBox(
-              width: 100, // Fixed width for the button
+              width: 100,
               child: PrimaryButton(
                 text: isFollowing ? "Unfollow" : "Follow",
                 outlined: isFollowing,
@@ -86,7 +59,7 @@ class _OrganizerSectionState extends State<OrganizerSection> {
                   setState(() {
                     isFollowing = !isFollowing;
                   });
-                  // Call API to follow/unfollow here if needed
+                  // Add API call for follow/unfollow here
                 },
               ),
             ),

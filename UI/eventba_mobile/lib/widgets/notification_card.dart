@@ -19,12 +19,15 @@ class NotificationCard extends StatelessWidget {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => NotificationDetailsScreen(
-              title: title,
-              content: content,
-              time: time,
-            ),
+          PageRouteBuilder(
+            pageBuilder: (_, __, ___) =>
+                NotificationDetailsScreen(
+                  title: title,
+                  content: content,
+                  time: time,
+                ),
+            transitionDuration: Duration.zero,
+            reverseTransitionDuration: Duration.zero,
           ),
         );
       },

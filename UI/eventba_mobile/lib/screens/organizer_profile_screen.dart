@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:eventba_mobile/widgets/event_card.dart';
 
 class OrganizerProfileScreen extends StatefulWidget {
-  final int organizerId;
+  final int userId;
   final String name;
   final String avatarUrl;
   final String bio;
 
   const OrganizerProfileScreen({
     super.key,
-    required this.organizerId,
+    required this.userId,
     required this.name,
     required this.avatarUrl,
     required this.bio,

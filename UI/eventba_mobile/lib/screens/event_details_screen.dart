@@ -1,9 +1,7 @@
-import 'package:eventba_mobile/screens/event_questions_screen.dart';
-import 'package:eventba_mobile/screens/ticket_scanner_screen.dart';
+import 'package:flutter/material.dart';
 import 'package:eventba_mobile/widgets/master_screen.dart';
 import 'package:eventba_mobile/widgets/organizer_section.dart';
 import 'package:eventba_mobile/widgets/ticket_option.dart';
-import 'package:flutter/material.dart';
 
 class EventDetailsScreen extends StatefulWidget {
   final String eventTitle;
@@ -17,18 +15,54 @@ class EventDetailsScreen extends StatefulWidget {
 class _EventDetailsScreenState extends State<EventDetailsScreen> {
   bool isFollowing = false;
   bool isFavorited = false;
+  final List<String> imageUrls = [
+    'assets/images/default_event_cover_image.png',
+    'assets/images/default_event_cover_image.png',
+    'assets/images/default_event_cover_image.png',
+  ];
+  void _showImageDialog(int initialIndex) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          insetPadding: EdgeInsets.all(10), // Adjust padding as needed
+          child: Container(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AspectRatio(
+                  aspectRatio: 16 / 9, // Adjust the aspect ratio as needed
+                  child: PageView.builder(
+                    controller: PageController(initialPage: initialIndex),
+                    itemCount: imageUrls.length,
+                    itemBuilder: (context, index) {
+                      return Image.asset(
+                        imageUrls[index],
+                        fit: BoxFit.contain,
+                      );
+                    },
+                  ),
+                ),
+                // Add any additional widgets here if needed
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
     return MasterScreenWidget(
-      initialIndex: -1,
-        appBarType: AppBarType.iconsSideTitleCenter,
-        title: widget.eventTitle,
-        leftIcon: Icons.arrow_back,
-        onLeftButtonPressed: () {
-      Navigator.pop(context); // Back button functionality
-    },
-    child: LayoutBuilder(
+      appBarType: AppBarType.iconsSideTitleCenter,
+      title: widget.eventTitle,
+      leftIcon: Icons.arrow_back,
+      onLeftButtonPressed: () {
+        Navigator.pop(context); // Back button functionality
+      },
+      child: LayoutBuilder(
         builder: (context, constraints) {
           final screenWidth = constraints.maxWidth;
           return SingleChildScrollView(
@@ -40,17 +74,25 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   children: [
                     const SizedBox(height: 16),
 
-                    // Event Image
-                    Container(
+                    // Event Image Carousel
+                    SizedBox(
                       height: 200,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        image: const DecorationImage(
-                          image: AssetImage(
-                            'assets/images/default_event_cover_image.png'
-                          ),
-                          fit: BoxFit.cover,
-                        ),
+                      child: PageView.builder(
+                        itemCount: imageUrls.length,
+                        itemBuilder: (context, index) {
+                          return GestureDetector(
+                            onTap: () => _showImageDialog(index),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(16),
+                                image: DecorationImage(
+                                  image: AssetImage(imageUrls[index]),
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ),
 
@@ -85,9 +127,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                                     children: [
                                       _buildDetailItem(Icons.location_on, "Location"),
                                       const SizedBox(height: 8),
-
                                       _buildDetailItem(Icons.calendar_today, "Date"),
-
                                       const SizedBox(height: 8),
                                       _buildDetailItem(Icons.access_time, "Time"),
                                     ],

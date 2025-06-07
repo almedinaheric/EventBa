@@ -147,6 +147,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     onChanged: (text) {
                       setState(() {
                         _isPasswordValid =
+                            text.trim().isNotEmpty &&
                             //RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$')
                             RegExp(r'/*').hasMatch(text);
                         _passwordErrorMessage = _isPasswordValid

@@ -31,11 +31,6 @@ class MyApp extends StatelessWidget {
           visualDensity: VisualDensity.adaptivePlatformDensity,
           fontFamily: 'Poppins'),
       home: const SplashScreen(),
-      routes: {
-        '/ticket-scanner': (context) =>const TicketScannerScreen(),
-        //'/edit-event': (context) => EditEventScreen(),
-        '/event-questions': (context) => const EventQuestionsScreen(),
-      },
     );
   }
 }

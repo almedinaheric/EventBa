@@ -5,12 +5,15 @@ class EventCard extends StatelessWidget {
   final String eventName;
   final String location;
   final String date;
+  final bool isMyEvent;
+  final String? myEventStatus;
   final bool isPaid;
   final bool isFeatured;
   final bool isFavoriteEvent;
   final double height;
   final double width;
   final VoidCallback? onTap;
+  final VoidCallback? onFavoriteToggle;
 
   const EventCard({
     super.key,
@@ -18,16 +21,33 @@ class EventCard extends StatelessWidget {
     required this.eventName,
     required this.location,
     required this.date,
+    this.isMyEvent = false,
+    this.myEventStatus,
     this.isPaid = false,
     this.isFeatured = false,
     this.isFavoriteEvent = false,
     this.height = 130,
     this.width = double.infinity,
     this.onTap,
-  });
+    this.onFavoriteToggle,
+  }) : assert(
+  isMyEvent == false || (myEventStatus != null),
+  "myEventStatus must be provided if isMyEvent is true",
+  );
 
   @override
   Widget build(BuildContext context) {
+    final String badgeText;
+    final Color badgeColor;
+
+    if (isMyEvent) {
+      badgeText = myEventStatus!.toUpperCase();
+      badgeColor = badgeText == "UPCOMING" ? Colors.green : Colors.grey;
+    } else {
+      badgeText = isPaid ? "PAID" : "FREE";
+      badgeColor = isPaid ? const Color(0xFF4776E6) : Colors.green;
+    }
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -47,15 +67,12 @@ class EventCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           child: Stack(
             children: [
-              // Background image
               Image.asset(
                 imageUrl,
                 height: height,
                 width: width,
                 fit: BoxFit.cover,
               ),
-
-              // Dark overlay
               Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -68,8 +85,6 @@ class EventCard extends StatelessWidget {
                   ),
                 ),
               ),
-
-              // Top row: date + badge
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 child: Row(
@@ -78,19 +93,19 @@ class EventCard extends StatelessWidget {
                     Text(
                       date,
                       style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500),
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                     Container(
-                      padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: isPaid ? const Color(0xFF4776E6) : Colors.green,
+                        color: badgeColor,
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
-                        isPaid ? "PAID" : "FREE",
+                        badgeText,
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -101,8 +116,6 @@ class EventCard extends StatelessWidget {
                   ],
                 ),
               ),
-
-              // Bottom left: name + location
               Positioned(
                 left: 16,
                 right: isFavoriteEvent ? 40 : 16,
@@ -133,16 +146,17 @@ class EventCard extends StatelessWidget {
                   ],
                 ),
               ),
-
-              // Bottom right: red heart if favorite
               if (isFavoriteEvent)
-                const Positioned(
+                Positioned(
                   bottom: 16,
                   right: 16,
-                  child: Icon(
-                    Icons.favorite,
-                    color: Colors.redAccent,
-                    size: 32,
+                  child: GestureDetector(
+                    onTap: onFavoriteToggle,
+                    child: const Icon(
+                      Icons.favorite,
+                      color: Colors.redAccent,
+                      size: 32,
+                    ),
                   ),
                 ),
             ],
@@ -152,3 +166,4 @@ class EventCard extends StatelessWidget {
     );
   }
 }
+
