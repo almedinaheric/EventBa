@@ -1,36 +1,84 @@
-# Dependencies
+# === OS-specific ===
+.DS_Store
+Thumbs.db
+
+# === Node.js / Frontend ===
 node_modules/
-npm-debug.log
-yarn-debug.log
-yarn-error.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+yarn.lock
 
-# Environment variables
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Build output
+# === Build output ===
 dist/
 build/
 .next/
 out/
+.cache/
+.temp/
 
-# IDE and editor files
+# === .NET / C# ===
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.vspscc
+*.vssscc
+
+# Rider-specific
 .idea/
-.vscode/
-*.swp
-*.swo
-.DS_Store
+*.sln.iml
 
-# Logs
+# Rider caches (optional, if not shared via .idea/.name)
+.idea/.idea_modules/
+.idea/modules.xml
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/dictionaries/
+.idea/httpRequests/
+.idea/dataSources/
+.idea/dataSources.local.xml
+.idea/.idea.ReSharper
+.idea/AssetWizardSettings.xml
+
+# === Environment variables ===
+.env
+.env.*
+!.env.example
+
+# === Logs ===
 logs/
 *.log
 
-# Testing
+# === Testing ===
 coverage/
+test-results/
 
-# Misc
-.cache/
-.temp/ 
+# === System ===
+*.swp
+*.swo
+
+# === Global JetBrains IDEs ===
+# If shared project settings are desired, remove `.idea/` and explicitly ignore:
+.idea/workspace.xml
+.idea/usage.statistics.xml
+.idea/tasks.xml
+.idea/dictionaries/
+
+# === Optional if using Docker ===
+docker-compose.override.yml
+docker-compose.*.yml
+
+# === VS Code (if used occasionally) ===
+.vscode/
+.history/
+
+# === Misc ===
+*.tmp
+*.bak
+*.orig
+*.rej
