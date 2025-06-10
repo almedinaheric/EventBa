@@ -40,7 +40,7 @@ class _LoginScreenState extends State<LoginScreen> {
     Authorization.password = password;
 
     try {
-      await Provider.of<UserProvider>(context, listen: false).getProfile();
+      //await Provider.of<UserProvider>(context, listen: false).getProfile();
 
       Navigator.pushReplacement(
         context,

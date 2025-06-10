@@ -21,13 +21,16 @@ class UserCard extends StatelessWidget {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (_) => OrganizerProfileScreen(
-              userId: userId,
-              name: name,
-              avatarUrl: imageUrl,
-              bio: bio,
-            ),
+          PageRouteBuilder(
+            pageBuilder: (_, __, ___) =>
+                OrganizerProfileScreen(
+                  userId: userId,
+                  name: name,
+                  avatarUrl: imageUrl,
+                  bio: bio,
+                ),
+            transitionDuration: Duration.zero,
+            reverseTransitionDuration: Duration.zero,
           ),
         );
       },

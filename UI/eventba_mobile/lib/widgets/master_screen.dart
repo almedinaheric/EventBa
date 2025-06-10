@@ -54,6 +54,8 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
 
     Widget screen;
     switch (index) {
+      case -1:
+        return;
       case 0:
         screen = const HomeScreen();
         break;

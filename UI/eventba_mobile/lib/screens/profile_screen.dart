@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:eventba_mobile/widgets/primary_button.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:eventba_mobile/screens/followers_screen.dart';
@@ -40,7 +41,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onTap: _pickImage,
               child: CircleAvatar(
                 radius: 60,
-                backgroundImage: _image != null ? FileImage(_image!) : const AssetImage('assets/images/profile_placeholder.png') as ImageProvider,
+                backgroundImage: _image != null
+                    ? FileImage(_image!)
+                    : const AssetImage('assets/images/profile_placeholder.png') as ImageProvider,
               ),
             ),
             const SizedBox(height: 16),
@@ -140,6 +143,61 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       transitionDuration: Duration.zero,
                       reverseTransitionDuration: Duration.zero,
                     ),
+                  );
+                },
+              ),
+            ]),
+            const SizedBox(height: 16),
+
+            // Logout section
+            _buildSectionCard(context, "Logout", [
+              _buildListTile(
+                context,
+                "Log Out",
+                Icons.logout,
+                    () {
+                  showDialog(
+                    context: context,
+                    builder: (context) {
+                      final size = MediaQuery.of(context).size;
+                      return AlertDialog(
+                        title: const Text(
+                          "Log Out",
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+                        ),
+                        content: const Text("Are you sure you want to log out?"),
+                        actions: [
+                          Center(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                PrimaryButton(
+                                  text: "Cancel",
+                                  width: size.width * 0.3,
+                                  outlined: false,
+                                  small: true,
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                ),
+                                const SizedBox(width: 12),
+                                PrimaryButton(
+                                  text: "Log Out",
+                                  width: size.width * 0.3,
+                                  outlined: true,
+                                  small: true,
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                    // TODO: Implement actual logout logic
+                                    // e.g. clear token, navigate to login screen, etc.
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   );
                 },
               ),

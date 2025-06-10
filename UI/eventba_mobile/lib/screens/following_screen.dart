@@ -45,7 +45,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
       child: following.isEmpty
           ? Center(
         child: Text(
-          "👀 No followers yet.",
+          "👀 No followings yet.",
           style: TextStyle(
             fontSize: 18,
             color: Colors.grey[600],

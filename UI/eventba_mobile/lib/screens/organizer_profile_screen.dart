@@ -1,3 +1,5 @@
+import 'package:eventba_mobile/screens/past_event_details_screen.dart';
+import 'package:eventba_mobile/widgets/master_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:eventba_mobile/widgets/event_card.dart';
 
@@ -24,7 +26,6 @@ class _OrganizerProfileScreenState extends State<OrganizerProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Replace with actual upcoming/past events from API
     final upcomingEvents = [
       const EventCard(
         imageUrl: 'assets/images/default_event_cover_image.png',
@@ -37,22 +38,45 @@ class _OrganizerProfileScreenState extends State<OrganizerProfileScreen> {
     ];
 
     final pastEvents = [
-      const EventCard(
-        imageUrl: 'assets/images/default_event_cover_image.png',
-        eventName: 'Spring Fest 2024',
-        location: 'Central Park',
-        date: '2024-04-20',
-        isPaid: true,
-        height: 160,
+      GestureDetector(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => PastEventDetailsScreen(
+                eventTitle: 'Spring Fest 2024',
+                eventData: {
+                  'id': 1,
+                  'imageUrl': 'assets/images/default_event_cover_image.png',
+                  'location': 'Central Park',
+                  'date': '2024-04-20',
+                  'isPaid': true,
+                  // Add other relevant fields if needed
+                },
+              ),
+            ),
+          );
+        },
+        child: const EventCard(
+          imageUrl: 'assets/images/default_event_cover_image.png',
+          eventName: 'Spring Fest 2024',
+          location: 'Central Park',
+          date: '2024-04-20',
+          isPaid: true,
+          height: 160,
+        ),
       ),
     ];
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),),
-        leading: const BackButton(),
-      ),
-      body: Column(
+    return MasterScreenWidget(
+      title: widget.name,
+      initialIndex: -1,
+      appBarType: AppBarType.iconsSideTitleCenter,
+      leftIcon: Icons.arrow_back,
+      onLeftButtonPressed: () {
+        Navigator.pop(context);
+      },
+      child: Column(
         children: [
           const SizedBox(height: 24),
 
@@ -61,8 +85,6 @@ class _OrganizerProfileScreenState extends State<OrganizerProfileScreen> {
             radius: 50,
             backgroundImage: AssetImage(widget.avatarUrl),
           ),
-          const SizedBox(height: 16),
-
           // Name
           Text(
             widget.name,

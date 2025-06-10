@@ -81,6 +81,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(

@@ -18,6 +18,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
         children: [
