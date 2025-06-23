@@ -79,12 +79,17 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
+    final formWidth = screenWidth * 0.6; // 60% of the screen width
 
-    return Scaffold(
-      resizeToAvoidBottomInset: false,
-      body: SingleChildScrollView(
+    return MasterScreen(
+        title: 'Create Event',
+        showBackButton: true,
+        body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-        child: Form(
+    child: Center(
+    child: Container(
+    width: formWidth, // Set width to 60% of screen width
+    child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -98,7 +103,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
                 hint: 'Enter event name',
                 isValid: _isNameValid,
                 errorMessage: _nameErrorMessage,
-                width: screenWidth * 0.9,
+                width: screenWidth * 0.6,
                 onChanged: (text) {
                   setState(() {
                     _isNameValid = text.trim().isNotEmpty;
@@ -168,7 +173,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
                 hint: 'Enter venue address',
                 isValid: _isVenueValid,
                 errorMessage: _venueErrorMessage,
-                width: screenWidth * 0.9,
+                width: screenWidth * 0.6,
                 onChanged: (text) {
                   setState(() {
                     _isVenueValid = text.trim().isNotEmpty;
@@ -249,7 +254,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
                 hint: 'Add description',
                 isValid: _isDescriptionValid,
                 errorMessage: _descriptionErrorMessage,
-                width: screenWidth * 0.9,
+                width: screenWidth * 0.6,
                 maxLines: 3,
                 onChanged: (text) {
                   setState(() {
@@ -280,7 +285,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
                   hint: 'Enter event capacity',
                   isValid: _isCapacityValid,
                   errorMessage: _capacityErrorMessage,
-                  width: screenWidth * 0.9,
+                  width: screenWidth * 0.6,
                   keyboardType: TextInputType.number,
                   onChanged: (text) {
                     setState(() {
@@ -409,6 +414,8 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
           ),
         ),
       ),
+    ),
+        ),
     );
   }
 
@@ -420,7 +427,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
           onTap: _pickMainImage,
           child: Container(
             height: 160,
-            width: screenWidth * 0.9,
+            width: screenWidth * 0.6,
             decoration: BoxDecoration(
               border: Border.all(color: Colors.grey.shade300),
               borderRadius: BorderRadius.circular(12),
@@ -452,7 +459,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
             return GestureDetector(
               onTap: () => _pickAdditionalImage(index),
               child: Container(
-                width: (screenWidth * 0.9 - 24) / 3,
+                width: (screenWidth * 0.6 - 24) / 3,
                 height: 80,
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.grey.shade300),
@@ -477,10 +484,13 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
 
   Future<void> _pickMainImage() async {
     try {
-      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-      if (image != null) {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+      );
+
+      if (result != null) {
         setState(() {
-          _mainImage = image;
+          _mainImage = XFile(result.files.single.path!);
         });
       }
     } catch (e) {
@@ -490,15 +500,20 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
     }
   }
 
+// Replace _pickAdditionalImage with:
   Future<void> _pickAdditionalImage(int index) async {
     try {
-      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-      if (image != null) {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+      );
+
+      if (result != null) {
         setState(() {
+          XFile newImage = XFile(result.files.single.path!);
           if (index < _additionalImages.length) {
-            _additionalImages[index] = image;
+            _additionalImages[index] = newImage;
           } else {
-            _additionalImages.add(image);
+            _additionalImages.add(newImage);
           }
         });
       }

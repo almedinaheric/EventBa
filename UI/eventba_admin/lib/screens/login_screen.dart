@@ -1,8 +1,6 @@
 import 'package:eventba_admin/screens/forgot_password_screen.dart';
 import 'package:eventba_admin/screens/home_screen.dart';
-import 'package:eventba_admin/screens/signup_screen.dart';
 import 'package:eventba_admin/utils/authorization.dart';
-import 'package:eventba_admin/widgets/master_screen.dart';
 import 'package:eventba_admin/widgets/text_link_button.dart';
 import 'package:flutter/material.dart';
 import '../widgets/custom_text_field.dart';
@@ -42,12 +40,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-          builder: (context) => const MasterScreenWidget(
-            initialIndex: 0,
-            child: HomeScreen(),
-          ),
-        ),
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
       );
     } catch (e) {
       _showError("Login failed. Please check your credentials.");
@@ -119,7 +112,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     hint: 'Enter your email',
                     isValid: _isEmailValid,
                     errorMessage: _emailErrorMessage,
-                    width: size.width * 0.7,
+                    width: size.width * 0.4,
                     onChanged: (text) {
                       setState(() {
                         _isEmailValid =
@@ -140,7 +133,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     obscureText: !_isPasswordVisible,
                     isValid: _isPasswordValid,
                     errorMessage: _passwordErrorMessage,
-                    width: size.width * 0.7,
+                    width: size.width * 0.4,
                     onToggleVisibility: _togglePasswordVisibility,
                     onChanged: (text) {
                       setState(() {
@@ -159,7 +152,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     children: [
                       const Spacer(), // This will push the TextLinkButton to the right
                       Padding(
-                        padding: EdgeInsets.only(right: size.width * 0.14), // Adjust the right padding as needed
+                        padding: EdgeInsets.only(right: size.width * 0.29), // Adjust the right padding as needed
                         child: TextLinkButton(
                           linkText: "Forgot Password?",
                           onTap: () {
@@ -180,24 +173,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       : PrimaryButton(
                           text: "Log In",
                           onPressed: _onLoginPressed,
-                          width: size.width * 0.7,
+                          width: size.width * 0.4,
                         ),
                 ],
-              ),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 24), // This adds 24 pixels padding from the bottom
-                child: TextLinkButton(
-                  prefixText: "Don’t have an account? ",
-                  linkText: "Create account.",
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const SignUpScreen(),
-                      ),
-                    );
-                  },
-                ),
               ),
             ],
           ),

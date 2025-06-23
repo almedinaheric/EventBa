@@ -1,8 +1,5 @@
 import 'package:eventba_admin/providers/user_provider.dart';
-import 'package:eventba_admin/screens/event_questions_screen.dart';
-import 'package:eventba_admin/screens/home_screen.dart';
 import 'package:eventba_admin/screens/splash_screen.dart';
-import 'package:eventba_admin/screens/ticket_scanner_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 

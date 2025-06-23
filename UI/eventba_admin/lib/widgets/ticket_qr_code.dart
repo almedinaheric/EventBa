@@ -1,4 +1,3 @@
-import 'package:eventba_admin/screens/tickets_screen.dart';
 import 'package:eventba_admin/widgets/primary_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

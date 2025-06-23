@@ -69,7 +69,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     hint: 'Enter your email',
                     isValid: _isEmailValid,
                     errorMessage: _emailErrorMessage,
-                    width: size.width * 0.7,
+                    width: size.width * 0.4,
                     onChanged: (text) {
                       setState(() {
                         _isEmailValid =
@@ -85,7 +85,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   PrimaryButton(
                     text: "Send Reset Link",
                     onPressed: _onSubmitPressed,
-                    width: size.width * 0.7,
+                    width: size.width * 0.4,
                   ),
                 ],
               ),

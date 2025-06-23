@@ -1,5 +1,3 @@
-import 'package:eventba_admin/screens/signup_screen.dart';
-import 'package:eventba_admin/widgets/text_link_button.dart';
 import 'package:flutter/material.dart';
 import 'package:eventba_admin/screens/login_screen.dart';
 import '../widgets/primary_button.dart';
@@ -164,19 +162,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               );
             },
           ),
-        ),
-        const SizedBox(height: 16),
-        TextLinkButton(
-          prefixText: "Don't have an account? ",
-          linkText: "Create account.",
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const SignUpScreen(),
-              ),
-            );
-          },
         ),
       ],
     );
