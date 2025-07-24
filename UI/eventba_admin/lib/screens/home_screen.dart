@@ -1,6 +1,12 @@
 import 'package:eventba_admin/screens/event_creation_screen.dart';
+import 'package:eventba_admin/screens/private_events_screen.dart';
+import 'package:eventba_admin/screens/public_events_screen.dart';
+import 'package:eventba_admin/screens/users_screen.dart';
+import 'package:eventba_admin/screens/report_generation_screen.dart'; // Add this import
 import 'package:eventba_admin/widgets/master_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:eventba_admin/screens/notification_creation_screen.dart';
+import 'package:eventba_admin/screens/notifications_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -192,6 +198,43 @@ class _HomeScreenState extends State<HomeScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const EventCreationScreen()),
+      );
+    }
+    if (screenName == 'Private Events') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const PrivateEventsScreen()),
+      );
+    }
+    if (screenName == 'Add Notification') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (context) => const NotificationCreationScreen()),
+      );
+    }
+    if (screenName == 'Users') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const UsersScreen()),
+      );
+    }
+    if (screenName == 'Notifications') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const NotificationsScreen()),
+      );
+    }
+    if (screenName == 'Public Events') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const PublicEventsScreen()),
+      );
+    }
+    if (screenName == 'Generate Report') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const ReportGenerationScreen()),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(

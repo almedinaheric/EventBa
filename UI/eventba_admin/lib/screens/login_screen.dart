@@ -86,18 +86,11 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.center, // vertical centering
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Column(
                 children: [
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: IconButton(
-                      icon: const Icon(Icons.arrow_back),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
                   const Text(
                     'Log In',
                     style: TextStyle(
@@ -105,7 +98,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF343A40)),
                   ),
-                  const SizedBox(height: 132),
+                  const SizedBox(height: 48),
                   CustomTextField(
                     controller: _emailController,
                     label: 'Email',

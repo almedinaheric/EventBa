@@ -26,10 +26,10 @@ class PrimaryButton extends StatelessWidget {
     final Color backgroundColor = outlined ? Colors.transparent : primaryColor;
     const BorderSide borderSide = BorderSide(color: primaryColor, width: 1);
     final EdgeInsetsGeometry padding = small
-        ? const EdgeInsets.symmetric(vertical: 8, horizontal: 8)
-        : const EdgeInsets.symmetric(vertical: 16, horizontal: 24);
+        ? const EdgeInsets.symmetric(vertical: 4, horizontal: 8)
+        : const EdgeInsets.symmetric(vertical: 8, horizontal: 16);
     final double fontSize = small ? 12 : 16;
-    final double borderRadius = small ? 8 : 16;
+    final double borderRadius = small ? 4 : 8;
 
     return Material(
       color: backgroundColor,
