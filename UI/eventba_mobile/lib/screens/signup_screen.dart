@@ -3,6 +3,8 @@ import 'package:eventba_mobile/widgets/text_link_button.dart';
 import 'package:flutter/material.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/primary_button.dart';
+import 'package:provider/provider.dart';
+import '../providers/user_provider.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -20,12 +22,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
   bool _isFullNameValid = false;
   bool _isEmailValid = false;
   bool _isPasswordValid = false;
+  bool _isLoading = false;
 
   String? _fullNameErrorMessage;
   String? _emailErrorMessage;
   String? _passwordErrorMessage;
 
-  void _onSignUpPressed() {
+  void _onSignUpPressed() async {
     if (_fullNameController.text.isEmpty || !_isFullNameValid) {
       _showError("Please enter your full name (name and surname).");
       return;
@@ -39,8 +42,36 @@ class _SignUpScreenState extends State<SignUpScreen> {
           "Password must be at least 8 characters long and include an uppercase letter, a lowercase letter, and a number.");
       return;
     }
-
-    // Proceed with registration logic
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      final names = _fullNameController.text.trim().split(' ');
+      final firstName = names.first;
+      final lastName = names.length > 1 ? names.sublist(1).join(' ') : '';
+      // TODO: Set a valid roleId and interests as needed
+      final request = {
+        'firstName': firstName,
+        'lastName': lastName,
+        'email': _emailController.text.trim(),
+        'password': _passwordController.text,
+        'roleId':
+            '00000000-0000-0000-0000-000000000000', // Replace with actual roleId
+        'interestCategoryIds': <String>[],
+      };
+      await Provider.of<UserProvider>(context, listen: false).register(request);
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+      );
+    } catch (e) {
+      _showError("Registration failed. Please try again.");
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   void _showError(String message) {
@@ -144,8 +175,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                   const SizedBox(height: 16),
                   PrimaryButton(
-                    text: "Sign Up",
-                    onPressed: _onSignUpPressed,
+                    text: _isLoading ? "Signing Up..." : "Sign Up",
+                    onPressed: _isLoading ? () {} : _onSignUpPressed,
                     width: size.width * 0.9,
                   ),
                 ],

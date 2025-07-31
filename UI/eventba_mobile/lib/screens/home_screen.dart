@@ -6,6 +6,9 @@ import 'package:eventba_mobile/screens/recommended_events_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:eventba_mobile/widgets/text_link_button.dart';
 import 'package:eventba_mobile/widgets/event_card.dart';
+import 'package:provider/provider.dart';
+import '../providers/event_provider.dart';
+import '../models/event/basic_event.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -15,71 +18,56 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  late Future<List<BasicEvent>> _eventsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _eventsFuture = _fetchEvents();
+  }
+
+  Future<List<BasicEvent>> _fetchEvents() async {
+    final provider = Provider.of<EventProvider>(context, listen: false);
+    final result = await provider.get();
+    return result.result;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      body: ListView(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-        children: [
-          _buildSearchBar(),
-          const SizedBox(height: 20),
-          _buildSectionHeader(
-            'Recommended',
-            onViewAllTap: () {
-              Navigator.push(
-                context,
-                PageRouteBuilder(
-                  pageBuilder: (_, __, ___) => const RecommendedEventsScreen(),
-                  transitionDuration: Duration.zero,
-                  reverseTransitionDuration: Duration.zero,
-                ),
+      body: FutureBuilder<List<BasicEvent>>(
+        future: _eventsFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Failed to load events'));
+          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return Center(child: Text('No events found'));
+          }
+          final events = snapshot.data!;
+          return ListView.builder(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+            itemCount: events.length,
+            itemBuilder: (context, index) {
+              final event = events[index];
+              return EventCard(
+                imageUrl: event.coverImage != null
+                    ? 'assets/images/default_event_cover_image.png'
+                    : 'assets/images/default_event_cover_image.png',
+                eventName: event.title,
+                location: '', // Add location if available in BasicEvent
+                date: event.startDate,
+                height: 160,
+                isPaid: false, // Add logic if event is paid
+                onTap: () {
+                  // Navigate to event details
+                },
               );
             },
-          ),
-          const SizedBox(height: 12),
-          _buildRecommendedEventGrid(),
-          const SizedBox(height: 20),
-          _buildSectionHeader(
-            'Search by category',
-            showViewAll: false,
-          ),
-          const SizedBox(height: 12),
-          _buildCategoryChips(),
-          const SizedBox(height: 20),
-          _buildSectionHeader(
-            'Public events',
-            onViewAllTap: () {
-              Navigator.push(
-                context,
-                PageRouteBuilder(
-                  pageBuilder: (_, __, ___) => const PublicEventsScreen(),
-                  transitionDuration: Duration.zero,
-                  reverseTransitionDuration: Duration.zero,
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 12),
-          _buildPublicEventGrid(),
-          const SizedBox(height: 20),
-          _buildSectionHeader(
-            'Private events',
-            onViewAllTap: () {
-              Navigator.push(
-                context,
-                PageRouteBuilder(
-                  pageBuilder: (_, __, ___) => const PrivateEventsScreen(),
-                  transitionDuration: Duration.zero,
-                  reverseTransitionDuration: Duration.zero,
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 12),
-          _buildPrivateEventGrid(),
-          const SizedBox(height: 20),
-        ],
+          );
+        },
       ),
     );
   }
@@ -103,10 +91,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildSectionHeader(
-      String title, {
-        bool showViewAll = true,
-        VoidCallback? onViewAllTap,
-      }) {
+    String title, {
+    bool showViewAll = true,
+    VoidCallback? onViewAllTap,
+  }) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -151,7 +139,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 );
               },
-
             ),
           ),
           const SizedBox(width: 10),
@@ -291,39 +278,41 @@ class _HomeScreenState extends State<HomeScreen> {
         children: categories
             .map(
               (category) => GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                PageRouteBuilder(
-                  pageBuilder: (_, __, ___) => CategoryEventsScreen(categoryName: category),
-                  transitionDuration: Duration.zero,
-                  reverseTransitionDuration: Duration.zero,
-                ),
-              );
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: BoxDecoration(
-                color: const Color(0xFF5B7CF6),
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    PageRouteBuilder(
+                      pageBuilder: (_, __, ___) =>
+                          CategoryEventsScreen(categoryName: category),
+                      transitionDuration: Duration.zero,
+                      reverseTransitionDuration: Duration.zero,
+                    ),
+                  );
+                },
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF5B7CF6),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              child: Text(
-                category,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
+                  child: Text(
+                    category,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
-        )
+            )
             .toList(),
       ),
     );

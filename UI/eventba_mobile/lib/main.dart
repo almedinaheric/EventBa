@@ -1,4 +1,5 @@
 import 'package:eventba_mobile/providers/user_provider.dart';
+import 'package:eventba_mobile/providers/event_provider.dart';
 import 'package:eventba_mobile/screens/event_questions_screen.dart';
 import 'package:eventba_mobile/screens/home_screen.dart';
 import 'package:eventba_mobile/screens/splash_screen.dart';
@@ -11,6 +12,7 @@ void main() {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => UserProvider()),
+        ChangeNotifierProvider(create: (_) => EventProvider()),
       ],
       child: const MyApp(),
     ),

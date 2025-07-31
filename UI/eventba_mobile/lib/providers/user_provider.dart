@@ -29,6 +29,18 @@ class UserProvider extends BaseProvider<User> {
     }
   }
 
+  Future<User> register(Map<String, dynamic> request) async {
+    try {
+      final user = await insert(request);
+      _user = user;
+      notifyListeners();
+      return user;
+    } catch (e) {
+      print("Exception in register: $e");
+      rethrow;
+    }
+  }
+
   @override
   User fromJson(data) {
     return User.fromJson(data);

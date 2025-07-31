@@ -40,8 +40,8 @@ class _LoginScreenState extends State<LoginScreen> {
     Authorization.password = password;
 
     try {
-      //await Provider.of<UserProvider>(context, listen: false).getProfile();
-
+      await Provider.of<UserProvider>(context, listen: false).getProfile();
+      if (!mounted) return;
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -146,8 +146,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     onToggleVisibility: _togglePasswordVisibility,
                     onChanged: (text) {
                       setState(() {
-                        _isPasswordValid =
-                            text.trim().isNotEmpty &&
+                        _isPasswordValid = text.trim().isNotEmpty &&
                             //RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$')
                             RegExp(r'/*').hasMatch(text);
                         _passwordErrorMessage = _isPasswordValid

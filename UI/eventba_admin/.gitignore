@@ -43,3 +43,22 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# iOS / Xcode
+**/ios/Pods/
+**/ios/.symlinks/
+**/ios/Flutter/
+**/ios/Runner.xcworkspace/
+**/ios/.generated/
+
+# CocoaPods artifacts
+**/ios/Podfile.lock
+**/ios/Podfile.generated
+
+# Prevent user-specific Xcode settings from being committed
+**/ios/xcuserdata/
+**/ios/*.xcuserstate
+
+# Flutter build outputs (already partially included, but reinforce)
+.packages
+Generated.xcconfig

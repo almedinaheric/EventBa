@@ -97,7 +97,7 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
       case 1:
         return 'Favorite Events';
       case 2:
-        return 'Creaete Event';
+        return 'Create Event';
       case 3:
         return 'Tickets';
       case 4:
@@ -174,12 +174,12 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
           leading: IconButton(
             icon: Icon(widget.leftIcon ?? Icons.arrow_back),
             onPressed:
-                widget.onLeftButtonPressed ?? () => Navigator.pop(context),
+            widget.onLeftButtonPressed ?? () => Navigator.pop(context),
           ),
           centerTitle: true,
           title: Text(widget.title ?? '',
               style:
-                  const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+              const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
           actions: [
             if (widget.rightIcon != null)
               IconButton(
@@ -191,58 +191,6 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Scaffold(
-          appBar: _buildAppBar(),
-          body: widget.child,
-          resizeToAvoidBottomInset:
-              false, // Allow content to resize for keyboard
-          bottomNavigationBar: widget.showBottomNavBar
-              ? BottomAppBar(
-                  shape: const CircularNotchedRectangle(),
-                  child: SizedBox(
-                    height: 60,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _buildNavItem(Icons.home_outlined, 0),
-                        _buildNavItem(Icons.favorite_border, 1),
-                        const SizedBox(width: 0),
-                        _buildNavItem(Icons.confirmation_num_outlined, 3),
-                        _buildNavItem(Icons.person_outlined, 4),
-                      ],
-                    ),
-                  ),
-                )
-              : null,
-        ),
-        // Position FAB independently of Scaffold to prevent it from moving when error messages appear
-        if (widget.showBottomNavBar)
-          Positioned(
-            bottom: 84, // Adjust this value to position correctly
-            left: 0,
-            right: 0,
-            child: Center(
-              child: FloatingActionButton(
-                onPressed: () => _onBottomNavTap(2),
-                shape: const CircleBorder(),
-                backgroundColor: const Color(0xFF4776E6),
-                elevation: 6,
-                child: const Icon(
-                  Icons.add,
-                  size: 32,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-
   Widget _buildNavItem(IconData icon, int index) {
     final isSelected = _selectedIndex == index;
     return IconButton(
@@ -252,6 +200,48 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
         size: 32,
         color: isSelected ? const Color(0xFF4776E6) : const Color(0xFF363B3E),
       ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: _buildAppBar(),
+      body: widget.child,
+      resizeToAvoidBottomInset: false,
+      bottomNavigationBar: widget.showBottomNavBar
+          ? BottomAppBar(
+        shape: const CircularNotchedRectangle(),
+        notchMargin: 8.0,
+        child: SizedBox(
+          height: 60,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildNavItem(Icons.home_outlined, 0),
+              _buildNavItem(Icons.favorite_border, 1),
+              const SizedBox(width: 0), // for FAB spacing
+              _buildNavItem(Icons.confirmation_num_outlined, 3),
+              _buildNavItem(Icons.person_outlined, 4),
+            ],
+          ),
+        ),
+      )
+          : null,
+      floatingActionButton: widget.showBottomNavBar
+          ? FloatingActionButton(
+        onPressed: () => _onBottomNavTap(2),
+        shape: const CircleBorder(),
+        backgroundColor: const Color(0xFF4776E6),
+        elevation: 6,
+        child: const Icon(
+          Icons.add,
+          size: 32,
+          color: Colors.white,
+        ),
+      )
+          : null,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 }
