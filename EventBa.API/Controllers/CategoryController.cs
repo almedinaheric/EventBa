@@ -18,6 +18,20 @@ public class CategoryController : BaseCRUDController<CategoryResponseDto, Catego
     {
         _categoryService = service;
     }
+
+    [HttpGet]
+    [AllowAnonymous]
+    public override async Task<PagedResult<CategoryResponseDto>> Get([FromQuery] CategorySearchObject search)
+    {
+        return await _service.Get(search);
+    }
+
+    [HttpGet("{id}")]
+    [AllowAnonymous]
+    public override async Task<CategoryResponseDto> GetById(Guid id)
+    {
+        return await _service.GetById(id);
+    }
     
     [HttpPost]
     [Authorize(Roles = "Admin")]
@@ -38,5 +52,12 @@ public class CategoryController : BaseCRUDController<CategoryResponseDto, Catego
     public override async Task<CategoryResponseDto> Delete(Guid id)
     {
         return await _service.Delete(id);
+    }
+
+    [HttpGet("getForReport")]
+    [Authorize(Roles = "Admin")]
+    public async Task<int> GetNumberOfItems()
+    {
+        return await _categoryService.GetNumberOfItems();
     }
 }

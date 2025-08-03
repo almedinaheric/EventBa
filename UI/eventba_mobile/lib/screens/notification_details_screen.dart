@@ -1,16 +1,15 @@
+import 'package:eventba_mobile/providers/notification_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:eventba_mobile/widgets/master_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:eventba_mobile/models/notification/notification.dart' as notification_model;
 
 class NotificationDetailsScreen extends StatelessWidget {
-  final String title;
-  final String content;
-  final String time;
+  final notification_model.Notification? notification;
 
   const NotificationDetailsScreen({
     super.key,
-    required this.title,
-    required this.content,
-    required this.time,
+    required this.notification
   });
 
   @override
@@ -71,7 +70,7 @@ class NotificationDetailsScreen extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              title,
+                              notification!.title,
                               style: const TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
@@ -80,7 +79,7 @@ class NotificationDetailsScreen extends StatelessWidget {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              _formatDateTime(time),
+                              _formatDateTime(_formatTime(notification!.createdAt)),
                               style: const TextStyle(
                                 fontSize: 14,
                                 color: Colors.grey,
@@ -126,7 +125,7 @@ class NotificationDetailsScreen extends StatelessWidget {
                           ),
                         ),
                         child: Text(
-                          content,
+                          notification!.content,
                           style: const TextStyle(
                             fontSize: 15,
                             color: Colors.black87,
@@ -148,7 +147,6 @@ class NotificationDetailsScreen extends StatelessWidget {
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: () {
-                      // Delete notification functionality
                       _showDeleteConfirmation(context);
                     },
                     icon: const Icon(Icons.delete_outline, size: 18),
@@ -208,8 +206,8 @@ class NotificationDetailsScreen extends StatelessWidget {
     return '$hour:$minute $period';
   }
 
-  void _showDeleteConfirmation(BuildContext context) {
-    showDialog(
+  void _showDeleteConfirmation(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
@@ -220,30 +218,37 @@ class NotificationDetailsScreen extends StatelessWidget {
           ),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+              onPressed: () => Navigator.of(context).pop(false),
               child: const Text('Cancel'),
             ),
             TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                Navigator.of(context).pop(); // Go back to notifications list
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Notification deleted'),
-                    duration: Duration(seconds: 2),
-                  ),
-                );
-              },
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.red,
-              ),
+              onPressed: () => Navigator.of(context).pop(true),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
               child: const Text('Delete'),
             ),
           ],
         );
       },
     );
+
+    if (confirmed == true) {
+      try {
+        await Provider.of<NotificationProvider>(context, listen: false)
+            .delete(notification!.id);
+
+
+        // Go back to the notifications list and show a success message
+        Navigator.of(context).pop(true);
+      } catch (e) {
+        print("Error deleting notification: $e");
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to delete notification'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
+
 }

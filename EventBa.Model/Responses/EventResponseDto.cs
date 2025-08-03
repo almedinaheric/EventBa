@@ -25,7 +25,6 @@ public class EventResponseDto
 
     public CategoryResponseDto Category { get; set; } = null!;
     public ImageResponseDto? CoverImage { get; set; }
-    public List<TagResponseDto> Tags { get; set; } = new();
     public List<ImageResponseDto> GalleryImages { get; set; } = new();
     public Guid OrganizerId { get; set; }
 }

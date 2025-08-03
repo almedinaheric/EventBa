@@ -5,6 +5,7 @@ using EventBa.Model.SearchObjects;
 using EventBa.Services.Database;
 using EventBa.Services.Database.Context;
 using EventBa.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace EventBa.Services.Services;
 
@@ -18,5 +19,11 @@ public class RoleService : BaseCRUDService<RoleResponseDto, Role, RoleSearchObje
     {
         _context = context;
         _mapper = mapper;
+    }
+
+    public override IQueryable<Role> AddInclude(IQueryable<Role> query, RoleSearchObject? search = null)
+    {
+        query = query.Include(x => x.Users);
+        return query;
     }
 }

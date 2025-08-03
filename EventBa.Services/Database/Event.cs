@@ -37,6 +37,5 @@ public partial class Event
     public virtual ICollection<RecommendedEvent> RecommendedEvents { get; set; } = new List<RecommendedEvent>();
     public virtual ICollection<TicketPurchase> TicketPurchases { get; set; } = new List<TicketPurchase>();
     public virtual ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();
-    public virtual ICollection<Tag> Tags { get; set; } = new List<Tag>();
     public virtual ICollection<User> Users { get; set; } = new List<User>();
 }

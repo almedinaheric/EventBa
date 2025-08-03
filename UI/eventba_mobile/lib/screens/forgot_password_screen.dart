@@ -3,6 +3,8 @@ import 'package:eventba_mobile/widgets/text_link_button.dart';
 import 'package:flutter/material.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/primary_button.dart';
+import 'package:provider/provider.dart';
+import '../providers/user_provider.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -14,23 +16,47 @@ class ForgotPasswordScreen extends StatefulWidget {
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final _emailController = TextEditingController();
   bool _isEmailValid = false;
+  bool _isLoading = false;
   String? _emailErrorMessage;
 
-  void _onSubmitPressed() {
+  void _onSubmitPressed() async {
     if (_emailController.text.isEmpty || !_isEmailValid) {
       _showError('Please enter a valid email.');
       return;
     }
 
-    // Proceed with your password reset logic
-    // For now, we're just showing a message after form validation
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Password reset link has been sent to your email')));
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      await userProvider.forgotPassword(_emailController.text.trim());
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Password reset link has been sent to your email'),
+        ),
+      );
+
+      Navigator.pop(context);
+    } catch (e) {
+      _showError('Failed to send reset link. Please try again.');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -58,9 +84,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   const Text(
                     'Forgot Password',
                     style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF343A40)),
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF343A40),
+                    ),
                   ),
                   const SizedBox(height: 164),
                   CustomTextField(
@@ -72,9 +99,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     width: size.width * 0.9,
                     onChanged: (text) {
                       setState(() {
-                        _isEmailValid =
-                            RegExp(r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$')
-                                .hasMatch(text);
+                        _isEmailValid = RegExp(
+                          r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$',
+                        ).hasMatch(text);
                         _emailErrorMessage = _isEmailValid
                             ? null
                             : 'Please enter a valid email address.';
@@ -83,8 +110,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   ),
                   const SizedBox(height: 16),
                   PrimaryButton(
-                    text: "Send Reset Link",
-                    onPressed: _onSubmitPressed,
+                    text: _isLoading ? "Sending..." : "Send Reset Link",
+                    onPressed: _isLoading ? () {} : _onSubmitPressed,
                     width: size.width * 0.9,
                   ),
                 ],

@@ -1,6 +1,10 @@
 import 'package:eventba_mobile/widgets/master_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:eventba_mobile/widgets/event_card.dart';
+import 'package:provider/provider.dart';
+import 'package:eventba_mobile/providers/event_provider.dart';
+import 'package:eventba_mobile/models/event/basic_event.dart';
+import 'package:eventba_mobile/screens/event_details_screen.dart';
 
 class FavoriteEventsScreen extends StatefulWidget {
   const FavoriteEventsScreen({super.key});
@@ -10,45 +14,82 @@ class FavoriteEventsScreen extends StatefulWidget {
 }
 
 class _FavoriteEventsScreenState extends State<FavoriteEventsScreen> {
-  List<bool> isFavoriteList = List.generate(4, (index) => true);
-  List<int> favoriteEventIndices = List.generate(4, (index) => index);
+  List<BasicEvent> _favoriteEvents = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFavoriteEvents();
+  }
+
+  Future<void> _loadFavoriteEvents() async {
+    try {
+      final eventProvider = Provider.of<EventProvider>(context, listen: false);
+      final favoriteEvents = await eventProvider.getUserFavoriteEvents();
+      setState(() {
+        _favoriteEvents = favoriteEvents;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print("Failed to load favorite events: $e");
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final favoriteEvents = favoriteEventIndices.where((index) => isFavoriteList[index]).toList();
-
-    return Material(
-      child: favoriteEvents.isNotEmpty
-          ? ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          ..._buildEventCardsList(),
-          const SizedBox(height: 60), // Bottom padding for nav bar
-        ],
-      )
+    return Scaffold(
+      resizeToAvoidBottomInset: false,
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _favoriteEvents.isNotEmpty
+          ? RefreshIndicator(
+              onRefresh: _loadFavoriteEvents,
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  ..._buildEventCardsList(),
+                  const SizedBox(height: 60),
+                ],
+              ),
+            )
           : const Center(
-        child: Text(
-          'No favorite events yet',
-          style: TextStyle(fontSize: 18, color: Colors.grey),
-        ),
-      ),
+              child: Text(
+                'No favorite events yet',
+                style: TextStyle(fontSize: 18, color: Colors.grey),
+              ),
+            ),
     );
   }
 
   List<Widget> _buildEventCardsList() {
-    return favoriteEventIndices.where((index) => isFavoriteList[index]).map((index) {
+    return _favoriteEvents.map((event) {
       return Column(
         children: [
           EventCard(
-            imageUrl: 'assets/images/default_event_cover_image.png',
-            eventName: 'Event Name $index',
-            location: 'Location $index',
-            date: 'Date $index',
-            isPaid: index % 2 == 0,
+            imageData: null,
+            eventName: event.title,
+            location: event.location,
+            date: event.startDate,
+            isPaid: false,
             height: 160,
-            isFavoriteEvent: isFavoriteList[index],
+            isFavoriteEvent: true,
+            onTap: () {
+              Navigator.push(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (_, __, ___) =>
+                      EventDetailsScreen(eventId: event.id),
+                  transitionDuration: Duration.zero,
+                  reverseTransitionDuration: Duration.zero,
+                ),
+              );
+            },
             onFavoriteToggle: () {
-              _toggleFavorite(index);
+              _removeFromFavorites(event.id);
             },
           ),
           const SizedBox(height: 12),
@@ -57,22 +98,11 @@ class _FavoriteEventsScreenState extends State<FavoriteEventsScreen> {
     }).toList();
   }
 
-  void _toggleFavorite(int index) {
+  void _removeFromFavorites(String eventId) {
+    // TODO: Implement API call to remove from favorites
+    print('Removing event $eventId from favorites');
     setState(() {
-      isFavoriteList[index] = !isFavoriteList[index];
-      if (!isFavoriteList[index]) {
-        favoriteEventIndices.remove(index);
-      }
+      _favoriteEvents.removeWhere((event) => event.id == eventId);
     });
-
-    // Call API to update favorite status
-    _updateFavoriteStatus(index, isFavoriteList[index]);
-  }
-
-  void _updateFavoriteStatus(int eventId, bool isFavorite) {
-    // Replace with actual API call
-    print('Updating favorite status for event $eventId to $isFavorite');
-    // Example API call:
-    // FavoriteService.updateFavoriteStatus(eventId, isFavorite);
   }
 }

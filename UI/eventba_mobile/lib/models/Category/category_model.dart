@@ -9,7 +9,7 @@ class CategoryModel {
   final DateTime updatedAt;
   final String name;
   final String? description;
-  final int? eventCount;
+  final int eventCount;
 
   CategoryModel({
     required this.id,
@@ -17,7 +17,7 @@ class CategoryModel {
     required this.updatedAt,
     required this.name,
     this.description,
-    this.eventCount,
+    required this.eventCount,
   });
 
   factory CategoryModel.fromJson(Map<String, dynamic> json) =>

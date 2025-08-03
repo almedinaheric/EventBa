@@ -22,5 +22,4 @@ public class EventUpdateRequestDto
     
     public Guid CategoryId { get; set; }
     public Guid? CoverImageId { get; set; }
-    public List<Guid> TagIds { get; set; } = new();
 }

@@ -4,22 +4,22 @@ part 'image_model.g.dart';
 
 @JsonSerializable()
 class ImageModel {
-  final String? id;
-  final String? data;
-  final String? contentType;
+  final String id;
+  final String data;
+  final String contentType;
   final String? userId;
   final String? eventId;
-  final DateTime? createdAt;
-  final DateTime? updatedAt;
+  final DateTime createdAt;
+  final DateTime updatedAt;
 
   ImageModel({
-    this.id,
-    this.data,
-    this.contentType,
+    required this.id,
+    required this.data,
+    required this.contentType,
     this.userId,
     this.eventId,
-    this.createdAt,
-    this.updatedAt,
+    required this.createdAt,
+    required this.updatedAt,
   });
 
   factory ImageModel.fromJson(Map<String, dynamic> json) =>

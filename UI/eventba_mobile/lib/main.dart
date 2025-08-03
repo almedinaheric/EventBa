@@ -1,5 +1,8 @@
+import 'package:eventba_mobile/providers/event_image_provider.dart';
+import 'package:eventba_mobile/providers/notification_provider.dart';
 import 'package:eventba_mobile/providers/user_provider.dart';
 import 'package:eventba_mobile/providers/event_provider.dart';
+import 'package:eventba_mobile/providers/category_provider.dart';
 import 'package:eventba_mobile/screens/event_questions_screen.dart';
 import 'package:eventba_mobile/screens/home_screen.dart';
 import 'package:eventba_mobile/screens/splash_screen.dart';
@@ -13,6 +16,9 @@ void main() {
       providers: [
         ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(create: (_) => EventProvider()),
+        ChangeNotifierProvider(create: (_) => CategoryProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationProvider()),
+        ChangeNotifierProvider(create: (_) => EventImageProvider()),
       ],
       child: const MyApp(),
     ),

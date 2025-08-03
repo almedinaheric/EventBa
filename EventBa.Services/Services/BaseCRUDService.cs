@@ -20,6 +20,10 @@ public class BaseCRUDService<T, TDb, TSearch, TInsert, TUpdate> : BaseService<T,
     {
     }
 
+    public virtual async Task BeforeUpdate(TDb entity, TUpdate update)
+    {
+    }
+
     public virtual async Task<T> Insert(TInsert insert)
     {
         var set = _context.Set<TDb>();
@@ -35,6 +39,7 @@ public class BaseCRUDService<T, TDb, TSearch, TInsert, TUpdate> : BaseService<T,
         var set = _context.Set<TDb>();
         var entity = await set.FindAsync(id);
         _mapper.Map(update, entity);
+        await BeforeUpdate(entity, update);
         await _context.SaveChangesAsync();
         return _mapper.Map<T>(entity);
     }

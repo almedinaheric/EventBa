@@ -7,4 +7,5 @@ namespace EventBa.Services.Interfaces;
 public interface IPaymentService : ICRUDService<PaymentResponseDto, PaymentSearchObject, PaymentInsertRequestDto,
     PaymentUpdateRequestDto>
 {
+    Task<List<PaymentResponseDto>> GetMyPayments();
 }

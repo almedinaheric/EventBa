@@ -33,9 +33,7 @@ public partial class EventBaDbContext : DbContext
     public virtual DbSet<RecommendedEvent> RecommendedEvents { get; set; }
 
     public virtual DbSet<Role> Roles { get; set; }
-
-    public virtual DbSet<Tag> Tags { get; set; }
-
+    
     public virtual DbSet<Ticket> Tickets { get; set; }
 
     public virtual DbSet<TicketPurchase> TicketPurchases { get; set; }
@@ -153,23 +151,6 @@ public partial class EventBaDbContext : DbContext
                 .HasForeignKey(d => d.OrganizerId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("events_organizer_id_fkey");
-
-            entity.HasMany(d => d.Tags).WithMany(p => p.Events)
-                .UsingEntity<Dictionary<string, object>>(
-                    "EventTag",
-                    r => r.HasOne<Tag>().WithMany()
-                        .HasForeignKey("TagId")
-                        .HasConstraintName("event_tags_tag_id_fkey"),
-                    l => l.HasOne<Event>().WithMany()
-                        .HasForeignKey("EventId")
-                        .HasConstraintName("event_tags_event_id_fkey"),
-                    j =>
-                    {
-                        j.HasKey("EventId", "TagId").HasName("event_tags_pkey");
-                        j.ToTable("event_tags");
-                        j.IndexerProperty<Guid>("EventId").HasColumnName("event_id");
-                        j.IndexerProperty<Guid>("TagId").HasColumnName("tag_id");
-                    });
         });
 
         modelBuilder.Entity<EventGalleryImage>(entity =>
@@ -454,30 +435,6 @@ public partial class EventBaDbContext : DbContext
                     v => (RoleName)Enum.Parse(typeof(RoleName), v))
                 .HasColumnName("name")
                 .HasColumnType("text");
-            entity.Property(e => e.UpdatedAt)
-                .HasDefaultValueSql("CURRENT_TIMESTAMP")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("updated_at");
-        });
-
-        modelBuilder.Entity<Tag>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("tags_pkey");
-
-            entity.ToTable("tags");
-
-            entity.HasIndex(e => e.Name, "tags_name_key").IsUnique();
-
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("uuid_generate_v4()")
-                .HasColumnName("id");
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("CURRENT_TIMESTAMP")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("created_at");
-            entity.Property(e => e.Name)
-                .HasMaxLength(50)
-                .HasColumnName("name");
             entity.Property(e => e.UpdatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnType("timestamp without time zone")

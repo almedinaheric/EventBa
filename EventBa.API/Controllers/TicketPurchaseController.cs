@@ -2,6 +2,7 @@ using EventBa.Model.Requests;
 using EventBa.Model.Responses;
 using EventBa.Model.SearchObjects;
 using EventBa.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EventBa.API.Controllers;
@@ -16,5 +17,13 @@ public class TicketPurchaseController : BaseCRUDController<TicketPurchaseRespons
         TicketPurchaseUpdateRequestDto>> logger, ITicketPurchaseService service) : base(logger, service)
     {
         _ticketPurchaseService = service;
+    }
+
+    [HttpGet("my-purchases")]
+    [Authorize]
+    public async Task<IActionResult> GetMyPurchases()
+    {
+        var purchases = await _ticketPurchaseService.GetMyPurchases();
+        return Ok(purchases);
     }
 }

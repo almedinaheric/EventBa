@@ -7,15 +7,15 @@ part of 'role.dart';
 // **************************************************************************
 
 Role _$RoleFromJson(Map<String, dynamic> json) => Role(
-      id: json['id'] as String,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
-      name: json['name'] as String,
-    );
+  id: json['id'] as String,
+  createdAt: DateTime.parse(json['createdAt'] as String),
+  updatedAt: DateTime.parse(json['updatedAt'] as String),
+  name: json['name'] as String,
+);
 
 Map<String, dynamic> _$RoleToJson(Role instance) => <String, dynamic>{
-      'id': instance.id,
-      'createdAt': instance.createdAt.toIso8601String(),
-      'updatedAt': instance.updatedAt.toIso8601String(),
-      'name': instance.name,
-    };
+  'id': instance.id,
+  'createdAt': instance.createdAt.toIso8601String(),
+  'updatedAt': instance.updatedAt.toIso8601String(),
+  'name': instance.name,
+};

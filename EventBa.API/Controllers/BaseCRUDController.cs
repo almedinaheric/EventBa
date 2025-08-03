@@ -1,4 +1,5 @@
 using EventBa.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EventBa.API.Controllers;
@@ -18,18 +19,21 @@ public class BaseCRUDController<T, TSearch, TInsert, TUpdate> : BaseController<T
     }
 
     [HttpPost]
+    [Authorize]
     public virtual async Task<T> Insert([FromBody] TInsert insert)
     {
         return await _service.Insert(insert);
     }
 
     [HttpPut("{id}")]
+    [Authorize]
     public virtual async Task<T> Update(Guid id, [FromBody] TUpdate update)
     {
         return await _service.Update(id, update);
     }
 
     [HttpDelete("{id}")]
+    [Authorize]
     public virtual async Task<T> Delete(Guid id)
     {
         return await _service.Delete(id);

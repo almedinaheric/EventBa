@@ -1,13 +1,16 @@
+import 'dart:convert';
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:eventba_mobile/widgets/master_screen.dart';
 import 'package:eventba_mobile/widgets/primary_button.dart';
 import 'package:eventba_mobile/widgets/custom_text_field.dart';
-
-import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:eventba_mobile/providers/event_provider.dart';
+import 'package:eventba_mobile/models/enums/event_type.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:eventba_mobile/providers/category_provider.dart';
+import 'package:eventba_mobile/models/category/category_model.dart';
+import 'package:eventba_mobile/providers/event_image_provider.dart';
 
 class EventCreationScreen extends StatefulWidget {
   const EventCreationScreen({super.key});
@@ -20,18 +23,11 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
   final _formKey = GlobalKey<FormState>();
   final ImagePicker _picker = ImagePicker();
 
-  final List<String> _categories = [
-    'Music',
-    'Sports',
-    'Art',
-    'Technology',
-    'Food',
-    // add more categories as needed
-  ];
+  List<String> _categories = [];
 
   // Controllers
   final TextEditingController _nameController = TextEditingController();
-  String? _selectedCategory; // Changed from controller to variable for dropdown
+  String? _selectedCategory;
   final TextEditingController _venueController = TextEditingController();
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _startTimeController = TextEditingController();
@@ -48,6 +44,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
   List<XFile> _additionalImages = [];
 
   bool _isPaid = false;
+  bool _isLoading = false;
 
   // Validation flags and error messages
   bool _isNameValid = true;
@@ -77,6 +74,28 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
   String? _ecoCountErrorMessage;
 
   @override
+  void initState() {
+    super.initState();
+    _fetchCategories();
+  }
+
+  Future<void> _fetchCategories() async {
+    try {
+      final categoryProvider = Provider.of<CategoryProvider>(context, listen: false);
+      final categories = await categoryProvider.get();
+
+      setState(() {
+        _categories = categories.result.map((category) => category.name).toList();
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(        behavior: SnackBarBehavior.floating,
+            content: Text('Failed to fetch categories: $e')),
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
 
@@ -102,14 +121,12 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
                 onChanged: (text) {
                   setState(() {
                     _isNameValid = text.trim().isNotEmpty;
-                    _nameErrorMessage =
-                    _isNameValid ? null : 'Event name is required';
+                    _nameErrorMessage = _isNameValid ? null : 'Event name is required';
                   });
                 },
               ),
               const SizedBox(height: 12),
 
-              // Changed from CustomTextField to Dropdown
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -147,8 +164,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
                       setState(() {
                         _selectedCategory = newValue;
                         _isCategoryValid = newValue != null;
-                        _categoryErrorMessage =
-                        _isCategoryValid ? null : 'Category is required';
+                        _categoryErrorMessage = _isCategoryValid ? null : 'Category is required';
                       });
                     },
                     validator: (value) {
@@ -172,8 +188,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
                 onChanged: (text) {
                   setState(() {
                     _isVenueValid = text.trim().isNotEmpty;
-                    _venueErrorMessage =
-                    _isVenueValid ? null : 'Venue is required';
+                    _venueErrorMessage = _isVenueValid ? null : 'Venue is required';
                   });
                 },
               ),
@@ -190,8 +205,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
                 onChanged: (text) {
                   setState(() {
                     _isDateValid = text.trim().isNotEmpty;
-                    _dateErrorMessage =
-                    _isDateValid ? null : 'Date is required';
+                    _dateErrorMessage = _isDateValid ? null : 'Date is required';
                   });
                 },
               ),
@@ -212,9 +226,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
                       onChanged: (text) {
                         setState(() {
                           _isStartTimeValid = text.trim().isNotEmpty;
-                          _startTimeErrorMessage = _isStartTimeValid
-                              ? null
-                              : 'Start time is required';
+                          _startTimeErrorMessage = _isStartTimeValid ? null : 'Start time is required';
                         });
                       },
                     ),
@@ -233,8 +245,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
                       onChanged: (text) {
                         setState(() {
                           _isEndTimeValid = text.trim().isNotEmpty;
-                          _endTimeErrorMessage =
-                          _isEndTimeValid ? null : 'End time is required';
+                          _endTimeErrorMessage = _isEndTimeValid ? null : 'End time is required';
                         });
                       },
                     ),
@@ -254,15 +265,16 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
                 onChanged: (text) {
                   setState(() {
                     _isDescriptionValid = text.trim().isNotEmpty;
-                    _descriptionErrorMessage =
-                    _isDescriptionValid ? null : 'Description is required';
+                    _descriptionErrorMessage = _isDescriptionValid ? null : 'Description is required';
                   });
                 },
               ),
               const SizedBox(height: 16),
 
-              const Text("Pricing and Tickets",
-                  style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text(
+                "Pricing and Tickets",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 8),
               Row(
                 children: [
@@ -284,20 +296,18 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
                   keyboardType: TextInputType.number,
                   onChanged: (text) {
                     setState(() {
-                      _isCapacityValid = text.trim().isNotEmpty &&
-                          int.tryParse(text.trim()) != null &&
-                          int.parse(text.trim()) > 0;
-                      _capacityErrorMessage = _isCapacityValid
-                          ? null
-                          : 'Capacity required and must be a positive number';
+                      _isCapacityValid = text.trim().isNotEmpty && int.tryParse(text.trim()) != null && int.parse(text.trim()) > 0;
+                      _capacityErrorMessage = _isCapacityValid ? null : 'Capacity required and must be a positive number';
                     });
                   },
                 ),
 
               if (_isPaid) ...[
                 const SizedBox(height: 12),
-                const Text("VIP tickets",
-                    style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text(
+                  "VIP tickets",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -308,16 +318,11 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
                         isValid: _isVipPriceValid,
                         errorMessage: _vipPriceErrorMessage,
                         width: double.infinity,
-                        keyboardType:
-                        TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: TextInputType.numberWithOptions(decimal: true),
                         onChanged: (text) {
                           setState(() {
-                            _isVipPriceValid = text.trim().isNotEmpty &&
-                                double.tryParse(text.trim()) != null &&
-                                double.parse(text.trim()) >= 0;
-                            _vipPriceErrorMessage = _isVipPriceValid
-                                ? null
-                                : 'VIP price required and must be a number ≥ 0';
+                            _isVipPriceValid = text.trim().isNotEmpty && double.tryParse(text.trim()) != null && double.parse(text.trim()) >= 0;
+                            _vipPriceErrorMessage = _isVipPriceValid ? null : 'VIP price required and must be a number ≥ 0';
                           });
                         },
                       ),
@@ -333,12 +338,8 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
                         keyboardType: TextInputType.number,
                         onChanged: (text) {
                           setState(() {
-                            _isVipCountValid = text.trim().isNotEmpty &&
-                                int.tryParse(text.trim()) != null &&
-                                int.parse(text.trim()) >= 0;
-                            _vipCountErrorMessage = _isVipCountValid
-                                ? null
-                                : 'VIP ticket count required and must be ≥ 0';
+                            _isVipCountValid = text.trim().isNotEmpty && int.tryParse(text.trim()) != null && int.parse(text.trim()) >= 0;
+                            _vipCountErrorMessage = _isVipCountValid ? null : 'VIP ticket count required and must be ≥ 0';
                           });
                         },
                       ),
@@ -346,8 +347,10 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                const Text("ECONOMY tickets",
-                    style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text(
+                  "ECONOMY tickets",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -358,16 +361,11 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
                         isValid: _isEcoPriceValid,
                         errorMessage: _ecoPriceErrorMessage,
                         width: double.infinity,
-                        keyboardType:
-                        TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: TextInputType.numberWithOptions(decimal: true),
                         onChanged: (text) {
                           setState(() {
-                            _isEcoPriceValid = text.trim().isNotEmpty &&
-                                double.tryParse(text.trim()) != null &&
-                                double.parse(text.trim()) >= 0;
-                            _ecoPriceErrorMessage = _isEcoPriceValid
-                                ? null
-                                : 'Economy price required and must be ≥ 0';
+                            _isEcoPriceValid = text.trim().isNotEmpty && double.tryParse(text.trim()) != null && double.parse(text.trim()) >= 0;
+                            _ecoPriceErrorMessage = _isEcoPriceValid ? null : 'Economy price required and must be ≥ 0';
                           });
                         },
                       ),
@@ -383,12 +381,8 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
                         keyboardType: TextInputType.number,
                         onChanged: (text) {
                           setState(() {
-                            _isEcoCountValid = text.trim().isNotEmpty &&
-                                int.tryParse(text.trim()) != null &&
-                                int.parse(text.trim()) >= 0;
-                            _ecoCountErrorMessage = _isEcoCountValid
-                                ? null
-                                : 'Economy ticket count required and must be ≥ 0';
+                            _isEcoCountValid = text.trim().isNotEmpty && int.tryParse(text.trim()) != null && int.parse(text.trim()) >= 0;
+                            _ecoCountErrorMessage = _isEcoCountValid ? null : 'Economy ticket count required and must be ≥ 0';
                           });
                         },
                       ),
@@ -400,8 +394,8 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
               const SizedBox(height: 24),
               Center(
                 child: PrimaryButton(
-                  text: "Create Event",
-                  onPressed: _submitForm,
+                  text: _isLoading ? "Creating..." : "Create Event",
+                  onPressed: _isLoading ? () {} : _onSubmitPressed,
                 ),
               ),
               const SizedBox(height: 60), // for safe area
@@ -424,12 +418,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
             decoration: BoxDecoration(
               border: Border.all(color: Colors.grey.shade300),
               borderRadius: BorderRadius.circular(12),
-              image: _mainImage != null
-                  ? DecorationImage(
-                image: FileImage(File(_mainImage!.path)),
-                fit: BoxFit.cover,
-              )
-                  : null,
+              image: _mainImage != null ? DecorationImage(image: FileImage(File(_mainImage!.path)), fit: BoxFit.cover) : null,
             ),
             child: _mainImage == null
                 ? const Center(
@@ -457,20 +446,13 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.grey.shade300),
                   borderRadius: BorderRadius.circular(12),
-                  image: index < _additionalImages.length
-                      ? DecorationImage(
-                    image: FileImage(File(_additionalImages[index].path)),
-                    fit: BoxFit.cover,
-                  )
-                      : null,
+                  image: index < _additionalImages.length ? DecorationImage(image: FileImage(File(_additionalImages[index].path)), fit: BoxFit.cover) : null,
                 ),
-                child: index >= _additionalImages.length
-                    ? const Center(child: Icon(Icons.add))
-                    : null,
+                child: index >= _additionalImages.length ? const Center(child: Icon(Icons.add)) : null,
               ),
             );
           }),
-        )
+        ),
       ],
     );
   }
@@ -484,9 +466,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
         });
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to pick image: ${e.toString()}')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to pick image: ${e.toString()}')));
     }
   }
 
@@ -503,9 +483,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
         });
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to pick image: ${e.toString()}')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to pick image: ${e.toString()}')));
     }
   }
 
@@ -522,19 +500,13 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
             color: isSelected ? const Color(0xFF4776E6) : Colors.transparent,
-            border: Border.all(
-              color: isSelected ? const Color(0xFF4776E6) : Colors.grey,
-              width: 1.5,
-            ),
+            border: Border.all(color: isSelected ? const Color(0xFF4776E6) : Colors.grey, width: 1.5),
             borderRadius: BorderRadius.circular(12),
           ),
           alignment: Alignment.center,
           child: Text(
             label,
-            style: TextStyle(
-              color: isSelected ? Colors.white : Colors.black,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(color: isSelected ? Colors.white : Colors.black, fontWeight: FontWeight.bold),
           ),
         ),
       ),
@@ -544,17 +516,13 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
   Future<void> _pickDate() async {
     DateTimeRange? picked = await showDateRangePicker(
       context: context,
-      initialDateRange: DateTimeRange(
-        start: DateTime.now(),
-        end: DateTime.now().add(const Duration(days: 1)),
-      ),
+      initialDateRange: DateTimeRange(start: DateTime.now(), end: DateTime.now().add(const Duration(days: 1))),
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
     );
     if (picked != null) {
       setState(() {
-        _dateController.text =
-        "${picked.start.toLocal().toString().split(' ')[0]} - ${picked.end.toLocal().toString().split(' ')[0]}";
+        _dateController.text = "${picked.start.toLocal().toString().split(' ')[0]} - ${picked.end.toLocal().toString().split(' ')[0]}";
         _isDateValid = true;
         _dateErrorMessage = null;
       });
@@ -562,10 +530,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
   }
 
   Future<void> _pickStartTime() async {
-    final TimeOfDay? pickedTime = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.now(),
-    );
+    final TimeOfDay? pickedTime = await showTimePicker(context: context, initialTime: TimeOfDay.now());
     if (pickedTime != null) {
       setState(() {
         _startTimeController.text = pickedTime.format(context);
@@ -576,10 +541,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
   }
 
   Future<void> _pickEndTime() async {
-    final TimeOfDay? pickedTime = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.now(),
-    );
+    final TimeOfDay? pickedTime = await showTimePicker(context: context, initialTime: TimeOfDay.now());
     if (pickedTime != null) {
       setState(() {
         _endTimeController.text = pickedTime.format(context);
@@ -589,7 +551,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
     }
   }
 
-  void _submitForm() {
+  void _validateForm() {
     setState(() {
       _isNameValid = _nameController.text.trim().isNotEmpty;
       _nameErrorMessage = _isNameValid ? null : 'Event name is required';
@@ -604,77 +566,122 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
       _dateErrorMessage = _isDateValid ? null : 'Date is required';
 
       _isStartTimeValid = _startTimeController.text.trim().isNotEmpty;
-      _startTimeErrorMessage =
-      _isStartTimeValid ? null : 'Start time is required';
+      _startTimeErrorMessage = _isStartTimeValid ? null : 'Start time is required';
 
       _isEndTimeValid = _endTimeController.text.trim().isNotEmpty;
       _endTimeErrorMessage = _isEndTimeValid ? null : 'End time is required';
 
       _isDescriptionValid = _descriptionController.text.trim().isNotEmpty;
-      _descriptionErrorMessage =
-      _isDescriptionValid ? null : 'Description is required';
+      _descriptionErrorMessage = _isDescriptionValid ? null : 'Description is required';
 
       if (!_isPaid) {
-        _isCapacityValid = _capacityController.text.trim().isNotEmpty &&
-            int.tryParse(_capacityController.text.trim()) != null &&
-            int.parse(_capacityController.text.trim()) > 0;
-        _capacityErrorMessage = _isCapacityValid
-            ? null
-            : 'Capacity required and must be a positive number';
+        _isCapacityValid = _capacityController.text.trim().isNotEmpty && int.tryParse(_capacityController.text.trim()) != null && int.parse(_capacityController.text.trim()) > 0;
+        _capacityErrorMessage = _isCapacityValid ? null : 'Capacity required and must be a positive number';
       } else {
-        _isVipPriceValid = _vipPriceController.text.trim().isNotEmpty &&
-            double.tryParse(_vipPriceController.text.trim()) != null &&
-            double.parse(_vipPriceController.text.trim()) >= 0;
-        _vipPriceErrorMessage = _isVipPriceValid
-            ? null
-            : 'VIP price required and must be a number ≥ 0';
+        _isVipPriceValid = _vipPriceController.text.trim().isNotEmpty && double.tryParse(_vipPriceController.text.trim()) != null && double.parse(_vipPriceController.text.trim()) >= 0;
+        _vipPriceErrorMessage = _isVipPriceValid ? null : 'VIP price required and must be a number ≥ 0';
 
-        _isVipCountValid = _vipCountController.text.trim().isNotEmpty &&
-            int.tryParse(_vipCountController.text.trim()) != null &&
-            int.parse(_vipCountController.text.trim()) >= 0;
-        _vipCountErrorMessage = _isVipCountValid
-            ? null
-            : 'VIP ticket count required and must be ≥ 0';
+        _isVipCountValid = _vipCountController.text.trim().isNotEmpty && int.tryParse(_vipCountController.text.trim()) != null && int.parse(_vipCountController.text.trim()) >= 0;
+        _vipCountErrorMessage = _isVipCountValid ? null : 'VIP ticket count required and must be ≥ 0';
 
-        _isEcoPriceValid = _ecoPriceController.text.trim().isNotEmpty &&
-            double.tryParse(_ecoPriceController.text.trim()) != null &&
-            double.parse(_ecoPriceController.text.trim()) >= 0;
-        _ecoPriceErrorMessage =
-        _isEcoPriceValid ? null : 'Economy price required and must be ≥ 0';
+        _isEcoPriceValid = _ecoPriceController.text.trim().isNotEmpty && double.tryParse(_ecoPriceController.text.trim()) != null && double.parse(_ecoPriceController.text.trim()) >= 0;
+        _ecoPriceErrorMessage = _isEcoPriceValid ? null : 'Economy price required and must be ≥ 0';
 
-        _isEcoCountValid = _ecoCountController.text.trim().isNotEmpty &&
-            int.tryParse(_ecoCountController.text.trim()) != null &&
-            int.parse(_ecoCountController.text.trim()) >= 0;
-        _ecoCountErrorMessage = _isEcoCountValid
-            ? null
-            : 'Economy ticket count required and must be ≥ 0';
+        _isEcoCountValid = _ecoCountController.text.trim().isNotEmpty && int.tryParse(_ecoCountController.text.trim()) != null && int.parse(_ecoCountController.text.trim()) >= 0;
+        _ecoCountErrorMessage = _isEcoCountValid ? null : 'Economy ticket count required and must be ≥ 0';
       }
     });
+  }
 
-    bool allValid = _isNameValid &&
-        _isCategoryValid &&
-        _isVenueValid &&
-        _isDateValid &&
-        _isStartTimeValid &&
-        _isEndTimeValid &&
-        _isDescriptionValid &&
-        (!_isPaid
-            ? _isCapacityValid
-            : (_isVipPriceValid &&
-            _isVipCountValid &&
-            _isEcoPriceValid &&
-            _isEcoCountValid));
+  void _onSubmitPressed() {
+    _validateForm();
+
+    bool allValid = _isNameValid && _isCategoryValid && _isVenueValid && _isDateValid && _isStartTimeValid && _isEndTimeValid && _isDescriptionValid && (!_isPaid ? _isCapacityValid : (_isVipPriceValid && _isVipCountValid && _isEcoPriceValid && _isEcoCountValid));
 
     if (allValid) {
-      // Your submit logic here
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Event created successfully!')),
-      );
-      // Clear form or navigate away
+      _createEvent();
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fix errors before submitting')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please fix errors before submitting')));
+    }
+  }
+
+  Future<void> _createEvent() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final eventProvider = Provider.of<EventProvider>(context, listen: false);
+      final imageProvider = Provider.of<EventImageProvider>(context, listen: false);
+
+      // Split the date range into start and end date strings
+      final dateRangeParts = _dateController.text.split(' - ');
+      if (dateRangeParts.length != 2) {
+        throw FormatException('Invalid date range format. Expected "YYYY-MM-DD - YYYY-MM-DD"');
+      }
+
+      final startDateParts = dateRangeParts[0].split('-');
+      final endDateParts = dateRangeParts[1].split('-');
+
+      if (startDateParts.length != 3 || endDateParts.length != 3) {
+        throw FormatException('Invalid date format. Use YYYY-MM-DD');
+      }
+
+      final startDateFormatted = '${startDateParts[2]}-${startDateParts[1]}-${startDateParts[0]}';
+      final endDateFormatted = '${endDateParts[2]}-${endDateParts[1]}-${endDateParts[0]}';
+
+      final startTimeParts = _startTimeController.text.split(':');
+      final endTimeParts = _endTimeController.text.split(':');
+
+      // Upload main image
+      String? coverImageId;
+      if (_mainImage != null) {
+        final bytes = await File(_mainImage!.path).readAsBytes();
+        final base64Image = base64Encode(bytes);
+        final mainImageRequest = {
+          'data': base64Image,
+          'contentType': 'image/jpeg',
+        };
+        final mainImageResponse = await imageProvider.insert(mainImageRequest);
+        coverImageId = mainImageResponse.id;
+      }
+
+      // Create event request
+      final request = {
+        'title': _nameController.text.trim(),
+        'description': _descriptionController.text.trim(),
+        'location': _venueController.text.trim(),
+        'startDate': startDateFormatted,
+        'endDate': endDateFormatted,
+        'startTime': '${startTimeParts[0]}:${startTimeParts[1]}:00',
+        'endTime': '${endTimeParts[0]}:${endTimeParts[1]}:00',
+        'capacity': int.parse(_capacityController.text.trim()),
+        'availableTicketsCount': int.parse(_capacityController.text.trim()),
+        'status': 'Upcoming',
+        'isFeatured': true,
+        'type': _isPaid ? 'Public' : 'Private',
+        'isPublished': true,
+        'categoryId': _selectedCategory,
+        'coverImageId': coverImageId,
+      };
+
+      print(request);
+
+      await eventProvider.insert(request);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Event created successfully!')));
+      Navigator.pop(context);
+    } catch (e) {
+      print("Failed to create event: $e");
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to create event: $e')));
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 

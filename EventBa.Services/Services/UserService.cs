@@ -41,8 +41,72 @@ public class UserService :
     
     public override async Task BeforeInsert(User entity, UserInsertRequestDto insert)
     {
+        Console.WriteLine($"BeforeInsert called for user: {insert.Email}");
+        
         entity.PasswordSalt = GenerateSalt();
         entity.PasswordHash = GenerateHash(entity.PasswordSalt, insert.Password);
+        
+        Console.WriteLine($"Password hashed successfully for: {insert.Email}");
+        
+        // Handle category relationships
+        if (insert.InterestCategoryIds != null && insert.InterestCategoryIds.Any())
+        {
+            Console.WriteLine($"Processing {insert.InterestCategoryIds.Count} categories for user: {insert.Email}");
+            var categories = await _context.Categories
+                .Where(c => insert.InterestCategoryIds.Contains(c.Id))
+                .ToListAsync();
+            
+            Console.WriteLine($"Found {categories.Count} categories in database");
+            
+            foreach (var category in categories)
+            {
+                entity.Categories.Add(category);
+            }
+        }
+        
+        Console.WriteLine($"BeforeInsert completed for user: {insert.Email}");
+    }
+
+    public override async Task BeforeUpdate(User entity, UserUpdateRequestDto update)
+    {
+        // Handle category relationships
+        if (update.InterestCategoryIds != null && update.InterestCategoryIds.Any())
+        {
+            var categories = await _context.Categories
+                .Where(c => update.InterestCategoryIds.Contains(c.Id))
+                .ToListAsync();
+            
+            entity.Categories.Clear();
+            foreach (var category in categories)
+            {
+                entity.Categories.Add(category);
+            }
+        }
+    }
+    
+    public override async Task<UserResponseDto> Insert(UserInsertRequestDto insert)
+    {
+        Console.WriteLine($"UserService.Insert called for: {insert.Email}");
+    
+        try
+        {
+            var result = await base.Insert(insert);
+            var entityWithIncludes = await AddInclude(_context.Set<User>().Where(u => u.Id == Guid.Parse(result.Id.ToString())))
+                .FirstOrDefaultAsync();
+            
+            if (entityWithIncludes != null)
+            {
+                result = _mapper.Map<UserResponseDto>(entityWithIncludes);
+            }
+        
+            Console.WriteLine($"UserService.Insert completed successfully for: {insert.Email}");
+            return result;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"UserService.Insert failed for {insert.Email}: {ex.Message}");
+            throw;
+        }
     }
 
     public static string GenerateSalt()

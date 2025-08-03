@@ -28,7 +28,7 @@ class _OrganizerProfileScreenState extends State<OrganizerProfileScreen> {
   Widget build(BuildContext context) {
     final upcomingEvents = [
       const EventCard(
-        imageUrl: 'assets/images/default_event_cover_image.png',
+        imageData: null,
         eventName: 'Tech Meetup 2025',
         location: 'Downtown Hall',
         date: '2025-07-15',
@@ -58,7 +58,7 @@ class _OrganizerProfileScreenState extends State<OrganizerProfileScreen> {
           );
         },
         child: const EventCard(
-          imageUrl: 'assets/images/default_event_cover_image.png',
+          imageData: null,
           eventName: 'Spring Fest 2024',
           location: 'Central Park',
           date: '2024-04-20',

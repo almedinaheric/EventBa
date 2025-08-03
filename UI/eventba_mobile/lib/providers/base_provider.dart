@@ -14,23 +14,20 @@ abstract class BaseProvider<T> with ChangeNotifier {
 
   BaseProvider(String endpoint) {
     _endpoint = endpoint;
-    _baseUrl = const String.fromEnvironment("baseUrl",
-        defaultValue: "http://10.0.2.2:5187/");
-    //defaultValue: "http://localhost:5187/");
+    _baseUrl = const String.fromEnvironment("baseUrl", defaultValue: "http://10.0.2.2:5187/");
   }
 
   String get baseUrl => _baseUrl!;
 
-  Future<SearchResult<T>> get({dynamic filter}) async {
+  Future<SearchResult<T>> get({dynamic filter, bool authorized = true}) async {
     var url = "$_baseUrl$_endpoint";
-
     if (filter != null) {
       var queryString = StringHelpers.getQueryString(filter);
       url = "$url?$queryString";
     }
 
     var uri = Uri.parse(url);
-    var headers = createHeaders();
+    var headers = authorized ? createHeaders() : {"Content-Type": "application/json"};
 
     var response = await http.get(uri, headers: headers);
 
@@ -49,10 +46,10 @@ abstract class BaseProvider<T> with ChangeNotifier {
     }
   }
 
-  Future<T> insert(dynamic request) async {
+  /*Future<T> insert(dynamic request, {bool authorized = true}) async {
     var url = "$_baseUrl$_endpoint";
     var uri = Uri.parse(url);
-    var headers = createHeaders();
+    var headers = authorized ? createHeaders() : {"Content-Type": "application/json"};
 
     var jsonRequest = jsonEncode(request);
     var response = await http.post(uri, headers: headers, body: jsonRequest);
@@ -63,12 +60,39 @@ abstract class BaseProvider<T> with ChangeNotifier {
     } else {
       throw Exception("Unknown error");
     }
+  }*/
+  Future<T> insert(dynamic request, {bool authorized = true}) async {
+    var url = "$_baseUrl$_endpoint";
+    var uri = Uri.parse(url);
+    var headers = authorized ? createHeaders() : {"Content-Type": "application/json"};
+
+    var jsonRequest = jsonEncode(request);
+
+    // 🚀 Log the request
+    print("📤 Sending POST request to: $uri");
+    print("📨 Headers: $headers");
+    print("📦 Request Body: $jsonRequest");
+
+    var response = await http.post(uri, headers: headers, body: jsonRequest);
+
+    // 🧾 Log the raw response
+    print("📥 Response status: ${response.statusCode}");
+    print("📝 Response body: ${response.body}");
+
+    if (isValidResponse(response)) {
+      var data = jsonDecode(response.body);
+      print("✅ Successfully inserted. Parsed data: $data");
+      return fromJson(data);
+    } else {
+      print("❌ Insert failed with status: ${response.statusCode}");
+      throw Exception("Unknown error");
+    }
   }
 
-  Future<T> update(int id, [dynamic request]) async {
+  Future<T> update(String id, [dynamic request, bool authorized = true]) async {
     var url = "$_baseUrl$_endpoint/$id";
     var uri = Uri.parse(url);
-    var headers = createHeaders();
+    var headers = authorized ? createHeaders() : {"Content-Type": "application/json"};
 
     var jsonRequest = jsonEncode(request);
     var response = await http.put(uri, headers: headers, body: jsonRequest);
@@ -80,6 +104,25 @@ abstract class BaseProvider<T> with ChangeNotifier {
       throw Exception("Unknown error");
     }
   }
+
+  Future<T> delete(String id) async {
+    var url = "$_baseUrl$_endpoint/$id";
+    var uri = Uri.parse(url);
+    var headers = await createHeaders();
+
+    print(uri);
+
+    var response = await http.delete(uri, headers: headers);
+
+    print(response.body);
+    if (isValidResponse(response)) {
+      var data = jsonDecode(response.body);
+      return fromJson(data);
+    } else {
+      throw Exception("Unknown error in a DELETE request");
+    }
+  }
+
 
   T fromJson(data) {
     throw Exception("Method not implemented");
@@ -100,15 +143,11 @@ abstract class BaseProvider<T> with ChangeNotifier {
     String email = Authorization.email ?? "";
     String password = Authorization.password ?? "";
 
-    print("passed creds: $email, $password");
-
     String basicAuth = "Basic ${base64Encode(utf8.encode('$email:$password'))}";
 
-    var headers = {
+    return {
       "Content-Type": "application/json",
       "Authorization": basicAuth
     };
-
-    return headers;
   }
 }

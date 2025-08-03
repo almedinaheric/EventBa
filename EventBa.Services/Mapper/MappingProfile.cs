@@ -22,6 +22,8 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role))
             .ForMember(dest => dest.Followers, opt => opt.MapFrom(src => src.Followers))
             .ForMember(dest => dest.Following, opt => opt.MapFrom(src => src.Followings))
+            .ForMember(dest => dest.Interests, opt => opt.MapFrom(src => src.Categories))
+            .ForMember(dest => dest.FavoriteEvents, opt => opt.MapFrom(src => src.Events))
             .ReverseMap();
         CreateMap<User, BasicUserResponseDto>();
         CreateMap<UserInsertRequestDto, User>();
@@ -34,7 +36,6 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.CoverImage, opt => opt.MapFrom(src => src.CoverImage))
             .ForMember(dest => dest.GalleryImages, opt => opt.MapFrom(src => src.EventGalleryImages))
             .ForMember(dest => dest.Category, opt => opt.MapFrom(src => src.Category))
-            .ForMember(dest => dest.Tags, opt => opt.MapFrom(src => src.Tags))
             .ReverseMap();
         CreateMap<Event, BasicEventResponseDto>();
         CreateMap<EventInsertRequestDto, Event>();
@@ -79,13 +80,6 @@ public class MappingProfile : Profile
         CreateMap<Category, CategoryResponseDto>().ReverseMap();
         CreateMap<CategoryInsertRequestDto, Category>();
         CreateMap<CategoryUpdateRequestDto, Category>();
-
-        // ---------------------
-        // Tag
-        // ---------------------
-        CreateMap<Tag, TagResponseDto>().ReverseMap();
-        CreateMap<TagInsertRequestDto, Tag>();
-        CreateMap<TagUpdateRequestDto, Tag>();
 
         // ---------------------
         // Image

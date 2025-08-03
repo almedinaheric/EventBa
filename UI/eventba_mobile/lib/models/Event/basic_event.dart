@@ -10,6 +10,7 @@ class BasicEvent {
   final String title;
   final String startDate;
   final String endDate;
+  final String location;
   final EventStatus status;
   final ImageModel? coverImage;
 
@@ -18,6 +19,7 @@ class BasicEvent {
     required this.title,
     required this.startDate,
     required this.endDate,
+    required this.location,
     required this.status,
     this.coverImage,
   });

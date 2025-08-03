@@ -6,7 +6,6 @@ namespace EventBa.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
 public class BaseController<T, TSearch> : ControllerBase where T : class where TSearch : class
 {
     protected readonly IService<T, TSearch> _service;
@@ -19,12 +18,14 @@ public class BaseController<T, TSearch> : ControllerBase where T : class where T
     }
 
     [HttpGet()]
+    [Authorize]
     public virtual async Task<PagedResult<T>> Get([FromQuery] TSearch search)
     {
         return await _service.Get(search);
     }
 
     [HttpGet("{id}")]
+    [Authorize]
     public virtual async Task<T> GetById(Guid id)
     {
         return await _service.GetById(id);

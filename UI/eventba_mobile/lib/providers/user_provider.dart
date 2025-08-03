@@ -1,48 +1,139 @@
 import 'dart:convert';
-
-import 'package:eventba_mobile/models/user/user.dart';
 import 'package:http/http.dart' as http;
-
+import '../models/user/user.dart';
 import 'base_provider.dart';
 
 class UserProvider extends BaseProvider<User> {
   UserProvider() : super("User");
 
-  User? _user;
-  User? get user => _user;
-
-  Future<User> getProfile() async {
-    try {
-      final uri = Uri.parse(baseUrl).resolve('User/profile');
-      final headers = createHeaders();
-      final response = await http.get(uri, headers: headers);
-      if (response.statusCode == 200) {
-        _user = User.fromJson(jsonDecode(response.body));
-        notifyListeners();
-        return _user!;
-      } else {
-        throw Exception("Failed to load user profile: ${response.statusCode}");
-      }
-    } catch (e) {
-      print("Exception in getProfile: $e");
-      rethrow;
-    }
-  }
-
-  Future<User> register(Map<String, dynamic> request) async {
-    try {
-      final user = await insert(request);
-      _user = user;
-      notifyListeners();
-      return user;
-    } catch (e) {
-      print("Exception in register: $e");
-      rethrow;
-    }
-  }
-
   @override
   User fromJson(data) {
     return User.fromJson(data);
+  }
+
+  Future<User> register({
+    required String firstName,
+    required String lastName,
+    required String email,
+    required String password,
+    String? phoneNumber,
+    String? bio,
+  }) async {
+    var url = "${baseUrl}User/register";
+    var uri = Uri.parse(url);
+    var headers = createHeaders();
+
+    var requestBody = {
+      "firstName": firstName,
+      "lastName": lastName,
+      "email": email,
+      "password": password,
+      if (phoneNumber != null) "phoneNumber": phoneNumber,
+      if (bio != null) "bio": bio,
+    };
+
+    var jsonRequest = jsonEncode(requestBody);
+    var response = await http.post(uri, headers: headers, body: jsonRequest);
+
+    if (isValidResponse(response)) {
+      var data = jsonDecode(response.body);
+      return fromJson(data);
+    } else {
+      throw Exception("Registration failed");
+    }
+  }
+
+  Future<bool> forgotPassword(String email) async {
+    var url = "${baseUrl}User/forgot-password";
+    var uri = Uri.parse(url);
+    var headers = createHeaders();
+
+    var requestBody = {"email": email};
+
+    var jsonRequest = jsonEncode(requestBody);
+    var response = await http.post(uri, headers: headers, body: jsonRequest);
+
+    if (isValidResponse(response)) {
+      return true;
+    } else {
+      throw Exception("Forgot password request failed");
+    }
+  }
+
+  Future<User> getProfile() async {
+    var url = "${baseUrl}User/profile";
+    print("Making GET request to: $url");
+
+    var uri = Uri.parse(url);
+    var headers = createHeaders();
+    print("Request headers: $headers");
+
+    try {
+      var response = await http.get(uri, headers: headers);
+      print("Response status: ${response.statusCode}");
+      print("Response body: ${response.body}");
+
+      if (isValidResponse(response)) {
+        var data = jsonDecode(response.body);
+        print("Decoded JSON data: $data");
+
+        var user = fromJson(data);
+        print("Mapped user object: $user");
+        return user;
+      } else {
+        print("Invalid response received.");
+        throw Exception("Unknown error in a GET request");
+      }
+    } catch (e) {
+      print("Exception occurred during getProfile(): $e");
+      rethrow;
+    }
+  }
+
+  Future<User> getById(String userId) async {
+    var url = "${baseUrl}User/$userId";
+    var uri = Uri.parse(url);
+    var headers = createHeaders();
+
+    try {
+      var response = await http.get(uri, headers: headers);
+      if (isValidResponse(response)) {
+        var data = jsonDecode(response.body);
+        return fromJson(data);
+      } else {
+        throw Exception("Failed to load user by ID");
+      }
+    } catch (e) {
+      print("Error fetching user by ID: $e");
+      rethrow;
+    }
+  }
+
+  Future<bool> followUser(String userId) async {
+    var url = "${baseUrl}User/$userId/follow";
+
+    var uri = Uri.parse(url);
+    var headers = createHeaders();
+    var response = await http.post(uri, headers: headers);
+
+    if (isValidResponse(response)) {
+      return true;
+    } else {
+      throw Exception("Unknown error in a POST request");
+    }
+  }
+
+  Future<bool> unfollowUser(String userId) async {
+    var url = "${baseUrl}User/$userId/unfollow";
+
+    var uri = Uri.parse(url);
+    var headers = createHeaders();
+    var response = await http.post(uri, headers: headers);
+
+    if (isValidResponse(response)) {
+      return true;
+    } else {
+      throw Exception("Unknown error in a POST request");
+    }
   }
 }

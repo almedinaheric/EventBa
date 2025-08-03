@@ -1,12 +1,15 @@
+import 'dart:typed_data';
+
+import 'package:eventba_mobile/models/enums/event_status.dart';
 import 'package:flutter/material.dart';
 
 class EventCard extends StatelessWidget {
-  final String imageUrl;
+  final Uint8List? imageData;
   final String eventName;
   final String location;
   final String date;
   final bool isMyEvent;
-  final String? myEventStatus;
+  final EventStatus? myEventStatus;
   final bool isPaid;
   final bool isFeatured;
   final bool isFavoriteEvent;
@@ -17,7 +20,7 @@ class EventCard extends StatelessWidget {
 
   const EventCard({
     super.key,
-    required this.imageUrl,
+    this.imageData,
     required this.eventName,
     required this.location,
     required this.date,
@@ -41,7 +44,7 @@ class EventCard extends StatelessWidget {
     final Color badgeColor;
 
     if (isMyEvent) {
-      badgeText = myEventStatus!.toUpperCase();
+      badgeText = myEventStatus!.name.toUpperCase();
       badgeColor = badgeText == "UPCOMING" ? Colors.green : Colors.grey;
     } else {
       badgeText = isPaid ? "PAID" : "FREE";
@@ -67,8 +70,15 @@ class EventCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           child: Stack(
             children: [
-              Image.asset(
-                imageUrl,
+              imageData != null
+                  ? Image.memory(
+                imageData!,
+                height: height,
+                width: width,
+                fit: BoxFit.cover,
+              )
+                  : Image.asset(
+                'assets/images/default_event_cover_image.png',
                 height: height,
                 width: width,
                 fit: BoxFit.cover,

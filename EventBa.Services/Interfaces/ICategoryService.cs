@@ -7,4 +7,5 @@ namespace EventBa.Services.Interfaces;
 public interface ICategoryService : ICRUDService<CategoryResponseDto, CategorySearchObject, CategoryInsertRequestDto,
     CategoryUpdateRequestDto>
 {
+    Task<int> GetNumberOfItems();
 }

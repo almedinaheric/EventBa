@@ -45,7 +45,7 @@ class RecommendedEventsScreen extends StatelessWidget {
 
   Widget _buildEventCard({required bool isPaid}) {
     return EventCard(
-      imageUrl: 'assets/images/default_event_cover_image.png',
+      imageData: null,
       eventName: 'Event Name',
       location: 'Location',
       date: 'Date',

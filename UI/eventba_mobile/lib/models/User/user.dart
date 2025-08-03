@@ -1,29 +1,29 @@
-import 'package:eventba_mobile/models/basic_user/basic_user.dart';
-import 'package:eventba_mobile/models/category/category_model.dart';
-import 'package:eventba_mobile/models/event/basic_event.dart';
-import 'package:eventba_mobile/models/image/image_model.dart';
-import 'package:eventba_mobile/models/role/role.dart';
 import 'package:json_annotation/json_annotation.dart';
+import '../basic_user/basic_user.dart';
+import '../category/category_model.dart';
+import '../role/role.dart';
+import '../image/image_model.dart';
+import '../event/basic_event.dart';
 
 part 'user.g.dart';
 
-@JsonSerializable(explicitToJson: true)
+@JsonSerializable()
 class User {
-  String id;
-  DateTime createdAt;
-  DateTime updatedAt;
-  String firstName;
-  String lastName;
-  String fullName;
-  String email;
-  String? bio;
-  String? phoneNumber;
-  Role role;
-  ImageModel? profileImage;
-  List<CategoryModel> interests;
-  List<BasicUser> followers;
-  List<BasicUser> following;
-  List<BasicEvent> favoriteEvents;
+  final String id;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final String firstName;
+  final String lastName;
+  final String fullName;
+  final String email;
+  final String? bio;
+  final String? phoneNumber;
+  final Role role;
+  final ImageModel? profileImage;
+  final List<CategoryModel> interests;
+  final List<BasicUser> followers;
+  final List<BasicUser> following;
+  final List<BasicEvent> favoriteEvents;
 
   User({
     required this.id,
@@ -37,12 +37,13 @@ class User {
     this.phoneNumber,
     required this.role,
     this.profileImage,
-    this.interests = const [],
-    this.followers = const [],
-    this.following = const [],
-    this.favoriteEvents = const [],
+    required this.interests,
+    required this.followers,
+    required this.following,
+    required this.favoriteEvents,
   });
 
   factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);
+
   Map<String, dynamic> toJson() => _$UserToJson(this);
 }

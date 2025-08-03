@@ -7,4 +7,5 @@ namespace EventBa.Services.Interfaces;
 public interface IImageService : ICRUDService<ImageResponseDto, ImageSearchObject, ImageInsertRequestDto,
     ImageUpdateRequestDto>
 {
+    Task<List<ImageResponseDto>> GetImagesForEvent(Guid eventId);
 }

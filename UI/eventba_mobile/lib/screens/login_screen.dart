@@ -76,7 +76,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _showError(String message) {
     ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+        .showSnackBar(
+        SnackBar(
+        behavior: SnackBarBehavior.floating,
+        content: Text(message))
+    );
   }
 
   void _togglePasswordVisibility() {

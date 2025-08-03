@@ -13,7 +13,7 @@ CategoryModel _$CategoryModelFromJson(Map<String, dynamic> json) =>
       updatedAt: DateTime.parse(json['updatedAt'] as String),
       name: json['name'] as String,
       description: json['description'] as String?,
-      eventCount: (json['eventCount'] as num?)?.toInt(),
+      eventCount: (json['eventCount'] as num).toInt(),
     );
 
 Map<String, dynamic> _$CategoryModelToJson(CategoryModel instance) =>

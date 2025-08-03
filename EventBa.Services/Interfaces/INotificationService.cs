@@ -7,4 +7,7 @@ namespace EventBa.Services.Interfaces;
 public interface INotificationService : ICRUDService<NotificationResponseDto, NotificationSearchObject, NotificationInsertRequestDto,
     NotificationUpdateRequestDto>
 {
+    Task<List<NotificationResponseDto>> GetMyNotifications();
+    Task MarkAsRead(Guid notificationId);
+    Task MarkAllAsRead();
 }

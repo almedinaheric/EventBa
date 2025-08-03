@@ -1,9 +1,30 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:eventba_mobile/widgets/master_screen.dart';
 import 'package:eventba_mobile/widgets/event_card.dart';
+import '../providers/event_provider.dart';
+import '../models/event/basic_event.dart';
+import 'event_details_screen.dart';
 
-class PublicEventsScreen extends StatelessWidget {
+class PublicEventsScreen extends StatefulWidget {
   const PublicEventsScreen({super.key});
+
+  @override
+  _PublicEventsScreenState createState() => _PublicEventsScreenState();
+}
+
+class _PublicEventsScreenState extends State<PublicEventsScreen> {
+  late Future<List<BasicEvent>> _publicEventsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    final eventProvider = Provider.of<EventProvider>(context, listen: false);
+    _publicEventsFuture = eventProvider.getPublicEvents();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -11,46 +32,58 @@ class PublicEventsScreen extends StatelessWidget {
       appBarType: AppBarType.iconsSideTitleCenter,
       title: "Public events",
       leftIcon: Icons.arrow_back,
-      onLeftButtonPressed: () {
-        Navigator.pop(context); // Back button functionality
-      },
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // No search bar here based on your requirement (remove if you want)
-          // Or uncomment _buildSearchBar() if needed
-          // _buildSearchBar(),
-          // const SizedBox(height: 20),
-          // Section header is title already shown in app bar, so skip here
-          // But if you want a header for the list as well, you can add it
-          ..._buildEventCardsList(),
-          const SizedBox(height: 60), // Bottom padding for nav bar
-        ],
+      onLeftButtonPressed: () => Navigator.pop(context),
+      child: FutureBuilder<List<BasicEvent>>(
+        future: _publicEventsFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error loading public events.'));
+          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return Center(child: Text('No public events found.'));
+          }
+
+          final events = snapshot.data!;
+          return ListView.separated(
+            padding: const EdgeInsets.all(16),
+            itemCount: events.length + 1,  // Add 1 for extra space at the end
+            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            itemBuilder: (context, index) {
+              if (index == events.length) {
+                // Last item - add extra space
+                return const SizedBox(height: 48);
+              }
+
+              final event = events[index];
+              Uint8List? imageBytes;
+              if (event.coverImage?.data != null) {
+                try {
+                  imageBytes = base64Decode(event.coverImage!.data);
+                } catch (_) {}
+              }
+              return EventCard(
+                imageData: imageBytes,
+                eventName: event.title,
+                location: event.location ?? 'Location TBA',
+                date: event.startDate,
+                height: 160,
+                //isPaid: event.isPaid ?? false, // Uncomment if available
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    PageRouteBuilder(
+                      pageBuilder: (_, __, ___) => EventDetailsScreen(eventId: event.id),
+                      transitionDuration: Duration.zero,
+                      reverseTransitionDuration: Duration.zero,
+                    ),
+                  );
+                },
+              );
+            },
+          );
+        },
       ),
-    );
-  }
-
-  List<Widget> _buildEventCardsList() {
-    return [
-      _buildEventCard(isPaid: true),
-      const SizedBox(height: 12),
-      _buildEventCard(isPaid: false),
-      const SizedBox(height: 12),
-      _buildEventCard(isPaid: true),
-      const SizedBox(height: 12),
-      _buildEventCard(isPaid: false),
-      // Add more events or map a list of event data here
-    ];
-  }
-
-  Widget _buildEventCard({required bool isPaid}) {
-    return EventCard(
-      imageUrl: 'assets/images/default_event_cover_image.png',
-      eventName: 'Event Name',
-      location: 'Location',
-      date: 'Date',
-      isPaid: isPaid,
-      height: 160,
     );
   }
 }

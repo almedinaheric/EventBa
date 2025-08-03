@@ -20,12 +20,13 @@ public class UserController : BaseCRUDController<UserResponseDto, UserSearchObje
     }
 
     [AllowAnonymous]
-    public override async Task<UserResponseDto> Insert([FromBody] UserInsertRequestDto insert)
+    public override Task<UserResponseDto> Insert([FromBody] UserInsertRequestDto insert)
     {
-        return await _service.Insert(insert);
+        return _service.Insert(insert);
     }
 
     [HttpGet("profile")]
+    [Authorize]
     public async Task<IActionResult> GetProfile()
     {
         var profile = await _userService.GetUserAsync();

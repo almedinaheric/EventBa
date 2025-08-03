@@ -11,7 +11,9 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+builder.Services.AddDbContext<EventBaDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
 builder.Services.AddTransient<ICategoryService, CategoryService>();
 builder.Services.AddTransient<IEventService, EventService>();
 builder.Services.AddTransient<IEventReviewService, EventReviewService>();
@@ -19,7 +21,6 @@ builder.Services.AddTransient<IImageService, ImageService>();
 builder.Services.AddTransient<INotificationService, NotificationService>();
 builder.Services.AddTransient<IPaymentService, PaymentService>();
 builder.Services.AddTransient<IRoleService, RoleService>();
-builder.Services.AddTransient<ITagService, TagService>();
 builder.Services.AddTransient<ITicketPurchaseService, TicketPurchaseService>();
 builder.Services.AddTransient<ITicketService, TicketService>();
 builder.Services.AddTransient<IUserQuestionService, UserQuestionService>();
@@ -56,12 +57,7 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-
-builder.Services.AddDbContext<EventBaDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-
 builder.Services.AddAutoMapper(typeof(IUserService));
-
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 
 builder.Services.AddAuthentication("BasicAuthentication")

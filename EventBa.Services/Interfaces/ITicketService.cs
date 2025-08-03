@@ -7,4 +7,5 @@ namespace EventBa.Services.Interfaces;
 public interface ITicketService : ICRUDService<TicketResponseDto, TicketSearchObject, TicketInsertRequestDto,
     TicketUpdateRequestDto>
 {
+    Task<List<TicketResponseDto>> GetTicketsForEvent(Guid eventId);
 }

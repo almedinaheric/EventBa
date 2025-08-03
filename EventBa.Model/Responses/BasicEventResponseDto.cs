@@ -9,6 +9,7 @@ public class BasicEventResponseDto
     public DateOnly StartDate { get; set; }
     public DateOnly EndDate { get; set; }
     public EventStatus Status { get; set; }
+    public string Location { get; set; } = null!;
     public ImageResponseDto? CoverImage { get; set; }
     
     //how to know paid vs free?

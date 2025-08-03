@@ -4,11 +4,11 @@ part 'meta.g.dart';
 
 @JsonSerializable()
 class Meta {
-  int count;
-  int currentPage;
-  int totalPages;
-  bool hasPrevious;
-  bool hasNext;
+  int? count;
+  int? currentPage;
+  int? totalPages;
+  bool? hasPrevious;
+  bool? hasNext;
 
   Meta(this.count, this.currentPage, this.totalPages, this.hasPrevious,
       this.hasNext);

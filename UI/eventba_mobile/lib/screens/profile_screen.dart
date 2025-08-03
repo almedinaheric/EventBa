@@ -2,10 +2,15 @@ import 'dart:io';
 import 'package:eventba_mobile/widgets/primary_button.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
+import 'package:eventba_mobile/providers/user_provider.dart';
+import 'package:eventba_mobile/models/user/user.dart';
 import 'package:eventba_mobile/screens/followers_screen.dart';
 import 'package:eventba_mobile/screens/following_screen.dart';
 import 'package:eventba_mobile/screens/my_events_screen.dart';
 import 'package:eventba_mobile/screens/support_screen.dart';
+import 'package:eventba_mobile/screens/welcome_screen.dart';
+import 'package:eventba_mobile/utils/authorization.dart';
 import 'profile_details_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -17,9 +22,35 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   File? _image;
+  User? _user;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserProfile();
+  }
+
+  Future<void> _loadUserProfile() async {
+    try {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final user = await userProvider.getProfile();
+      setState(() {
+        _user = user;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print("Failed to load user profile: $e");
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   Future<void> _pickImage() async {
-    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+    final pickedFile = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+    );
 
     if (pickedFile != null) {
       setState(() {
@@ -28,8 +59,82 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  void _logout() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        final size = MediaQuery.of(context).size;
+        return AlertDialog(
+          title: const Text(
+            "Log Out",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          content: const Text("Are you sure you want to log out?"),
+          actions: [
+            Center(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  PrimaryButton(
+                    text: "Cancel",
+                    width: size.width * 0.3,
+                    outlined: false,
+                    small: true,
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                  ),
+                  const SizedBox(width: 12),
+                  PrimaryButton(
+                    text: "Log Out",
+                    width: size.width * 0.3,
+                    outlined: true,
+                    small: true,
+                    onPressed: () {
+                      // Clear authorization credentials
+                      Authorization.email = null;
+                      Authorization.password = null;
+
+                      // Close the dialog first
+                      Navigator.pop(context);
+
+                      // Navigate to welcome screen and clear all previous routes
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const WelcomeScreen(),
+                        ),
+                            (route) => false, // This removes all previous routes
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    final userName =
+        _user?.fullName ??
+            "${_user?.firstName ?? ''} ${_user?.lastName ?? ''}".trim();
+    final followersCount = _user?.followers?.length ?? 0;
+    final followingCount = _user?.following?.length ?? 0;
+    //final eventsCount = _user?.events?.length ?? 0;
+    // TODO: ovjde napraviti api za getanje koliko eventata ima ovaj organizerid
+    final eventsCount = 10;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FA),
       body: SingleChildScrollView(
@@ -43,13 +148,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 radius: 60,
                 backgroundImage: _image != null
                     ? FileImage(_image!)
-                    : const AssetImage('assets/images/profile_placeholder.png') as ImageProvider,
+                    : const AssetImage('assets/images/profile_placeholder.png')
+                as ImageProvider,
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
-              "Dylan Malik",
-              style: TextStyle(
+            Text(
+              userName,
+              style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF363B3E),
@@ -61,27 +167,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _buildStatColumn(context, "20", "Followers", () {
-                  Navigator.push(
-                    context,
-                    PageRouteBuilder(
-                      pageBuilder: (_, __, ___) => const FollowersScreen(),
-                      transitionDuration: Duration.zero,
-                      reverseTransitionDuration: Duration.zero,
-                    ),
-                  );
-                }),
-                _buildStatColumn(context, "10", "Following", () {
-                  Navigator.push(
-                    context,
-                    PageRouteBuilder(
-                      pageBuilder: (_, __, ___) => const FollowingScreen(),
-                      transitionDuration: Duration.zero,
-                      reverseTransitionDuration: Duration.zero,
-                    ),
-                  );
-                }),
-                _buildStatColumn(context, "10", "Events", () {
+                _buildStatColumn(
+                  context,
+                  followersCount.toString(),
+                  "Followers",
+                      () {
+                    Navigator.push(
+                      context,
+                      PageRouteBuilder(
+                        pageBuilder: (_, __, ___) => const FollowersScreen(),
+                        transitionDuration: Duration.zero,
+                        reverseTransitionDuration: Duration.zero,
+                      ),
+                    );
+                  },
+                ),
+                _buildStatColumn(
+                  context,
+                  followingCount.toString(),
+                  "Following",
+                      () {
+                    Navigator.push(
+                      context,
+                      PageRouteBuilder(
+                        pageBuilder: (_, __, ___) => const FollowingScreen(),
+                        transitionDuration: Duration.zero,
+                        reverseTransitionDuration: Duration.zero,
+                      ),
+                    );
+                  },
+                ),
+                _buildStatColumn(context, eventsCount.toString(), "Events", () {
                   Navigator.push(
                     context,
                     PageRouteBuilder(
@@ -97,110 +213,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             // Profile actions
             _buildSectionCard(context, "Account", [
-              _buildListTile(
-                context,
-                "Edit Profile Details",
-                Icons.person,
-                    () {
-                  Navigator.push(
-                    context,
-                    PageRouteBuilder(
-                      pageBuilder: (_, __, ___) => const ProfileDetailsScreen(),
-                      transitionDuration: Duration.zero,
-                      reverseTransitionDuration: Duration.zero,
-                    ),
-                  );
-                },
-              ),
-              _buildListTile(
-                context,
-                "My Events",
-                Icons.event,
-                    () {
-                  Navigator.push(
-                    context,
-                    PageRouteBuilder(
-                      pageBuilder: (_, __, ___) => const MyEventsScreen(),
-                      transitionDuration: Duration.zero,
-                      reverseTransitionDuration: Duration.zero,
-                    ),
-                  );
-                },
-              ),
+              _buildListTile(context, "Edit Profile Details", Icons.person, () {
+                Navigator.push(
+                  context,
+                  PageRouteBuilder(
+                    pageBuilder: (_, __, ___) => const ProfileDetailsScreen(),
+                    transitionDuration: Duration.zero,
+                    reverseTransitionDuration: Duration.zero,
+                  ),
+                );
+              }),
+              _buildListTile(context, "My Events", Icons.event, () {
+                Navigator.push(
+                  context,
+                  PageRouteBuilder(
+                    pageBuilder: (_, __, ___) => const MyEventsScreen(),
+                    transitionDuration: Duration.zero,
+                    reverseTransitionDuration: Duration.zero,
+                  ),
+                );
+              }),
             ]),
             const SizedBox(height: 16),
 
             _buildSectionCard(context, "Help", [
-              _buildListTile(
-                context,
-                "Support",
-                Icons.support_agent,
-                    () {
-                  Navigator.push(
-                    context,
-                    PageRouteBuilder(
-                      pageBuilder: (_, __, ___) => const SupportScreen(),
-                      transitionDuration: Duration.zero,
-                      reverseTransitionDuration: Duration.zero,
-                    ),
-                  );
-                },
-              ),
+              _buildListTile(context, "Support", Icons.support_agent, () {
+                Navigator.push(
+                  context,
+                  PageRouteBuilder(
+                    pageBuilder: (_, __, ___) => const SupportScreen(),
+                    transitionDuration: Duration.zero,
+                    reverseTransitionDuration: Duration.zero,
+                  ),
+                );
+              }),
             ]),
             const SizedBox(height: 16),
 
             // Logout section
             _buildSectionCard(context, "Logout", [
-              _buildListTile(
-                context,
-                "Log Out",
-                Icons.logout,
-                    () {
-                  showDialog(
-                    context: context,
-                    builder: (context) {
-                      final size = MediaQuery.of(context).size;
-                      return AlertDialog(
-                        title: const Text(
-                          "Log Out",
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
-                        ),
-                        content: const Text("Are you sure you want to log out?"),
-                        actions: [
-                          Center(
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                PrimaryButton(
-                                  text: "Cancel",
-                                  width: size.width * 0.3,
-                                  outlined: false,
-                                  small: true,
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                  },
-                                ),
-                                const SizedBox(width: 12),
-                                PrimaryButton(
-                                  text: "Log Out",
-                                  width: size.width * 0.3,
-                                  outlined: true,
-                                  small: true,
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                    // TODO: Implement actual logout logic
-                                    // e.g. clear token, navigate to login screen, etc.
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                },
-              ),
+              _buildListTile(context, "Log Out", Icons.logout, _logout),
             ]),
             const SizedBox(height: 24),
           ],
@@ -209,7 +261,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildStatColumn(BuildContext context, String number, String label, VoidCallback onTap) {
+  Widget _buildStatColumn(
+      BuildContext context,
+      String number,
+      String label,
+      VoidCallback onTap,
+      ) {
     return GestureDetector(
       onTap: onTap,
       child: Column(
@@ -223,19 +280,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Colors.grey,
-            ),
-          ),
+          Text(label, style: const TextStyle(fontSize: 14, color: Colors.grey)),
         ],
       ),
     );
   }
 
-  Widget _buildSectionCard(BuildContext context, String title, List<Widget> children) {
+  Widget _buildSectionCard(
+      BuildContext context,
+      String title,
+      List<Widget> children,
+      ) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 16),
@@ -271,7 +326,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildListTile(BuildContext context, String title, IconData icon, VoidCallback onTap) {
+  Widget _buildListTile(
+      BuildContext context,
+      String title,
+      IconData icon,
+      VoidCallback onTap,
+      ) {
     return ListTile(
       leading: Icon(icon, color: const Color(0xFF4776E6)),
       title: Text(
