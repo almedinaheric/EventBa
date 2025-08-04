@@ -108,6 +108,19 @@ public class UserService :
             throw;
         }
     }
+    
+    public override async Task<UserResponseDto> GetById(Guid id)
+    {
+        var query = _context.Users.AsQueryable();
+        query = AddInclude(query);
+        var entity = await query.FirstOrDefaultAsync(u => u.Id == id);
+
+        if (entity == null)
+            throw new UserException("User not found");
+
+        return _mapper.Map<UserResponseDto>(entity);
+    }
+
 
     public static string GenerateSalt()
     {

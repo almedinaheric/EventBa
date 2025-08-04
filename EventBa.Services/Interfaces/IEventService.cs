@@ -8,11 +8,15 @@ public interface IEventService : ICRUDService<EventResponseDto, EventSearchObjec
     EventUpdateRequestDto>
 {
     Task<List<EventResponseDto>> GetMyEvents();
+    
+    Task<List<EventResponseDto>> GetEventsByOrganizer(Guid userId);
+
     Task<List<EventResponseDto>> GetRecommendedEvents();
     Task<List<EventResponseDto>> GetPublicEvents();
     Task<List<EventResponseDto>> GetPrivateEvents();
     Task<List<EventResponseDto>> GetEventsByCategoryId(Guid categoryId);
-
-
     Task<EventStatisticsResponseDto> GetEventStatistics(Guid eventId);
+    Task<List<EventResponseDto>> GetUserFavoriteEventsAsync();
+    Task<bool> ToggleFavoriteEventAsync(Guid eventId);
+    Task<EventResponseDto> GetById(Guid id);
 }

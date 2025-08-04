@@ -1,3 +1,4 @@
+import 'package:eventba_mobile/providers/user_provider.dart';
 import 'package:eventba_mobile/widgets/primary_button.dart';
 import 'package:eventba_mobile/screens/organizer_profile_screen.dart';
 import 'package:eventba_mobile/widgets/user_card.dart';
@@ -23,6 +24,39 @@ class OrganizerSection extends StatefulWidget {
 
 class _OrganizerSectionState extends State<OrganizerSection> {
   bool isFollowing = false;
+  final UserProvider _userProvider = UserProvider();
+
+  Future<void> _handleFollowUnfollow() async {
+    try {
+      if (isFollowing) {
+        await _userProvider.unfollowUser(widget.organizerId.toString());
+      } else {
+        await _userProvider.followUser(widget.organizerId.toString());
+      }
+
+      setState(() {
+        isFollowing = !isFollowing;
+      });
+
+      // Navigate to organizer profile screen after follow/unfollow
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => OrganizerProfileScreen(
+            userId: widget.organizerId,
+            name: widget.name,
+            avatarUrl: widget.imageUrl,
+            bio: widget.bio,
+          ),
+        ),
+      );
+    } catch (e) {
+      print("Error: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to ${isFollowing ? 'unfollow' : 'follow'} user.")),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,21 +80,14 @@ class _OrganizerSectionState extends State<OrganizerSection> {
               userId: widget.organizerId,
               bio: widget.bio,
             ),
-
             const Spacer(),
-
             SizedBox(
               width: 100,
               child: PrimaryButton(
                 text: isFollowing ? "Unfollow" : "Follow",
                 outlined: isFollowing,
                 small: true,
-                onPressed: () {
-                  setState(() {
-                    isFollowing = !isFollowing;
-                  });
-                  // Add API call for follow/unfollow here
-                },
+                onPressed: _handleFollowUnfollow,
               ),
             ),
           ],

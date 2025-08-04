@@ -65,6 +65,8 @@ builder.Services.AddAuthentication("BasicAuthentication")
 
 builder.Services.AddAuthorization();
 
+//builder.WebHost.UseUrls("http://0.0.0.0:5187");
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

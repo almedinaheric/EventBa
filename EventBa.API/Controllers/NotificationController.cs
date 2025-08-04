@@ -26,6 +26,15 @@ public class NotificationController : BaseCRUDController<NotificationResponseDto
         var notifications = await _notificationService.GetMyNotifications();
         return Ok(notifications);
     }
+    
+    [HttpGet("unread-count")]
+    [Authorize]
+    public async Task<IActionResult> GetUnreadNotificationCount()
+    {
+        var count = await _notificationService.GetUnreadNotificationCount();
+        return Ok(count);
+    }
+
 
     [HttpPost("{id}/mark-as-read")]
     [Authorize]

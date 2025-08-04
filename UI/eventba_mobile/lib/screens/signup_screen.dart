@@ -128,7 +128,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
   void _showError(String message) {
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    ).showSnackBar(
+        SnackBar(
+            behavior: SnackBarBehavior.floating,
+            content: Text(message)
+        ));
   }
 
   void _togglePasswordVisibility() {

@@ -27,7 +27,7 @@ public partial class User
     public virtual ICollection<UserQuestion> UserQuestionReceivers { get; set; } = new List<UserQuestion>();
     public virtual ICollection<UserQuestion> UserQuestionUsers { get; set; } = new List<UserQuestion>();
     public virtual ICollection<Category> Categories { get; set; } = new List<Category>();
-    public virtual ICollection<Event> EventsNavigation { get; set; } = new List<Event>();
+    public virtual ICollection<Event> FavoriteEvents { get; set; } = new List<Event>();
     public virtual ICollection<User> Followers { get; set; } = new List<User>();
     public virtual ICollection<User> Followings { get; set; } = new List<User>();
 }

@@ -11,38 +11,6 @@ class UserProvider extends BaseProvider<User> {
     return User.fromJson(data);
   }
 
-  Future<User> register({
-    required String firstName,
-    required String lastName,
-    required String email,
-    required String password,
-    String? phoneNumber,
-    String? bio,
-  }) async {
-    var url = "${baseUrl}User/register";
-    var uri = Uri.parse(url);
-    var headers = createHeaders();
-
-    var requestBody = {
-      "firstName": firstName,
-      "lastName": lastName,
-      "email": email,
-      "password": password,
-      if (phoneNumber != null) "phoneNumber": phoneNumber,
-      if (bio != null) "bio": bio,
-    };
-
-    var jsonRequest = jsonEncode(requestBody);
-    var response = await http.post(uri, headers: headers, body: jsonRequest);
-
-    if (isValidResponse(response)) {
-      var data = jsonDecode(response.body);
-      return fromJson(data);
-    } else {
-      throw Exception("Registration failed");
-    }
-  }
-
   Future<bool> forgotPassword(String email) async {
     var url = "${baseUrl}User/forgot-password";
     var uri = Uri.parse(url);
@@ -86,25 +54,6 @@ class UserProvider extends BaseProvider<User> {
       }
     } catch (e) {
       print("Exception occurred during getProfile(): $e");
-      rethrow;
-    }
-  }
-
-  Future<User> getById(String userId) async {
-    var url = "${baseUrl}User/$userId";
-    var uri = Uri.parse(url);
-    var headers = createHeaders();
-
-    try {
-      var response = await http.get(uri, headers: headers);
-      if (isValidResponse(response)) {
-        var data = jsonDecode(response.body);
-        return fromJson(data);
-      } else {
-        throw Exception("Failed to load user by ID");
-      }
-    } catch (e) {
-      print("Error fetching user by ID: $e");
       rethrow;
     }
   }

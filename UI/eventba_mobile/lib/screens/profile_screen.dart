@@ -1,17 +1,18 @@
 import 'dart:io';
-import 'package:eventba_mobile/widgets/primary_button.dart';
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:eventba_mobile/providers/user_provider.dart';
 import 'package:eventba_mobile/models/user/user.dart';
+import 'package:eventba_mobile/utils/authorization.dart';
+import 'package:eventba_mobile/screens/profile_details_screen.dart';
+import 'package:eventba_mobile/screens/my_events_screen.dart';
 import 'package:eventba_mobile/screens/followers_screen.dart';
 import 'package:eventba_mobile/screens/following_screen.dart';
-import 'package:eventba_mobile/screens/my_events_screen.dart';
 import 'package:eventba_mobile/screens/support_screen.dart';
 import 'package:eventba_mobile/screens/welcome_screen.dart';
-import 'package:eventba_mobile/utils/authorization.dart';
-import 'profile_details_screen.dart';
+import 'package:eventba_mobile/widgets/primary_button.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -67,10 +68,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return AlertDialog(
           title: const Text(
             "Log Out",
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
           ),
           content: const Text("Are you sure you want to log out?"),
           actions: [
@@ -94,20 +92,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     outlined: true,
                     small: true,
                     onPressed: () {
-                      // Clear authorization credentials
                       Authorization.email = null;
                       Authorization.password = null;
-
-                      // Close the dialog first
                       Navigator.pop(context);
-
-                      // Navigate to welcome screen and clear all previous routes
                       Navigator.pushAndRemoveUntil(
                         context,
                         MaterialPageRoute(
                           builder: (context) => const WelcomeScreen(),
                         ),
-                            (route) => false, // This removes all previous routes
+                        (route) => false,
                       );
                     },
                   ),
@@ -128,7 +121,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     final userName =
         _user?.fullName ??
-            "${_user?.firstName ?? ''} ${_user?.lastName ?? ''}".trim();
+        "${_user?.firstName ?? ''} ${_user?.lastName ?? ''}".trim();
     final followersCount = _user?.followers?.length ?? 0;
     final followingCount = _user?.following?.length ?? 0;
     //final eventsCount = _user?.events?.length ?? 0;
@@ -148,8 +141,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 radius: 60,
                 backgroundImage: _image != null
                     ? FileImage(_image!)
-                    : const AssetImage('assets/images/profile_placeholder.png')
-                as ImageProvider,
+                    : (_user?.profileImage != null
+                          ? MemoryImage(base64Decode(_user!.profileImage!.data))
+                          : const AssetImage(
+                                  'assets/images/profile_placeholder.png',
+                                )
+                                as ImageProvider),
               ),
             ),
             const SizedBox(height: 16),
@@ -171,7 +168,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   context,
                   followersCount.toString(),
                   "Followers",
-                      () {
+                  () {
                     Navigator.push(
                       context,
                       PageRouteBuilder(
@@ -186,7 +183,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   context,
                   followingCount.toString(),
                   "Following",
-                      () {
+                  () {
                     Navigator.push(
                       context,
                       PageRouteBuilder(
@@ -262,11 +259,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildStatColumn(
-      BuildContext context,
-      String number,
-      String label,
-      VoidCallback onTap,
-      ) {
+    BuildContext context,
+    String number,
+    String label,
+    VoidCallback onTap,
+  ) {
     return GestureDetector(
       onTap: onTap,
       child: Column(
@@ -287,10 +284,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildSectionCard(
-      BuildContext context,
-      String title,
-      List<Widget> children,
-      ) {
+    BuildContext context,
+    String title,
+    List<Widget> children,
+  ) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 16),
@@ -327,11 +324,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildListTile(
-      BuildContext context,
-      String title,
-      IconData icon,
-      VoidCallback onTap,
-      ) {
+    BuildContext context,
+    String title,
+    IconData icon,
+    VoidCallback onTap,
+  ) {
     return ListTile(
       leading: Icon(icon, color: const Color(0xFF4776E6)),
       title: Text(

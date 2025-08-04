@@ -1,4 +1,3 @@
-import 'package:eventba_mobile/widgets/master_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:eventba_mobile/widgets/event_card.dart';
 import 'package:provider/provider.dart';
@@ -98,11 +97,15 @@ class _FavoriteEventsScreenState extends State<FavoriteEventsScreen> {
     }).toList();
   }
 
-  void _removeFromFavorites(String eventId) {
-    // TODO: Implement API call to remove from favorites
-    print('Removing event $eventId from favorites');
-    setState(() {
-      _favoriteEvents.removeWhere((event) => event.id == eventId);
-    });
+  void _removeFromFavorites(String eventId) async {
+    try {
+      final eventProvider = Provider.of<EventProvider>(context, listen: false);
+      await eventProvider.toggleFavoriteEvent(eventId);
+      setState(() {
+        _favoriteEvents.removeWhere((event) => event.id == eventId);
+      });
+    } catch (e) {
+      print("Failed to remove from favorites: $e");
+    }
   }
 }

@@ -14,6 +14,8 @@ abstract class BaseProvider<T> with ChangeNotifier {
 
   BaseProvider(String endpoint) {
     _endpoint = endpoint;
+   //_baseUrl = const String.fromEnvironment("baseUrl", defaultValue: "http://192.168.0.34:5187/");
+    //_baseUrl = const String.fromEnvironment("baseUrl", defaultValue: "http://localhost:5187/");
     _baseUrl = const String.fromEnvironment("baseUrl", defaultValue: "http://10.0.2.2:5187/");
   }
 
@@ -46,45 +48,31 @@ abstract class BaseProvider<T> with ChangeNotifier {
     }
   }
 
-  /*Future<T> insert(dynamic request, {bool authorized = true}) async {
-    var url = "$_baseUrl$_endpoint";
+  Future<T> getById(String id, {bool authorized = true}) async {
+    var url = "$_baseUrl$_endpoint/$id";
     var uri = Uri.parse(url);
     var headers = authorized ? createHeaders() : {"Content-Type": "application/json"};
-
-    var jsonRequest = jsonEncode(request);
-    var response = await http.post(uri, headers: headers, body: jsonRequest);
-
+    var response = await http.get(uri, headers: headers);
     if (isValidResponse(response)) {
       var data = jsonDecode(response.body);
       return fromJson(data);
     } else {
       throw Exception("Unknown error");
     }
-  }*/
+  }
+
   Future<T> insert(dynamic request, {bool authorized = true}) async {
     var url = "$_baseUrl$_endpoint";
     var uri = Uri.parse(url);
     var headers = authorized ? createHeaders() : {"Content-Type": "application/json"};
 
     var jsonRequest = jsonEncode(request);
-
-    // 🚀 Log the request
-    print("📤 Sending POST request to: $uri");
-    print("📨 Headers: $headers");
-    print("📦 Request Body: $jsonRequest");
-
     var response = await http.post(uri, headers: headers, body: jsonRequest);
-
-    // 🧾 Log the raw response
-    print("📥 Response status: ${response.statusCode}");
-    print("📝 Response body: ${response.body}");
 
     if (isValidResponse(response)) {
       var data = jsonDecode(response.body);
-      print("✅ Successfully inserted. Parsed data: $data");
       return fromJson(data);
     } else {
-      print("❌ Insert failed with status: ${response.statusCode}");
       throw Exception("Unknown error");
     }
   }

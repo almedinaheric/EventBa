@@ -9,6 +9,9 @@ public interface IUserService : ICRUDService<UserResponseDto, UserSearchObject, 
 {
     public Task<UserResponseDto> Login(string email, string password);
     public Task<UserResponseDto> GetUserAsync();
+    
+    public Task<UserResponseDto> GetById(Guid id);
+
     public Task<User> GetUserEntityAsync();
     public Task<UserResponseDto> FollowUser(Guid userId);
     public Task<UserResponseDto> UnfollowUser(Guid userId);

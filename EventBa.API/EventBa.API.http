@@ -1,3 +1,4 @@
+//@EventBa.API_HostAddress = http://192.168.0.34:5187
 @EventBa.API_HostAddress = http://localhost:5187
 
 GET {{EventBa.API_HostAddress}}/weatherforecast/

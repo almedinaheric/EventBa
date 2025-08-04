@@ -24,6 +24,14 @@ public class UserController : BaseCRUDController<UserResponseDto, UserSearchObje
     {
         return _service.Insert(insert);
     }
+    
+    [HttpGet("{id}")]
+    [Authorize]
+    public override async Task<UserResponseDto> GetById([FromRoute] Guid id)
+    {
+        var user = await _userService.GetById(id);
+        return user;
+    }
 
     [HttpGet("profile")]
     [Authorize]

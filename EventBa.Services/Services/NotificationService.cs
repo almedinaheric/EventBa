@@ -45,6 +45,14 @@ public class NotificationService : BaseCRUDService<NotificationResponseDto, Noti
 
         return _mapper.Map<List<NotificationResponseDto>>(notifications);
     }
+    
+    public async Task<int> GetUnreadNotificationCount()
+    {
+        var currentUser = await _userService.GetUserEntityAsync();
+        return await _context.Notifications
+            .Where(n => n.UserId == currentUser.Id && n.Status != NotificationStatus.Read)
+            .CountAsync();
+    }
 
     public async Task MarkAsRead(Guid notificationId)
     {

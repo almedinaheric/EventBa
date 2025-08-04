@@ -613,7 +613,7 @@ public partial class EventBaDbContext : DbContext
                         j.IndexerProperty<Guid>("CategoryId").HasColumnName("category_id");
                     });
 
-            entity.HasMany(d => d.EventsNavigation).WithMany(p => p.Users)
+            entity.HasMany(d => d.FavoriteEvents).WithMany(p => p.Users)
                 .UsingEntity<Dictionary<string, object>>(
                     "FavoriteEvent",
                     r => r.HasOne<Event>().WithMany()

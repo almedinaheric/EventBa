@@ -1,13 +1,16 @@
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:eventba_mobile/providers/user_provider.dart';
 import 'package:eventba_mobile/models/user/user.dart';
+import 'package:eventba_mobile/models/category/category_model.dart';
+import 'package:eventba_mobile/providers/category_provider.dart';
+import 'package:eventba_mobile/utils/image_helpers.dart';
 import 'package:eventba_mobile/widgets/custom_text_field.dart';
 import 'package:eventba_mobile/widgets/master_screen.dart';
 import 'package:eventba_mobile/widgets/primary_button.dart';
 import 'package:eventba_mobile/widgets/category_selection_widget.dart';
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../providers/category_provider.dart';
-import '../providers/user_provider.dart';
-import '../models/category/category_model.dart';
 
 class ProfileDetailsScreen extends StatefulWidget {
   const ProfileDetailsScreen({super.key});
@@ -34,6 +37,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
   bool obscureConfirm = true;
 
   User? _user;
+  File? _profileImage;
 
   // Validation flags
   bool _isFirstNameValid = true;
@@ -69,8 +73,10 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
 
   Future<void> _loadCategories() async {
     try {
-      final categories =
-          await Provider.of<CategoryProvider>(context, listen: false).get();
+      final categories = await Provider.of<CategoryProvider>(
+        context,
+        listen: false,
+      ).get();
       setState(() {
         _categories = categories.result;
         _isLoadingCategories = false;
@@ -84,16 +90,19 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
 
   Future<void> _loadUserProfile() async {
     try {
-      final user =
-          await Provider.of<UserProvider>(context, listen: false).getProfile();
+      final user = await Provider.of<UserProvider>(
+        context,
+        listen: false,
+      ).getProfile();
       _user = user;
       setState(() {
         firstNameController.text = user.firstName;
         lastNameController.text = user.lastName;
         emailController.text = user.email;
         phoneController.text = user.phoneNumber ?? '';
-        _selectedCategoryIds =
-            user.interests!.map((interest) => interest.id).toList();
+        _selectedCategoryIds = user.interests!
+            .map((interest) => interest.id)
+            .toList();
       });
     } catch (e) {
       // Handle error silently for now
@@ -119,9 +128,10 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
               const Text(
                 "General Information",
                 style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w400,
-                    color: Colors.grey),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  color: Colors.grey,
+                ),
               ),
               const SizedBox(height: 12),
               CustomTextField(
@@ -134,11 +144,14 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
                 errorMessage: _emailErrorMessage,
                 onChanged: (text) {
                   setState(() {
-                    _isEmailValid = text.trim().isNotEmpty &&
-                        RegExp(r'^[\w\-.+]+@([\w-]+\.)+[\w-]{2,4}$')
-                            .hasMatch(text);
-                    _emailErrorMessage =
-                        _isEmailValid ? null : 'Enter a valid email';
+                    _isEmailValid =
+                        text.trim().isNotEmpty &&
+                        RegExp(
+                          r'^[\w\-.+]+@([\w-]+\.)+[\w-]{2,4}$',
+                        ).hasMatch(text);
+                    _emailErrorMessage = _isEmailValid
+                        ? null
+                        : 'Enter a valid email';
                   });
                 },
               ),
@@ -153,8 +166,9 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
                 onChanged: (text) {
                   setState(() {
                     _isFirstNameValid = text.trim().isNotEmpty;
-                    _firstNameErrorMessage =
-                        _isFirstNameValid ? null : 'First name is required';
+                    _firstNameErrorMessage = _isFirstNameValid
+                        ? null
+                        : 'First name is required';
                   });
                 },
               ),
@@ -169,8 +183,9 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
                 onChanged: (text) {
                   setState(() {
                     _isLastNameValid = text.trim().isNotEmpty;
-                    _lastNameErrorMessage =
-                        _isLastNameValid ? null : 'Last name is required';
+                    _lastNameErrorMessage = _isLastNameValid
+                        ? null
+                        : 'Last name is required';
                   });
                 },
               ),
@@ -185,19 +200,20 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
                 errorMessage: _phoneErrorMessage,
                 onChanged: (text) {
                   setState(() {
-                    _isPhoneValid = text.trim().isNotEmpty &&
-                        RegExp(r'^[+]*[(]{0,1}[0-9]{1,4}[)]{0,1}[-\s\./0-9]*$')
-                            .hasMatch(text);
-                    _phoneErrorMessage =
-                        _isPhoneValid ? null : 'Enter a valid phone number';
+                    _isPhoneValid =
+                        text.trim().isNotEmpty &&
+                        RegExp(
+                          r'^[+]*[(]{0,1}[0-9]{1,4}[)]{0,1}[-\s\./0-9]*$',
+                        ).hasMatch(text);
+                    _phoneErrorMessage = _isPhoneValid
+                        ? null
+                        : 'Enter a valid phone number';
                   });
                 },
               ),
               const SizedBox(height: 20),
               if (_isLoadingCategories)
-                const Center(
-                  child: CircularProgressIndicator(),
-                )
+                const Center(child: CircularProgressIndicator())
               else
                 CategorySelectionWidget(
                   categories: _categories,
@@ -210,19 +226,17 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
                   subtitle: "Select categories you're interested in",
                 ),
               const SizedBox(height: 20),
-              PrimaryButton(
-                text: "Save Changes",
-                onPressed: _saveProfile,
-              ),
+              PrimaryButton(text: "Save Changes", onPressed: _saveProfile),
               const SizedBox(height: 30),
               const Divider(),
               const SizedBox(height: 20),
               const Text(
                 "Change Password",
                 style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w400,
-                    color: Colors.grey),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  color: Colors.grey,
+                ),
               ),
               const SizedBox(height: 12),
               CustomTextField(
@@ -261,9 +275,9 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
                 },
                 onChanged: (text) {
                   setState(() {
-                    _isNewPasswordValid =
-                        RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$')
-                            .hasMatch(text);
+                    _isNewPasswordValid = RegExp(
+                      r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$',
+                    ).hasMatch(text);
                     _newPasswordErrorMessage = _isNewPasswordValid
                         ? null
                         : 'Password must be at least 8 characters long and include an uppercase letter, a lowercase letter, and a number.';
@@ -285,9 +299,11 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
                 },
                 onChanged: (text) {
                   setState(() {
-                    _isConfirmPasswordValid = text.trim().isNotEmpty &&
-                        RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$')
-                            .hasMatch(text);
+                    _isConfirmPasswordValid =
+                        text.trim().isNotEmpty &&
+                        RegExp(
+                          r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$',
+                        ).hasMatch(text);
                     _newPasswordErrorMessage = _isConfirmPasswordValid
                         ? null
                         : 'Password must be at least 8 characters long and include an uppercase letter, a lowercase letter, and a number.';
@@ -309,20 +325,25 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
   void _saveProfile() async {
     setState(() {
       _isFirstNameValid = firstNameController.text.trim().isNotEmpty;
-      _firstNameErrorMessage =
-          _isFirstNameValid ? null : 'First name is required';
+      _firstNameErrorMessage = _isFirstNameValid
+          ? null
+          : 'First name is required';
 
       _isLastNameValid = lastNameController.text.trim().isNotEmpty;
       _lastNameErrorMessage = _isLastNameValid ? null : 'Last name is required';
 
-      _isEmailValid = emailController.text.trim().isNotEmpty &&
-          RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-              .hasMatch(emailController.text);
+      _isEmailValid =
+          emailController.text.trim().isNotEmpty &&
+          RegExp(
+            r'^[\w\-.+]+@([\w-]+\.)+[\w-]{2,4}$',
+          ).hasMatch(emailController.text);
       _emailErrorMessage = _isEmailValid ? null : 'Enter a valid email';
 
-      _isPhoneValid = phoneController.text.trim().isNotEmpty &&
-          RegExp(r'^[+]*[(]{0,1}[0-9]{1,4}[)]{0,1}[-\s\./0-9]*$')
-              .hasMatch(phoneController.text);
+      _isPhoneValid =
+          phoneController.text.trim().isNotEmpty &&
+          RegExp(
+            r'^[+]*[(]{0,1}[0-9]{1,4}[)]{0,1}[-\s\./0-9]*$',
+          ).hasMatch(phoneController.text);
       _phoneErrorMessage = _isPhoneValid ? null : 'Enter a valid phone number';
     });
 
@@ -343,29 +364,40 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
             .update(_user!.id, request);
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile saved successfully!')),
+          const SnackBar(
+            behavior: SnackBarBehavior.floating,
+            content: Text('Profile saved successfully!'),
+          ),
         );
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('Failed to save profile. Please try again.')),
+            behavior: SnackBarBehavior.floating,
+            content: Text('Failed to save profile. Please try again.'),
+          ),
         );
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fix errors before saving')),
+        const SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text('Please fix errors before saving'),
+        ),
       );
     }
   }
 
   void _changePassword() {
     setState(() {
-      _isCurrentPasswordValid =
-          currentPasswordController.text.trim().isNotEmpty;
-      _currentPasswordErrorMessage =
-          _isCurrentPasswordValid ? null : 'Current password is required';
+      _isCurrentPasswordValid = currentPasswordController.text
+          .trim()
+          .isNotEmpty;
+      _currentPasswordErrorMessage = _isCurrentPasswordValid
+          ? null
+          : 'Current password is required';
 
-      _isNewPasswordValid = newPasswordController.text.trim().isNotEmpty &&
+      _isNewPasswordValid =
+          newPasswordController.text.trim().isNotEmpty &&
           newPasswordController.text.length >= 6;
       _newPasswordErrorMessage = _isNewPasswordValid
           ? null
@@ -373,21 +405,27 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
 
       _isConfirmPasswordValid =
           confirmPasswordController.text.trim().isNotEmpty &&
-              confirmPasswordController.text == newPasswordController.text;
-      _confirmPasswordErrorMessage =
-          _isConfirmPasswordValid ? null : 'Passwords do not match';
+          confirmPasswordController.text == newPasswordController.text;
+      _confirmPasswordErrorMessage = _isConfirmPasswordValid
+          ? null
+          : 'Passwords do not match';
     });
 
     if (_isCurrentPasswordValid &&
         _isNewPasswordValid &&
         _isConfirmPasswordValid) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Password changed successfully!')),
+        const SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text('Password changed successfully!'),
+        ),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('Please fix errors before changing password')),
+          behavior: SnackBarBehavior.floating,
+          content: Text('Please fix errors before changing password'),
+        ),
       );
     }
   }

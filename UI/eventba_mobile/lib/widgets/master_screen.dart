@@ -4,7 +4,9 @@ import 'package:eventba_mobile/screens/home_screen.dart';
 import 'package:eventba_mobile/screens/notifications_screen.dart';
 import 'package:eventba_mobile/screens/profile_screen.dart';
 import 'package:eventba_mobile/screens/tickets_screen.dart';
+import 'package:eventba_mobile/providers/notification_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 enum AppBarType {
   titleLeftIconRight,
@@ -42,11 +44,33 @@ class MasterScreenWidget extends StatefulWidget {
 
 class _MasterScreenWidgetState extends State<MasterScreenWidget> {
   late int _selectedIndex;
+  int _unreadNotificationCount = 0;
 
   @override
   void initState() {
     super.initState();
     _selectedIndex = widget.initialIndex;
+    _fetchUnreadNotifications();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _fetchUnreadNotifications();
+  }
+
+  Future<void> _fetchUnreadNotifications() async {
+    try {
+      final provider = Provider.of<NotificationProvider>(context, listen: false);
+      final count = await provider.getUnreadCount();
+      if (mounted) {
+        setState(() {
+          _unreadNotificationCount = count;
+        });
+      }
+    } catch (e) {
+      print("Failed to fetch unread notification count: $e");
+    }
   }
 
   void _onBottomNavTap(int index) {
@@ -135,19 +159,39 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
             ],
           ),
           actions: [
-            IconButton(
-              iconSize: 32,
-              icon: const Icon(Icons.notifications_outlined),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  PageRouteBuilder(
-                    pageBuilder: (_, __, ___) => const NotificationsScreen(),
-                    transitionDuration: Duration.zero,
-                    reverseTransitionDuration: Duration.zero,
+            Stack(
+              children: [
+                IconButton(
+                  iconSize: 32,
+                  icon: const Icon(Icons.notifications_outlined),
+                  onPressed: () async {
+                    final result = await Navigator.push(
+                      context,
+                      PageRouteBuilder(
+                        pageBuilder: (_, __, ___) => const NotificationsScreen(),
+                        transitionDuration: Duration.zero,
+                        reverseTransitionDuration: Duration.zero,
+                      ),
+                    );
+                    if (result == true) {
+                      _fetchUnreadNotifications();
+                    }
+                  },
+                ),
+                if (_unreadNotificationCount > 0)
+                  Positioned(
+                    right: 10,
+                    top: 10,
+                    child: Container(
+                      width: 10,
+                      height: 10,
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
                   ),
-                );
-              },
+              ],
             ),
             const SizedBox(width: 16),
           ],
@@ -169,17 +213,18 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
               ),
           ],
         );
+
       case AppBarType.iconsSideTitleCenter:
         return AppBar(
           leading: IconButton(
             icon: Icon(widget.leftIcon ?? Icons.arrow_back),
-            onPressed:
-            widget.onLeftButtonPressed ?? () => Navigator.pop(context),
+            onPressed: widget.onLeftButtonPressed ?? () => Navigator.pop(context, true),
           ),
           centerTitle: true,
-          title: Text(widget.title ?? '',
-              style:
-              const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+          title: Text(
+            widget.title ?? '',
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
           actions: [
             if (widget.rightIcon != null)
               IconButton(
@@ -220,7 +265,7 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
             children: [
               _buildNavItem(Icons.home_outlined, 0),
               _buildNavItem(Icons.favorite_border, 1),
-              const SizedBox(width: 0), // for FAB spacing
+              const SizedBox(width: 0),
               _buildNavItem(Icons.confirmation_num_outlined, 3),
               _buildNavItem(Icons.person_outlined, 4),
             ],

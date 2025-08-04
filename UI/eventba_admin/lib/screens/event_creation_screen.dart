@@ -5,7 +5,6 @@ import 'package:eventba_admin/widgets/master_screen.dart';
 import 'package:eventba_admin/widgets/primary_button.dart';
 import 'package:eventba_admin/widgets/custom_text_field.dart';
 
-import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 
@@ -519,7 +518,9 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to pick image: ${e.toString()}')),
+        SnackBar(
+            behavior: SnackBarBehavior.floating,
+            content: Text('Failed to pick image: ${e.toString()}')),
       );
     }
   }

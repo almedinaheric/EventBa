@@ -235,14 +235,12 @@ class NotificationDetailsScreen extends StatelessWidget {
       try {
         await Provider.of<NotificationProvider>(context, listen: false)
             .delete(notification!.id);
-
-
-        // Go back to the notifications list and show a success message
         Navigator.of(context).pop(true);
       } catch (e) {
         print("Error deleting notification: $e");
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
+            behavior: SnackBarBehavior.floating,
             content: Text('Failed to delete notification'),
             backgroundColor: Colors.red,
           ),

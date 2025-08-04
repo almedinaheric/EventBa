@@ -46,20 +46,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Future<void> _markAsRead(notification_model.Notification notification) async {
-    if (notification.isRead) return; // Already read
-
+    if (notification.isRead) return;
     try {
       final notificationProvider = Provider.of<NotificationProvider>(
         context,
         listen: false,
       );
       await notificationProvider.markAsRead(notification.id);
-
-      // Update local state
       setState(() {
         final index = _notifications.indexWhere((n) => n.id == notification.id);
         if (index != -1) {
-          // Create a new notification with updated status
           _notifications[index] = notification_model.Notification(
             id: notification.id,
             createdAt: notification.createdAt,
@@ -81,7 +77,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Future<void> _deleteNotification(notification_model.Notification notification) async {
-    // Show confirmation dialog
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -107,13 +102,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           context,
           listen: false,
         ).delete(notification.id);
-
-        // Remove from local state
         setState(() {
           _notifications.removeWhere((n) => n.id == notification.id);
         });
-
-        _showSuccessSnackBar("Notification deleted successfully");
       } catch (e) {
         print("Failed to delete notification: $e");
         _showErrorSnackBar("Failed to delete notification");
@@ -122,9 +113,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Future<void> _navigateToNotificationDetails(notification_model.Notification notification) async {
-    // Mark as read when opening details
     _markAsRead(notification);
-
     final bool? didChange = await Navigator.push<bool>(
       context,
       PageRouteBuilder(
@@ -149,16 +138,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  void _showSuccessSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        content: Text(message),
-        backgroundColor: Colors.green,
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final unreadCount = _notifications.where((n) => !n.isRead).length;
@@ -168,7 +147,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       title: unreadCount > 0 ? "Notifications ($unreadCount)" : "Notifications",
       leftIcon: Icons.arrow_back,
       onLeftButtonPressed: () {
-        Navigator.pop(context);
+        Navigator.pop(context, true);
       },
       rightIcon: _notifications.isNotEmpty ? Icons.mark_email_read : null,
       onRightButtonPressed: _notifications.isNotEmpty ? _markAllAsRead : null,
@@ -235,8 +214,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         listen: false,
       );
       await notificationProvider.markAllAsRead();
-
-      // Update local state
       setState(() {
         _notifications = _notifications.map((notification) {
           return notification_model.Notification(
@@ -253,8 +230,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           );
         }).toList();
       });
-
-      _showSuccessSnackBar("All notifications marked as read");
     } catch (e) {
       print("Failed to mark all as read: $e");
       _showErrorSnackBar("Failed to mark all notifications as read");
@@ -264,18 +239,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   List<Widget> _buildNotificationsCardsList(
       List<notification_model.Notification> notifications,
       ) {
-    // Sort notifications: unread first, then by date (newest first)
     final sortedNotifications = List<notification_model.Notification>.from(notifications);
     sortedNotifications.sort((a, b) {
-      // First sort by read status (unread first)
       if (a.isRead != b.isRead) {
         return a.isRead ? 1 : -1;
       }
-      // Then by importance (important first)
       if (a.isImportant != b.isImportant) {
         return a.isImportant ? -1 : 1;
       }
-      // Finally by date (newest first)
       return b.createdAt.compareTo(a.createdAt);
     });
 

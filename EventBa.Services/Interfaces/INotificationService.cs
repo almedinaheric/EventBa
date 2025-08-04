@@ -8,6 +8,7 @@ public interface INotificationService : ICRUDService<NotificationResponseDto, No
     NotificationUpdateRequestDto>
 {
     Task<List<NotificationResponseDto>> GetMyNotifications();
+    Task<int> GetUnreadNotificationCount();
     Task MarkAsRead(Guid notificationId);
     Task MarkAllAsRead();
 }

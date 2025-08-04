@@ -30,6 +30,20 @@ class NotificationProvider extends BaseProvider<Notification> {
     }
   }
 
+  Future<int> getUnreadCount() async {
+    var url = "${baseUrl}Notification/unread-count";
+
+    var uri = Uri.parse(url);
+    var headers = createHeaders();
+    var response = await http.get(uri, headers: headers);
+
+    if (isValidResponse(response)) {
+      return int.parse(response.body.toString());
+    } else {
+      throw Exception("Failed to fetch unread notification count");
+    }
+  }
+
   Future<void> markAsRead(String notificationId) async {
     var url = "${baseUrl}Notification/$notificationId/mark-as-read";
 

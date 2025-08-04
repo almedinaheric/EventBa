@@ -1,12 +1,12 @@
 import 'package:eventba_mobile/providers/event_image_provider.dart';
+import 'package:eventba_mobile/providers/event_review_provider.dart';
 import 'package:eventba_mobile/providers/notification_provider.dart';
+import 'package:eventba_mobile/providers/ticket_provider.dart';
 import 'package:eventba_mobile/providers/user_provider.dart';
 import 'package:eventba_mobile/providers/event_provider.dart';
 import 'package:eventba_mobile/providers/category_provider.dart';
-import 'package:eventba_mobile/screens/event_questions_screen.dart';
-import 'package:eventba_mobile/screens/home_screen.dart';
+import 'package:eventba_mobile/providers/user_question_provider.dart';
 import 'package:eventba_mobile/screens/splash_screen.dart';
-import 'package:eventba_mobile/screens/ticket_scanner_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -19,6 +19,9 @@ void main() {
         ChangeNotifierProvider(create: (_) => CategoryProvider()),
         ChangeNotifierProvider(create: (_) => NotificationProvider()),
         ChangeNotifierProvider(create: (_) => EventImageProvider()),
+        ChangeNotifierProvider(create: (_) => TicketProvider()),
+        ChangeNotifierProvider(create: (_) => EventReviewProvider()),
+        ChangeNotifierProvider(create: (_) => UserQuestionProvider()),
       ],
       child: const MyApp(),
     ),

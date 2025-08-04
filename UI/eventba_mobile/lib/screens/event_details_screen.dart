@@ -48,8 +48,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
 
       // Load event details
-      final events = await eventProvider.get();
-      final event = events.result.where((e) => e.id == widget.eventId).firstOrNull;
+      final event = await eventProvider.getById(widget.eventId);
 
       if (event != null) {
         setState(() {
@@ -178,6 +177,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                           Navigator.pop(context);
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
+                              behavior: SnackBarBehavior.floating,
                               content: Text("Question sent successfully."),
                             ),
                           );
@@ -185,6 +185,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                           Navigator.pop(context);
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
+                              behavior: SnackBarBehavior.floating,
                               content: Text("Failed to send question: $e"),
                             ),
                           );

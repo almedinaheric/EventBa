@@ -1,5 +1,6 @@
 using AutoMapper;
 using EventBa.Model.Enums;
+using EventBa.Model.Helpers;
 using EventBa.Model.Requests;
 using EventBa.Model.Responses;
 using EventBa.Model.SearchObjects;
@@ -97,7 +98,36 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
 
         return _mapper.Map<List<EventResponseDto>>(events);
     }
+    
+    public async Task<List<EventResponseDto>> GetEventsByOrganizer(Guid organizerId)
+    {
+        var events = await _context.Events
+            .Include(x => x.Category)
+            .Include(x => x.EventGalleryImages)
+            .Include(x => x.EventReviews)
+            .Include(x => x.Tickets)
+            .Where(x => x.OrganizerId == organizerId)
+            .ToListAsync();
 
+        return _mapper.Map<List<EventResponseDto>>(events);
+    }
+    
+    public override async Task<EventResponseDto> GetById(Guid id)
+    {
+        var entity = await _context.Events
+            .Include(x => x.Organizer)
+            .Include(x => x.Category)
+            .Include(x => x.CoverImage)
+            .Include(x => x.EventGalleryImages)
+            .Include(x => x.EventReviews)
+            .Include(x => x.Tickets)
+            .FirstOrDefaultAsync(x => x.Id == id);
+
+        if (entity == null)
+            throw new UserException("Event not found");
+
+        return _mapper.Map<EventResponseDto>(entity);
+    }
     public async Task<List<EventResponseDto>> GetRecommendedEvents()
     {
         var currentUser = await _userService.GetUserEntityAsync();
@@ -144,6 +174,54 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
             .ToListAsync();
 
         return _mapper.Map<List<EventResponseDto>>(privateEvents);
+    }
+    
+    public async Task<List<EventResponseDto>> GetUserFavoriteEventsAsync()
+    {
+        var currentUser = await _userService.GetUserAsync();
+
+        var user = await _context.Users
+            .Include(u => u.FavoriteEvents)
+            .FirstOrDefaultAsync(u => u.Id == currentUser.Id);
+
+        if (user == null)
+            throw new UserException("User not found");
+
+        var publishedFavorites = user.FavoriteEvents
+            .Where(e => e.IsPublished)
+            .ToList();
+
+        return _mapper.Map<List<EventResponseDto>>(publishedFavorites);
+    }
+
+    public async Task<bool> ToggleFavoriteEventAsync(Guid eventId)
+    {
+        var currentUser = await _userService.GetUserAsync();
+
+        var user = await _context.Users
+            .Include(u => u.FavoriteEvents)
+            .FirstOrDefaultAsync(u => u.Id == currentUser.Id);
+
+        if (user == null)
+            throw new UserException("User not found");
+
+        var targetEvent = await _context.Events.FindAsync(eventId);
+        if (targetEvent == null)
+            throw new UserException("Event not found");
+
+        var isAlreadyFavorite = user.FavoriteEvents.Any(e => e.Id == eventId);
+
+        if (isAlreadyFavorite)
+        {
+            user.FavoriteEvents.Remove(targetEvent);
+        }
+        else
+        {
+            user.FavoriteEvents.Add(targetEvent);
+        }
+
+        await _context.SaveChangesAsync();
+        return true;
     }
     
     public async Task<EventStatisticsResponseDto> GetEventStatistics(Guid eventId)

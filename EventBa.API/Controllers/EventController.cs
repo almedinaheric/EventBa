@@ -19,25 +19,19 @@ public class EventController : BaseCRUDController<EventResponseDto, EventSearchO
         _eventService = service;
     }
 
-    [HttpGet]
-    [AllowAnonymous]
-    public override async Task<PagedResult<EventResponseDto>> Get([FromQuery] EventSearchObject search)
-    {
-        return await _service.Get(search);
-    }
-
-    [HttpGet("{id}")]
-    [AllowAnonymous]
-    public override async Task<EventResponseDto> GetById(Guid id)
-    {
-        return await _service.GetById(id);
-    }
 
     [HttpGet("my-events")]
     [Authorize]
     public async Task<IActionResult> GetMyEvents()
     {
         var events = await _eventService.GetMyEvents();
+        return Ok(events);
+    }
+    
+    [HttpGet("organizer/{organizerId}")]
+    public async Task<ActionResult<List<EventResponseDto>>> GetEventsByOrganizer(Guid organizerId)
+    {
+        var events = await _eventService.GetEventsByOrganizer(organizerId);
         return Ok(events);
     }
 
@@ -79,5 +73,21 @@ public class EventController : BaseCRUDController<EventResponseDto, EventSearchO
     {
         var statistics = await _eventService.GetEventStatistics(id);
         return Ok(statistics);
+    }
+    
+    [HttpGet("favorites")]
+    [Authorize]
+    public async Task<IActionResult> GetFavoriteEvents()
+    {
+        var result = await _eventService.GetUserFavoriteEventsAsync();
+        return Ok(result);
+    }
+
+    [HttpPost("{id}/favorite-toggle")]
+    [Authorize]
+    public async Task<IActionResult> ToggleFavorite(Guid id)
+    {
+        var result = await _eventService.ToggleFavoriteEventAsync(id);
+        return Ok(result);
     }
 }
