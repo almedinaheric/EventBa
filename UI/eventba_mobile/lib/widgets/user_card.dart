@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 class UserCard extends StatelessWidget {
   final String imageUrl;
   final String name;
-  final int userId;
+  final String userId;
   final String bio;
 
   const UserCard({

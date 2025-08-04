@@ -1,22 +1,56 @@
+import 'package:eventba_mobile/models/basic_user/basic_user.dart';
 import 'package:eventba_mobile/widgets/master_screen.dart';
 import 'package:eventba_mobile/widgets/primary_button.dart';
 import 'package:eventba_mobile/widgets/user_card.dart';
 import 'package:flutter/material.dart';
+import 'package:eventba_mobile/providers/user_provider.dart'; // Import your provider
 
 class FollowersScreen extends StatefulWidget {
-  const FollowersScreen({super.key});
+  final List<BasicUser> followers;
+
+  const FollowersScreen({super.key, required this.followers});
 
   @override
   State<FollowersScreen> createState() => _FollowersScreenState();
 }
 
 class _FollowersScreenState extends State<FollowersScreen> {
-  final List<Map<String, String>> followers = [
-    {"name": "John Doe", "avatar": "assets/images/profile_placeholder.png"},
-    {"name": "Jane Smith", "avatar": "assets/images/profile_placeholder.png"},
-    {"name": "Mike Johnson", "avatar": "assets/images/profile_placeholder.png"},
-    // ... more followers
-  ];
+  late List<BasicUser> followers;
+  final UserProvider _userProvider = UserProvider();
+  // To keep track of which user is followed/unfollowed
+  final Map<String, bool> _isFollowingMap = {};
+
+  @override
+  void initState() {
+    super.initState();
+    followers = widget.followers;
+    // TODO: handle this !!!
+    // For now i will assume no followers are followed
+    for (var user in followers) {
+      _isFollowingMap[user.id] = false;
+    }
+  }
+
+  void _toggleFollow(String userId) async {
+    try {
+      bool isCurrentlyFollowing = _isFollowingMap[userId] ?? false;
+
+      if (isCurrentlyFollowing) {
+        await _userProvider.unfollowUser(userId.toString());
+      } else {
+        await _userProvider.followUser(userId.toString());
+      }
+
+      setState(() {
+        _isFollowingMap[userId] = !isCurrentlyFollowing;
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          behavior: SnackBarBehavior.floating, content: Text("Failed to update follow status")),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,9 +59,7 @@ class _FollowersScreenState extends State<FollowersScreen> {
       appBarType: AppBarType.iconsSideTitleCenter,
       title: "Followers",
       leftIcon: Icons.arrow_back,
-      onLeftButtonPressed: () {
-        Navigator.pop(context); // Back button functionality
-      },
+      onLeftButtonPressed: () => Navigator.pop(context),
       child: followers.isEmpty
           ? Center(
         child: Text(
@@ -45,11 +77,15 @@ class _FollowersScreenState extends State<FollowersScreen> {
         itemCount: followers.length,
         itemBuilder: (context, index) {
           final follower = followers[index];
+          final isFollowing = _isFollowingMap[follower.id] ?? false;
           return FollowerCard(
-            name: follower["name"]!,
-            avatar: follower["avatar"]!,
-            organizerId: index + 1,
-            bio: '',
+            name: follower.fullName,
+            avatar: follower.profileImage != null
+                ? follower.profileImage!.data
+                : 'assets/images/profile_placeholder.png',
+            organizerId: follower.id.toString(),
+            isFollowing: isFollowing,
+            onFollowToggle: () => _toggleFollow(follower!.id),
           );
         },
       ),
@@ -60,8 +96,10 @@ class _FollowersScreenState extends State<FollowersScreen> {
 class FollowerCard extends StatefulWidget {
   final String name;
   final String avatar;
-  final int organizerId;
+  final String organizerId;
   final String bio;
+  final bool isFollowing;
+  final VoidCallback onFollowToggle;
 
   const FollowerCard({
     super.key,
@@ -69,6 +107,8 @@ class FollowerCard extends StatefulWidget {
     required this.avatar,
     required this.organizerId,
     this.bio = '',
+    required this.isFollowing,
+    required this.onFollowToggle,
   });
 
   @override
@@ -76,7 +116,23 @@ class FollowerCard extends StatefulWidget {
 }
 
 class _FollowerCardState extends State<FollowerCard> {
-  bool isFollowing = false;
+  late bool isFollowing;
+
+  @override
+  void initState() {
+    super.initState();
+    isFollowing = widget.isFollowing;
+  }
+
+  @override
+  void didUpdateWidget(covariant FollowerCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isFollowing != widget.isFollowing) {
+      setState(() {
+        isFollowing = widget.isFollowing;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -99,10 +155,7 @@ class _FollowerCardState extends State<FollowerCard> {
                 outlined: isFollowing,
                 small: true,
                 onPressed: () {
-                  setState(() {
-                    isFollowing = !isFollowing;
-                  });
-                  // Call API to follow/unfollow here if needed
+                  widget.onFollowToggle();
                 },
               ),
             ),

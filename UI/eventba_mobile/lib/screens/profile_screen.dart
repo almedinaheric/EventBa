@@ -172,11 +172,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Navigator.push(
                       context,
                       PageRouteBuilder(
-                        pageBuilder: (_, __, ___) => const FollowersScreen(),
+                        pageBuilder: (_, __, ___) => FollowersScreen(followers: _user?.following ?? []),
                         transitionDuration: Duration.zero,
                         reverseTransitionDuration: Duration.zero,
                       ),
                     );
+                    setState(() {
+                      _loadUserProfile();
+                    });
                   },
                 ),
                 _buildStatColumn(
@@ -187,11 +190,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Navigator.push(
                       context,
                       PageRouteBuilder(
-                        pageBuilder: (_, __, ___) => const FollowingScreen(),
+                        pageBuilder: (_, __, ___) => FollowingScreen(following: _user?.following ?? []),
                         transitionDuration: Duration.zero,
                         reverseTransitionDuration: Duration.zero,
                       ),
                     );
+                    setState(() {
+                      _loadUserProfile();
+                    });
                   },
                 ),
                 _buildStatColumn(context, eventsCount.toString(), "Events", () {

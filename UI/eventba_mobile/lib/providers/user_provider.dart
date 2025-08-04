@@ -85,4 +85,23 @@ class UserProvider extends BaseProvider<User> {
       throw Exception("Unknown error in a POST request");
     }
   }
+
+  Future<bool> changePassword(String currentPassword, String newPassword) async {
+    var url = "${baseUrl}User/change-password";
+    var uri = Uri.parse(url);
+    var headers = createHeaders();
+
+    var body = jsonEncode({
+      "currentPassword": currentPassword,
+      "newPassword": newPassword,
+    });
+
+    var response = await http.post(uri, headers: headers, body: body);
+
+    if (isValidResponse(response)) {
+      return true;
+    } else {
+      throw Exception("Password change failed");
+    }
+  }
 }

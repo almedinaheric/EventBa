@@ -52,4 +52,12 @@ public class UserController : BaseCRUDController<UserResponseDto, UserSearchObje
     {
         return Ok(await _userService.UnfollowUser(userId));
     }
+    
+    [HttpPost("change-password")]
+    [Authorize]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequestDto request)
+    {
+        await _userService.ChangePasswordAsync(request);
+        return Ok(new { message = "Password changed successfully." });
+    }
 }

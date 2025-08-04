@@ -36,7 +36,8 @@ public class UserService :
             .Include(u => u.Role)
             .Include(u => u.Followings)
             .Include(u => u.Followers)
-            .Include(u => u.Categories);
+            .Include(u => u.Categories)
+            .Include(u => u.Events);
     }
     
     public override async Task BeforeInsert(User entity, UserInsertRequestDto insert)
@@ -69,21 +70,34 @@ public class UserService :
 
     public override async Task BeforeUpdate(User entity, UserUpdateRequestDto update)
     {
-        // Handle category relationships
-        if (update.InterestCategoryIds != null && update.InterestCategoryIds.Any())
+        var newCategoryIds = update.InterestCategoryIds ?? new List<Guid>();
+
+        var existingUserInterests = _context.Entry(entity)
+            .Collection(u => u.Categories)
+            .Query()
+            .ToList();
+
+        foreach (var category in existingUserInterests)
         {
-            var categories = await _context.Categories
-                .Where(c => update.InterestCategoryIds.Contains(c.Id))
+            entity.Categories.Remove(category);
+        }
+
+        if (newCategoryIds.Any())
+        {
+            var newCategories = await _context.Categories
+                .Where(c => newCategoryIds.Contains(c.Id))
                 .ToListAsync();
-            
-            entity.Categories.Clear();
-            foreach (var category in categories)
+
+            foreach (var category in newCategories)
             {
-                entity.Categories.Add(category);
+                if (entity.Categories.All(c => c.Id != category.Id))
+                {
+                    entity.Categories.Add(category);
+                }
             }
         }
     }
-    
+
     public override async Task<UserResponseDto> Insert(UserInsertRequestDto insert)
     {
         Console.WriteLine($"UserService.Insert called for: {insert.Email}");
@@ -250,5 +264,27 @@ public class UserService :
         await _context.SaveChangesAsync();
         return _mapper.Map<UserResponseDto>(currentUser);
     }
+    
+    public async Task ChangePasswordAsync(ChangePasswordRequestDto request)
+    {
+        var userEmail = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.Email)?.Value;
 
+        if (string.IsNullOrWhiteSpace(userEmail))
+            throw new UserException("User is not authenticated.");
+
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == userEmail);
+
+        if (user == null)
+            throw new UserException("User not found.");
+
+        var currentHash = GenerateHash(user.PasswordSalt, request.CurrentPassword);
+
+        if (currentHash != user.PasswordHash)
+            throw new UserException("Current password is incorrect.");
+
+        user.PasswordSalt = GenerateSalt();
+        user.PasswordHash = GenerateHash(user.PasswordSalt, request.NewPassword);
+
+        await _context.SaveChangesAsync();
+    }
 }

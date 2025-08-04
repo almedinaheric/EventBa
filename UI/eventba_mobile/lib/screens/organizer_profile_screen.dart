@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:eventba_mobile/widgets/event_card.dart';
 
 class OrganizerProfileScreen extends StatefulWidget {
-  final int userId;
+  final String userId;
   final String name;
   final String avatarUrl;
   final String bio;
@@ -51,7 +51,7 @@ class _OrganizerProfileScreenState extends State<OrganizerProfileScreen> {
                   'location': 'Central Park',
                   'date': '2024-04-20',
                   'isPaid': true,
-                  // Add other relevant fields if needed
+                  // Add other fields
                 },
               ),
             ),

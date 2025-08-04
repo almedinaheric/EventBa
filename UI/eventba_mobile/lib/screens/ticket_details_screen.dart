@@ -91,7 +91,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                       ),
 
                       const OrganizerSection(
-                                  organizerId: 1,
+                                  organizerId: "123",
                                   bio: "hey",
                                   imageUrl: 'assets/images/profile_placeholder.png',
                                   name: "Dylan Malik",

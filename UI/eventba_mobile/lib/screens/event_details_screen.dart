@@ -368,7 +368,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
                     OrganizerSection(
                       name: _organizer!.fullName,
-                      organizerId: int.tryParse(_organizer!.id) ?? 1,
+                      organizerId: _organizer!.id,
                     ),
 
                     const SizedBox(height: 24),

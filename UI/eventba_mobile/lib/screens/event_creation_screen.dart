@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:eventba_mobile/providers/event_image_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:eventba_mobile/widgets/primary_button.dart';
 import 'package:eventba_mobile/widgets/custom_text_field.dart';
@@ -7,7 +8,6 @@ import 'package:provider/provider.dart';
 import 'package:eventba_mobile/providers/event_provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:eventba_mobile/providers/category_provider.dart';
-import 'package:eventba_mobile/utils/image_helpers.dart';
 
 class EventCreationScreen extends StatefulWidget {
   const EventCreationScreen({super.key});

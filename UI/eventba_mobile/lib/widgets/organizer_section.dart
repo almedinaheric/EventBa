@@ -9,13 +9,13 @@ class OrganizerSection extends StatefulWidget {
     super.key,
     this.imageUrl = 'assets/images/profile_placeholder.png',
     this.name = 'Dylan Malik',
-    this.organizerId = 1,
+    this.organizerId = "123",
     this.bio = '',
   });
 
   final String imageUrl;
   final String name;
-  final int organizerId;
+  final String organizerId;
   final String bio;
 
   @override
@@ -38,7 +38,6 @@ class _OrganizerSectionState extends State<OrganizerSection> {
         isFollowing = !isFollowing;
       });
 
-      // Navigate to organizer profile screen after follow/unfollow
       Navigator.push(
         context,
         MaterialPageRoute(

@@ -1,35 +1,45 @@
-import 'package:eventba_mobile/models/user/user.dart';
+import 'package:eventba_mobile/models/basic_user/basic_user.dart';
+import 'package:eventba_mobile/providers/user_provider.dart';
 import 'package:eventba_mobile/widgets/master_screen.dart';
 import 'package:eventba_mobile/widgets/primary_button.dart';
 import 'package:eventba_mobile/widgets/user_card.dart';
 import 'package:flutter/material.dart';
 
 class FollowingScreen extends StatefulWidget {
-  const FollowingScreen({super.key});
+  final List<BasicUser> following;
+
+  const FollowingScreen({super.key, required this.following});
 
   @override
   State<FollowingScreen> createState() => _FollowingScreenState();
 }
 
 class _FollowingScreenState extends State<FollowingScreen> {
-  List<Map<String, String>> following = [
-    {"name": "John Doe", "avatar": "assets/images/profile_placeholder.png"},
-    {"name": "Jane Smith", "avatar": "assets/images/profile_placeholder.png"},
-    {"name": "Mike Johnson", "avatar": "assets/images/profile_placeholder.png"},
-    // ... more Following
-  ];
+  late List<BasicUser> following;
+  final UserProvider userProvider = UserProvider();
 
-  void _unfollowUser(int index) async {
-    final removedUser = following[index];
+  @override
+  void initState() {
+    super.initState();
+    following = List.from(widget.following);
+  }
 
-    // 1. Optionally call API to unfollow
-    // Example:
-    // await api.unfollowUser(removedUserId);
-
-    // 2. Remove user from the list and update UI
-    setState(() {
-      following.removeAt(index);
-    });
+  Future<void> _handleUnfollow(String userId) async {
+    try {
+      final success = await userProvider.unfollowUser(userId);
+      if (success) {
+        setState(() {
+          following.removeWhere((user) => user.id == userId);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Unfollowed successfully')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to unfollow: $e')),
+      );
+    }
   }
 
   @override
@@ -39,17 +49,12 @@ class _FollowingScreenState extends State<FollowingScreen> {
       appBarType: AppBarType.iconsSideTitleCenter,
       title: "Following",
       leftIcon: Icons.arrow_back,
-      onLeftButtonPressed: () {
-        Navigator.pop(context); // Back button functionality
-      },
+      onLeftButtonPressed: () => Navigator.pop(context),
       child: following.isEmpty
           ? Center(
         child: Text(
           "👀 No followings yet.",
-          style: TextStyle(
-            fontSize: 18,
-            color: Colors.grey[600],
-          ),
+          style: TextStyle(fontSize: 18, color: Colors.grey[600]),
         ),
       )
           : ListView.builder(
@@ -58,28 +63,29 @@ class _FollowingScreenState extends State<FollowingScreen> {
         physics: const NeverScrollableScrollPhysics(),
         itemCount: following.length,
         itemBuilder: (context, index) {
-          final follower = following[index];
+          final user = following[index];
           return FollowerCard(
-            name: follower["name"]!,
-            avatar: follower["avatar"]!,
-            organizerId: index + 1, // dummy id for example
-            bio: '',
-            onUnfollow: () {
-              _unfollowUser(index);
+            name: user.fullName,
+            avatar: user.profileImage != null
+                ? user.profileImage!.data
+                : 'assets/images/profile_placeholder.png',
+            organizerId: user.id,
+            onUnfollow: () async {
+              await _handleUnfollow(user.id);
             },
           );
         },
       ),
     );
   }
-  }
+}
 
 class FollowerCard extends StatefulWidget {
   final String name;
   final String avatar;
-  final int organizerId;
+  final String organizerId;
   final String bio;
-  final VoidCallback onUnfollow;  // callback for unfollow action
+  final Future<void> Function() onUnfollow;
 
   const FollowerCard({
     super.key,
@@ -95,7 +101,8 @@ class FollowerCard extends StatefulWidget {
 }
 
 class _FollowerCardState extends State<FollowerCard> {
-  bool isFollowing = true; // start as following
+  bool isFollowing = true;
+  bool isLoading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -113,15 +120,27 @@ class _FollowerCardState extends State<FollowerCard> {
             const Spacer(),
             SizedBox(
               width: 100,
-              child: PrimaryButton(
+              child: isLoading
+                  ? Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              )
+                  : PrimaryButton(
                 text: "Unfollow",
                 outlined: true,
                 small: true,
-                onPressed: () {
+                onPressed: () async {
                   setState(() {
+                    isLoading = true;
+                  });
+                  await widget.onUnfollow();
+                  setState(() {
+                    isLoading = false;
                     isFollowing = false;
                   });
-                  widget.onUnfollow();
                 },
               ),
             ),
@@ -131,4 +150,3 @@ class _FollowerCardState extends State<FollowerCard> {
     );
   }
 }
-

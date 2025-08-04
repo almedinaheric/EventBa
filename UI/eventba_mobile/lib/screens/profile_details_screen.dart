@@ -1,12 +1,12 @@
 import 'dart:io';
+import 'package:eventba_mobile/screens/welcome_screen.dart';
+import 'package:eventba_mobile/utils/authorization.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:eventba_mobile/providers/user_provider.dart';
 import 'package:eventba_mobile/models/user/user.dart';
 import 'package:eventba_mobile/models/category/category_model.dart';
 import 'package:eventba_mobile/providers/category_provider.dart';
-import 'package:eventba_mobile/utils/image_helpers.dart';
 import 'package:eventba_mobile/widgets/custom_text_field.dart';
 import 'package:eventba_mobile/widgets/master_screen.dart';
 import 'package:eventba_mobile/widgets/primary_button.dart';
@@ -35,11 +35,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
   bool obscureCurrent = true;
   bool obscureNew = true;
   bool obscureConfirm = true;
-
   User? _user;
-  File? _profileImage;
-
-  // Validation flags
   bool _isFirstNameValid = true;
   bool _isLastNameValid = true;
   bool _isEmailValid = true;
@@ -47,8 +43,6 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
   bool _isCurrentPasswordValid = false;
   bool _isNewPasswordValid = false;
   bool _isConfirmPasswordValid = false;
-
-  // Error messages
   String? _firstNameErrorMessage;
   String? _lastNameErrorMessage;
   String? _emailErrorMessage;
@@ -56,13 +50,11 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
   String? _currentPasswordErrorMessage;
   String? _newPasswordErrorMessage;
   String? _confirmPasswordErrorMessage;
-
-  // Category-related state
   List<CategoryModel> _categories = [];
   List<String> _selectedCategoryIds = [];
   bool _isLoadingCategories = true;
 
-  final double fieldWidth = double.infinity; // Responsive width
+  final double fieldWidth = double.infinity;
 
   @override
   void initState() {
@@ -387,39 +379,57 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
     }
   }
 
-  void _changePassword() {
+  void _changePassword() async {
     setState(() {
-      _isCurrentPasswordValid = currentPasswordController.text
-          .trim()
-          .isNotEmpty;
-      _currentPasswordErrorMessage = _isCurrentPasswordValid
-          ? null
-          : 'Current password is required';
+      _isCurrentPasswordValid = currentPasswordController.text.trim().isNotEmpty;
+      _currentPasswordErrorMessage =
+      _isCurrentPasswordValid ? null : 'Current password is required';
 
-      _isNewPasswordValid =
-          newPasswordController.text.trim().isNotEmpty &&
-          newPasswordController.text.length >= 6;
+      _isNewPasswordValid = RegExp(
+        r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$',
+      ).hasMatch(newPasswordController.text);
       _newPasswordErrorMessage = _isNewPasswordValid
           ? null
           : 'Password must be at least 8 characters long and include an uppercase letter, a lowercase letter, and a number.';
 
       _isConfirmPasswordValid =
-          confirmPasswordController.text.trim().isNotEmpty &&
           confirmPasswordController.text == newPasswordController.text;
-      _confirmPasswordErrorMessage = _isConfirmPasswordValid
-          ? null
-          : 'Passwords do not match';
+      _confirmPasswordErrorMessage =
+      _isConfirmPasswordValid ? null : 'Passwords do not match';
     });
 
     if (_isCurrentPasswordValid &&
         _isNewPasswordValid &&
         _isConfirmPasswordValid) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          behavior: SnackBarBehavior.floating,
-          content: Text('Password changed successfully!'),
-        ),
-      );
+      try {
+        await Provider.of<UserProvider>(context, listen: false).changePassword(
+          currentPasswordController.text,
+          newPasswordController.text,
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            behavior: SnackBarBehavior.floating,
+            content: Text('Password changed successfully!'),
+          ),
+        );
+        Authorization.email = null;
+        Authorization.password = null;
+        Navigator.pop(context);
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const WelcomeScreen(),
+          ),
+              (route) => false,
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            behavior: SnackBarBehavior.floating,
+            content: Text('Error: ${e.toString()}'),
+          ),
+        );
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
