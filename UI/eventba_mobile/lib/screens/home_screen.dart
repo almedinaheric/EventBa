@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -29,6 +30,10 @@ class _HomeScreenState extends State<HomeScreen> {
   late Future<List<CategoryModel>> _categoriesFuture;
 
   final TextEditingController _searchController = TextEditingController();
+  Timer? _searchTimer;
+  List<BasicEvent> _searchResults = [];
+  bool _isSearching = false;
+  bool _isSearchLoading = false;
 
   @override
   void initState() {
@@ -39,12 +44,16 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _searchTimer?.cancel();
     super.dispose();
   }
 
   void _loadData() {
     final eventProvider = Provider.of<EventProvider>(context, listen: false);
-    final categoryProvider = Provider.of<CategoryProvider>(context, listen: false);
+    final categoryProvider = Provider.of<CategoryProvider>(
+      context,
+      listen: false,
+    );
 
     // Fetch different types of events from your API
     _recommendedEventsFuture = _fetchRecommendedEvents(eventProvider);
@@ -53,7 +62,9 @@ class _HomeScreenState extends State<HomeScreen> {
     _categoriesFuture = _fetchCategories(categoryProvider);
   }
 
-  Future<List<BasicEvent>> _fetchRecommendedEvents(EventProvider provider) async {
+  Future<List<BasicEvent>> _fetchRecommendedEvents(
+    EventProvider provider,
+  ) async {
     try {
       // Assuming your provider has a method to get recommended events
       final result = await provider.getRecommendedEvents();
@@ -84,7 +95,9 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<List<CategoryModel>> _fetchCategories(CategoryProvider provider) async {
+  Future<List<CategoryModel>> _fetchCategories(
+    CategoryProvider provider,
+  ) async {
     try {
       final result = await provider.get();
       return result.result; // Based on your existing code structure
@@ -94,11 +107,43 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _handleSearch(String query) {
-    if (query.isNotEmpty) {
-      // Navigate to search results screen or filter events
-      // You can implement search functionality here
-      print('Searching for: $query');
+  void _handleSearchChange(String query) {
+    _searchTimer?.cancel();
+
+    if (query.isEmpty) {
+      setState(() {
+        _isSearching = false;
+        _searchResults = [];
+        _isSearchLoading = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _isSearching = true;
+      _isSearchLoading = true;
+    });
+
+    _searchTimer = Timer(const Duration(seconds: 1), () {
+      _performSearch(query);
+    });
+  }
+
+  Future<void> _performSearch(String searchTerm) async {
+    final eventProvider = Provider.of<EventProvider>(context, listen: false);
+
+    try {
+      final results = await eventProvider.searchEvents(searchTerm);
+      setState(() {
+        _searchResults = results;
+        _isSearchLoading = false;
+      });
+    } catch (e) {
+      print('Error searching events: $e');
+      setState(() {
+        _searchResults = [];
+        _isSearchLoading = false;
+      });
     }
   }
 
@@ -121,58 +166,68 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 _buildSearchBar(),
                 const SizedBox(height: 20),
-                _buildSectionHeader(
-                  "Recommended Events",
-                  onViewAllTap: () {
-                    Navigator.push(
-                      context,
-                      PageRouteBuilder(
-                        pageBuilder: (_, __, ___) => const RecommendedEventsScreen(),
-                        transitionDuration: Duration.zero,
-                        reverseTransitionDuration: Duration.zero,
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 10),
-                _buildRecommendedEvents(),
-                const SizedBox(height: 20),
-                _buildSectionHeader("Search by categories", showViewAll: false),
-                const SizedBox(height: 10),
-                _buildCategoryChips(),
-                const SizedBox(height: 20),
-                _buildSectionHeader(
-                  "Public Events",
-                  onViewAllTap: () {
-                    Navigator.push(
-                      context,
-                      PageRouteBuilder(
-                        pageBuilder: (_, __, ___) => const PublicEventsScreen(),
-                        transitionDuration: Duration.zero,
-                        reverseTransitionDuration: Duration.zero,
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 10),
-                _buildPublicEvents(),
-                const SizedBox(height: 20),
-                _buildSectionHeader(
-                  "Private Events",
-                  onViewAllTap: () {
-                    Navigator.push(
-                      context,
-                      PageRouteBuilder(
-                        pageBuilder: (_, __, ___) => const PrivateEventsScreen(),
-                        transitionDuration: Duration.zero,
-                        reverseTransitionDuration: Duration.zero,
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 10),
-                _buildPrivateEvents(),
-                const SizedBox(height: 20),
+                if (_isSearching) ...[
+                  _buildSearchResults(),
+                ] else ...[
+                  _buildSectionHeader(
+                    "Recommended Events",
+                    onViewAllTap: () {
+                      Navigator.push(
+                        context,
+                        PageRouteBuilder(
+                          pageBuilder: (_, __, ___) =>
+                              const RecommendedEventsScreen(),
+                          transitionDuration: Duration.zero,
+                          reverseTransitionDuration: Duration.zero,
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  _buildRecommendedEvents(),
+                  const SizedBox(height: 20),
+                  _buildSectionHeader(
+                    "Search by categories",
+                    showViewAll: false,
+                  ),
+                  const SizedBox(height: 10),
+                  _buildCategoryChips(),
+                  const SizedBox(height: 20),
+                  _buildSectionHeader(
+                    "Public Events",
+                    onViewAllTap: () {
+                      Navigator.push(
+                        context,
+                        PageRouteBuilder(
+                          pageBuilder: (_, __, ___) =>
+                              const PublicEventsScreen(),
+                          transitionDuration: Duration.zero,
+                          reverseTransitionDuration: Duration.zero,
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  _buildPublicEvents(),
+                  const SizedBox(height: 20),
+                  _buildSectionHeader(
+                    "Private Events",
+                    onViewAllTap: () {
+                      Navigator.push(
+                        context,
+                        PageRouteBuilder(
+                          pageBuilder: (_, __, ___) =>
+                              const PrivateEventsScreen(),
+                          transitionDuration: Duration.zero,
+                          reverseTransitionDuration: Duration.zero,
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  _buildPrivateEvents(),
+                  const SizedBox(height: 20),
+                ],
               ],
             ),
           ),
@@ -197,35 +252,39 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       child: TextField(
         controller: _searchController,
-        onSubmitted: _handleSearch,
         decoration: InputDecoration(
           hintText: 'Search events...',
           hintStyle: TextStyle(color: Colors.grey.shade600),
           prefixIcon: Icon(Icons.search, size: 20, color: Colors.grey.shade600),
           suffixIcon: _searchController.text.isNotEmpty
               ? IconButton(
-            icon: Icon(Icons.clear, size: 20, color: Colors.grey.shade600),
-            onPressed: () {
-              _searchController.clear();
-              setState(() {});
-            },
-          )
+                  icon: Icon(
+                    Icons.clear,
+                    size: 20,
+                    color: Colors.grey.shade600,
+                  ),
+                  onPressed: () {
+                    _searchController.clear();
+                    _handleSearchChange('');
+                  },
+                )
               : null,
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 16),
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 15,
+            horizontal: 16,
+          ),
         ),
-        onChanged: (value) {
-          setState(() {}); // To show/hide clear button
-        },
+        onChanged: _handleSearchChange,
       ),
     );
   }
 
   Widget _buildSectionHeader(
-      String title, {
-        bool showViewAll = true,
-        VoidCallback? onViewAllTap,
-      }) {
+    String title, {
+    bool showViewAll = true,
+    VoidCallback? onViewAllTap,
+  }) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -238,10 +297,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         if (showViewAll)
-          TextLinkButton(
-            linkText: "View All",
-            onTap: onViewAllTap ?? () {},
-          ),
+          TextLinkButton(linkText: "View All", onTap: onViewAllTap ?? () {}),
       ],
     );
   }
@@ -263,14 +319,10 @@ class _HomeScreenState extends State<HomeScreen> {
           height: 160,
           child: Row(
             children: [
-              Expanded(
-                child: _buildEventCard(events[0]),
-              ),
+              Expanded(child: _buildEventCard(events[0])),
               if (events.length > 1) ...[
                 const SizedBox(width: 12),
-                Expanded(
-                  child: _buildEventCard(events[1]),
-                ),
+                Expanded(child: _buildEventCard(events[1])),
               ],
             ],
           ),
@@ -364,7 +416,7 @@ class _HomeScreenState extends State<HomeScreen> {
       height: 160,
 
       //TODO: fix this
-      //isPaid: event.isPaid ?? false, // Assuming you have this field
+      isPaid: event.isPaid,
       onTap: () {
         Navigator.push(
           context,
@@ -395,7 +447,11 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.all(20.0),
               child: Column(
                 children: [
-                  Icon(Icons.error_outline, size: 48, color: Colors.grey.shade400),
+                  Icon(
+                    Icons.error_outline,
+                    size: 48,
+                    color: Colors.grey.shade400,
+                  ),
                   const SizedBox(height: 8),
                   Text(
                     'Failed to load categories',
@@ -424,7 +480,9 @@ class _HomeScreenState extends State<HomeScreen> {
             spacing: 10,
             runSpacing: 10,
             alignment: WrapAlignment.center,
-            children: categories.map((category) => _buildCategoryChip(category)).toList(),
+            children: categories
+                .map((category) => _buildCategoryChip(category))
+                .toList(),
           ),
         );
       },
@@ -473,9 +531,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildLoadingContainer(double height) {
     return SizedBox(
       height: height,
-      child: const Center(
-        child: CircularProgressIndicator(),
-      ),
+      child: const Center(child: CircularProgressIndicator()),
     );
   }
 
@@ -525,6 +581,37 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildSearchResults() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Search Results',
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 10),
+        if (_isSearchLoading)
+          _buildLoadingContainer(200)
+        else if (_searchResults.isEmpty)
+          _buildEmptyContainer('No events found', 200)
+        else
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _searchResults.length,
+            separatorBuilder: (context, index) => const SizedBox(height: 12),
+            itemBuilder: (context, index) {
+              return _buildEventCard(_searchResults[index]);
+            },
+          ),
+      ],
     );
   }
 }

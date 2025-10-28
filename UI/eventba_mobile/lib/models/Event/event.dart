@@ -29,6 +29,7 @@ class Event {
   final EventType type;
   final bool isPublished;
   final bool isFeatured;
+  final bool isPaid;
 
   final CategoryModel category;
   final ImageModel? coverImage;
@@ -55,6 +56,7 @@ class Event {
     required this.type,
     required this.isPublished,
     required this.isFeatured,
+    required this.isPaid,
     required this.category,
     this.coverImage,
     required this.galleryImages,

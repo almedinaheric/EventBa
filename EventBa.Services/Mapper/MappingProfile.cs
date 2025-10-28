@@ -1,4 +1,5 @@
 using AutoMapper;
+using EventBa.Model.Enums;
 using EventBa.Model.Requests;
 using EventBa.Model.Responses;
 using EventBa.Services.Database;
@@ -36,8 +37,14 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.CoverImage, opt => opt.MapFrom(src => src.CoverImage))
             .ForMember(dest => dest.GalleryImages, opt => opt.MapFrom(src => src.EventGalleryImages))
             .ForMember(dest => dest.Category, opt => opt.MapFrom(src => src.Category))
+            .ForMember(dest => dest.IsPaid, opt => opt.MapFrom(src => 
+                src.Tickets != null && src.Tickets.Any() && 
+                src.Tickets.Any(t => t.TicketType != TicketType.Free && t.Price > 0)))
             .ReverseMap();
-        CreateMap<Event, BasicEventResponseDto>();
+        CreateMap<Event, BasicEventResponseDto>()
+            .ForMember(dest => dest.IsPaid, opt => opt.MapFrom(src => 
+                src.Tickets != null && src.Tickets.Any() && 
+                src.Tickets.Any(t => t.TicketType != TicketType.Free && t.Price > 0)));
         CreateMap<EventInsertRequestDto, Event>();
         CreateMap<EventUpdateRequestDto, Event>();
 

@@ -96,9 +96,7 @@ class _PrivateEventsScreenState extends State<PrivateEventsScreen> {
           ),
 
           // Events List
-          Expanded(
-            child: _buildEventsList(isUpcoming: selectedIndex == 0),
-          ),
+          Expanded(child: _buildEventsList(isUpcoming: selectedIndex == 0)),
         ],
       ),
     );
@@ -162,7 +160,7 @@ class _PrivateEventsScreenState extends State<PrivateEventsScreen> {
               eventName: event['name'],
               location: event['venue'],
               date: event['date'],
-              isPaid: event['isPaid'],
+              isPaid: event['isPaid'] ?? false,
               isUpcoming: isUpcoming,
               eventData: event, // Passing individual event data
             );
@@ -216,7 +214,9 @@ class _PrivateEventsScreenState extends State<PrivateEventsScreen> {
               Container(
                 decoration: const BoxDecoration(
                   image: DecorationImage(
-                    image: AssetImage('assets/images/default_event_cover_image.png'),
+                    image: AssetImage(
+                      'assets/images/default_event_cover_image.png',
+                    ),
                     fit: BoxFit.cover,
                   ),
                 ),

@@ -22,6 +22,7 @@ public class EventResponseDto
     public EventType Type { get; set; }
     public bool IsPublished { get; set; }
     public bool IsFeatured { get; set; }
+    public bool IsPaid { get; set; }
 
     public CategoryResponseDto Category { get; set; } = null!;
     public ImageResponseDto? CoverImage { get; set; }

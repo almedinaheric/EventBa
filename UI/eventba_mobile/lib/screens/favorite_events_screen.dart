@@ -73,7 +73,7 @@ class _FavoriteEventsScreenState extends State<FavoriteEventsScreen> {
             eventName: event.title,
             location: event.location,
             date: event.startDate,
-            isPaid: false,
+            isPaid: event.isPaid,
             height: 160,
             isFavoriteEvent: true,
             onTap: () {

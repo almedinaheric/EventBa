@@ -12,6 +12,7 @@ class BasicEvent {
   final String endDate;
   final EventStatus status;
   final ImageModel? coverImage;
+  final bool isPaid;
 
   BasicEvent({
     required this.id,
@@ -20,6 +21,7 @@ class BasicEvent {
     required this.endDate,
     required this.status,
     this.coverImage,
+    this.isPaid = false,
   });
 
   factory BasicEvent.fromJson(Map<String, dynamic> json) =>

@@ -15,28 +15,32 @@ class _FavoriteEventsScreenState extends State<FavoriteEventsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final favoriteEvents = favoriteEventIndices.where((index) => isFavoriteList[index]).toList();
+    final favoriteEvents = favoriteEventIndices
+        .where((index) => isFavoriteList[index])
+        .toList();
 
     return Material(
       child: favoriteEvents.isNotEmpty
           ? ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          ..._buildEventCardsList(),
-          const SizedBox(height: 60), // Bottom padding for nav bar
-        ],
-      )
+              padding: const EdgeInsets.all(16),
+              children: [
+                ..._buildEventCardsList(),
+                const SizedBox(height: 60), // Bottom padding for nav bar
+              ],
+            )
           : const Center(
-        child: Text(
-          'No favorite events yet',
-          style: TextStyle(fontSize: 18, color: Colors.grey),
-        ),
-      ),
+              child: Text(
+                'No favorite events yet',
+                style: TextStyle(fontSize: 18, color: Colors.grey),
+              ),
+            ),
     );
   }
 
   List<Widget> _buildEventCardsList() {
-    return favoriteEventIndices.where((index) => isFavoriteList[index]).map((index) {
+    return favoriteEventIndices.where((index) => isFavoriteList[index]).map((
+      index,
+    ) {
       return Column(
         children: [
           EventCard(
@@ -44,7 +48,7 @@ class _FavoriteEventsScreenState extends State<FavoriteEventsScreen> {
             eventName: 'Event Name $index',
             location: 'Location $index',
             date: 'Date $index',
-            isPaid: index % 2 == 0,
+            isPaid: index % 2 == 0, // Using dummy data pattern
             height: 160,
             isFavoriteEvent: isFavoriteList[index],
             onFavoriteToggle: () {

@@ -16,6 +16,7 @@ BasicEvent _$BasicEventFromJson(Map<String, dynamic> json) => BasicEvent(
   coverImage: json['coverImage'] == null
       ? null
       : ImageModel.fromJson(json['coverImage'] as Map<String, dynamic>),
+  isPaid: json['isPaid'] as bool? ?? false,
 );
 
 Map<String, dynamic> _$BasicEventToJson(BasicEvent instance) =>
@@ -27,6 +28,7 @@ Map<String, dynamic> _$BasicEventToJson(BasicEvent instance) =>
       'location': instance.location,
       'status': _$EventStatusEnumMap[instance.status]!,
       'coverImage': instance.coverImage,
+      'isPaid': instance.isPaid,
     };
 
 const _$EventStatusEnumMap = {

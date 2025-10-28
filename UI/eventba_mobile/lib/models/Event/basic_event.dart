@@ -13,6 +13,7 @@ class BasicEvent {
   final String location;
   final EventStatus status;
   final ImageModel? coverImage;
+  final bool isPaid;
 
   BasicEvent({
     required this.id,
@@ -22,6 +23,7 @@ class BasicEvent {
     required this.location,
     required this.status,
     this.coverImage,
+    this.isPaid = false,
   });
 
   factory BasicEvent.fromJson(Map<String, dynamic> json) =>

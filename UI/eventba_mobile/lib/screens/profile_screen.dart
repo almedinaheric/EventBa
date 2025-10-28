@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
 import 'package:eventba_mobile/providers/user_provider.dart';
 import 'package:eventba_mobile/models/user/user.dart';
 import 'package:eventba_mobile/utils/authorization.dart';
@@ -25,6 +26,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   File? _image;
   User? _user;
   bool _isLoading = true;
+  int _eventsCount = 0;
 
   @override
   void initState() {
@@ -32,12 +34,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _loadUserProfile();
   }
 
+  Future<Map<String, dynamic>> _fetchEventsCount() async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final url = "${userProvider.baseUrl}Event/my-events-count";
+    final uri = Uri.parse(url);
+    final headers = userProvider.createHeaders();
+
+    final response = await http.get(uri, headers: headers);
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception("Failed to fetch events count");
+    }
+  }
+
   Future<void> _loadUserProfile() async {
     try {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final user = await userProvider.getProfile();
+
+      // Fetch events count
+      int eventsCount = 0;
+      try {
+        final response = await _fetchEventsCount();
+        if (response['count'] != null) {
+          eventsCount = response['count'];
+        }
+      } catch (e) {
+        print("Failed to load events count: $e");
+      }
+
       setState(() {
         _user = user;
+        _eventsCount = eventsCount;
         _isLoading = false;
       });
     } catch (e) {
@@ -124,9 +154,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         "${_user?.firstName ?? ''} ${_user?.lastName ?? ''}".trim();
     final followersCount = _user?.followers?.length ?? 0;
     final followingCount = _user?.following?.length ?? 0;
-    //final eventsCount = _user?.events?.length ?? 0;
-    // TODO: ovjde napraviti api za getanje koliko eventata ima ovaj organizerid
-    final eventsCount = 10;
+    final eventsCount = _eventsCount;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FA),
@@ -172,7 +200,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Navigator.push(
                       context,
                       PageRouteBuilder(
-                        pageBuilder: (_, __, ___) => FollowersScreen(followers: _user?.following ?? []),
+                        pageBuilder: (_, __, ___) =>
+                            FollowersScreen(followers: _user?.following ?? []),
                         transitionDuration: Duration.zero,
                         reverseTransitionDuration: Duration.zero,
                       ),
@@ -190,7 +219,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Navigator.push(
                       context,
                       PageRouteBuilder(
-                        pageBuilder: (_, __, ___) => FollowingScreen(following: _user?.following ?? []),
+                        pageBuilder: (_, __, ___) =>
+                            FollowingScreen(following: _user?.following ?? []),
                         transitionDuration: Duration.zero,
                         reverseTransitionDuration: Duration.zero,
                       ),

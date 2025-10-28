@@ -18,6 +18,7 @@ class Event {
   final EventStatus status;
   final EventType type;
   final bool isActive;
+  final bool isPaid;
   final String? coverImage;
   final BasicUser organizer;
   final CategoryModel category;
@@ -35,6 +36,7 @@ class Event {
     required this.status,
     required this.type,
     required this.isActive,
+    required this.isPaid,
     this.coverImage,
     required this.organizer,
     required this.category,

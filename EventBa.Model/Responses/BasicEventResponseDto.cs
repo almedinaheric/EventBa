@@ -11,6 +11,5 @@ public class BasicEventResponseDto
     public EventStatus Status { get; set; }
     public string Location { get; set; } = null!;
     public ImageResponseDto? CoverImage { get; set; }
-    
-    //how to know paid vs free?
+    public bool IsPaid { get; set; }
 }

@@ -11,7 +11,11 @@ class CategoryEventsScreen extends StatefulWidget {
   final String categoryId;
   final String categoryName;
 
-  const CategoryEventsScreen({super.key, required this.categoryId, required this.categoryName});
+  const CategoryEventsScreen({
+    super.key,
+    required this.categoryId,
+    required this.categoryName,
+  });
 
   @override
   State<CategoryEventsScreen> createState() => _CategoryEventsScreenState();
@@ -83,7 +87,7 @@ class _CategoryEventsScreenState extends State<CategoryEventsScreen> {
             eventName: event.title,
             location: event.location,
             date: event.startDate,
-            isPaid: false,
+            isPaid: event.isPaid,
             height: 160,
             onTap: () {
               Navigator.push(

@@ -16,6 +16,7 @@ Event _$EventFromJson(Map<String, dynamic> json) => Event(
       status: $enumDecode(_$EventStatusEnumMap, json['status']),
       type: $enumDecode(_$EventTypeEnumMap, json['type']),
       isActive: json['isActive'] as bool,
+      isPaid: json['isPaid'] as bool,
       coverImage: json['coverImage'] as String?,
       organizer: BasicUser.fromJson(json['organizer'] as Map<String, dynamic>),
       category:
@@ -37,6 +38,7 @@ Map<String, dynamic> _$EventToJson(Event instance) => <String, dynamic>{
       'status': _$EventStatusEnumMap[instance.status]!,
       'type': _$EventTypeEnumMap[instance.type]!,
       'isActive': instance.isActive,
+      'isPaid': instance.isPaid,
       'coverImage': instance.coverImage,
       'organizer': instance.organizer,
       'category': instance.category,
@@ -53,5 +55,5 @@ const _$EventStatusEnumMap = {
 
 const _$EventTypeEnumMap = {
   EventType.Public: 'Public',
-  EventType.Private: 'Private'
+  EventType.Private: 'Private',
 };

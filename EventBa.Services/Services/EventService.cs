@@ -18,12 +18,14 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
     public IMapper _mapper { get; set; }
     
     private readonly IUserService _userService;
+    private readonly IRecommendedEventService _recommendedEventService;
 
-    public EventService(EventBaDbContext context, IMapper mapper, IUserService userService) : base(context, mapper)
+    public EventService(EventBaDbContext context, IMapper mapper, IUserService userService, IRecommendedEventService recommendedEventService) : base(context, mapper)
     {
         _context = context;
         _mapper = mapper;
         _userService = userService;
+        _recommendedEventService = recommendedEventService;
     }
     
     public override async Task BeforeInsert(Event entity, EventInsertRequestDto insert)
@@ -38,6 +40,20 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
                     .Include(x => x.EventGalleryImages)
                     .Include(x => x.EventReviews)
                     .Include(x => x.Tickets);
+
+        return query;
+    }
+
+    public override IQueryable<Event> AddFilter(IQueryable<Event> query, EventSearchObject? search = null)
+    {
+        if (!string.IsNullOrWhiteSpace(search?.SearchTerm))
+        {
+            var searchTerm = search.SearchTerm.ToLower();
+            query = query.Where(x => 
+                x.Title.ToLower().Contains(searchTerm) || 
+                (x.Description != null && x.Description.ToLower().Contains(searchTerm))
+            );
+        }
 
         return query;
     }
@@ -130,17 +146,8 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
     }
     public async Task<List<EventResponseDto>> GetRecommendedEvents()
     {
-        var currentUser = await _userService.GetUserEntityAsync();
-        var recommendedEvents = await _context.RecommendedEvents
-            .Include(x => x.Event)
-            .ThenInclude(x => x.Category)
-            .Include(x => x.Event)
-            .ThenInclude(x => x.EventGalleryImages)
-            .Where(x => x.UserId == currentUser.Id)
-            .Select(x => x.Event)
-            .ToListAsync();
-
-        return _mapper.Map<List<EventResponseDto>>(recommendedEvents);
+        var currentUser = await _userService.GetUserAsync();
+        return await _recommendedEventService.GetRecommendedEventsForUser(currentUser.Id);
     }
     
     public async Task<List<EventResponseDto>> GetPublicEvents()
@@ -149,6 +156,7 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
             .Where(e => e.Type == EventType.Public && e.IsPublished)
             .Include(e => e.Category)
             .Include(e => e.EventGalleryImages)
+            .Include(e => e.Tickets)
             .ToListAsync();
 
         return _mapper.Map<List<EventResponseDto>>(publicEvents);
@@ -160,6 +168,7 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
             .Where(e => e.Type == EventType.Private && e.IsPublished)
             .Include(e => e.Category)
             .Include(e => e.EventGalleryImages)
+            .Include(e => e.Tickets)
             .ToListAsync();
 
         return _mapper.Map<List<EventResponseDto>>(privateEvents);
@@ -171,6 +180,7 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
             .Where(e => e.Category.Id == categoryId && e.IsPublished)
             .Include(e => e.Category)
             .Include(e => e.EventGalleryImages)
+            .Include(e => e.Tickets)
             .ToListAsync();
 
         return _mapper.Map<List<EventResponseDto>>(privateEvents);

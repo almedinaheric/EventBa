@@ -80,8 +80,7 @@ class _MyEventsScreenState extends State<MyEventsScreen> {
                           eventName: event.title,
                           location: event.location,
                           date: event.startDate,
-                          isPaid:
-                              false, // keep false, badge shows upcoming/past
+                          isPaid: event.isPaid,
                           isFeatured: false,
                           isFavoriteEvent: false,
                           isMyEvent: true,

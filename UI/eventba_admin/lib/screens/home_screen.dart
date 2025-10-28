@@ -3,6 +3,7 @@ import 'package:eventba_admin/screens/private_events_screen.dart';
 import 'package:eventba_admin/screens/public_events_screen.dart';
 import 'package:eventba_admin/screens/users_screen.dart';
 import 'package:eventba_admin/screens/report_generation_screen.dart'; // Add this import
+import 'package:eventba_admin/screens/support_screen.dart';
 import 'package:eventba_admin/widgets/master_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:eventba_admin/screens/notification_creation_screen.dart';
@@ -93,6 +94,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     _buildCard('Private Events'),
                     _buildCard('Users'),
                     _buildCard('Notifications'),
+                    _buildCard('Support'),
                     _buildCard('Manage Categories'),
                   ],
                 ),
@@ -119,6 +121,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _buildCard('Private Events'),
         _buildCard('Users'),
         _buildCard('Notifications'),
+        _buildCard('Support'),
       ],
     );
   }
@@ -145,6 +148,9 @@ class _HomeScreenState extends State<HomeScreen> {
         break;
       case 'Notifications':
         icon = Icons.notifications_outlined;
+        break;
+      case 'Support':
+        icon = Icons.support_agent_outlined;
         break;
       case 'Generate Report':
       case 'Reports':
@@ -210,7 +216,8 @@ class _HomeScreenState extends State<HomeScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(
-            builder: (context) => const NotificationCreationScreen()),
+          builder: (context) => const NotificationCreationScreen(),
+        ),
       );
     }
     if (screenName == 'Users') {
@@ -223,6 +230,12 @@ class _HomeScreenState extends State<HomeScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const NotificationsScreen()),
+      );
+    }
+    if (screenName == 'Support') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const SupportScreen()),
       );
     }
     if (screenName == 'Public Events') {

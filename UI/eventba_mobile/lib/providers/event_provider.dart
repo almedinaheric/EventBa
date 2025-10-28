@@ -56,7 +56,10 @@ class EventProvider extends BaseProvider<Event> {
     }
   }
 
-  Future<List<BasicEvent>> getRecommendedEvents({dynamic filter}) async {
+  Future<List<BasicEvent>> getRecommendedEvents({
+    int page = 1,
+    int pageSize = 10,
+  }) async {
     var url = "${baseUrl}Event/recommended";
     var uri = Uri.parse(url);
     var headers = createHeaders();
@@ -65,8 +68,15 @@ class EventProvider extends BaseProvider<Event> {
     if (isValidResponse(response)) {
       var data = jsonDecode(response.body);
       List<BasicEvent> events = [];
-      for (var item in data) {
-        events.add(basicEventFromJson(item));
+
+      // Calculate pagination manually since the endpoint doesn't support it
+      int startIndex = (page - 1) * pageSize;
+      int endIndex = startIndex + pageSize;
+
+      for (int i = 0; i < data.length; i++) {
+        if (i >= startIndex && i < endIndex) {
+          events.add(basicEventFromJson(data[i]));
+        }
       }
       return events;
     } else {
@@ -74,7 +84,10 @@ class EventProvider extends BaseProvider<Event> {
     }
   }
 
-  Future<List<BasicEvent>> getPublicEvents({dynamic filter}) async {
+  Future<List<BasicEvent>> getPublicEvents({
+    int page = 1,
+    int pageSize = 10,
+  }) async {
     var url = "${baseUrl}Event/public";
     var uri = Uri.parse(url);
     var headers = createHeaders();
@@ -82,8 +95,15 @@ class EventProvider extends BaseProvider<Event> {
     if (isValidResponse(response)) {
       var data = jsonDecode(response.body);
       List<BasicEvent> events = [];
-      for (var item in data) {
-        events.add(basicEventFromJson(item));
+
+      // Calculate pagination manually since the endpoint doesn't support it
+      int startIndex = (page - 1) * pageSize;
+      int endIndex = startIndex + pageSize;
+
+      for (int i = 0; i < data.length; i++) {
+        if (i >= startIndex && i < endIndex) {
+          events.add(basicEventFromJson(data[i]));
+        }
       }
       return events;
     } else {
@@ -91,7 +111,10 @@ class EventProvider extends BaseProvider<Event> {
     }
   }
 
-  Future<List<BasicEvent>> getPrivateEvents({dynamic filter}) async {
+  Future<List<BasicEvent>> getPrivateEvents({
+    int page = 1,
+    int pageSize = 10,
+  }) async {
     var url = "${baseUrl}Event/private";
     var uri = Uri.parse(url);
     var headers = createHeaders();
@@ -99,8 +122,15 @@ class EventProvider extends BaseProvider<Event> {
     if (isValidResponse(response)) {
       var data = jsonDecode(response.body);
       List<BasicEvent> events = [];
-      for (var item in data) {
-        events.add(basicEventFromJson(item));
+
+      // Calculate pagination manually since the endpoint doesn't support it
+      int startIndex = (page - 1) * pageSize;
+      int endIndex = startIndex + pageSize;
+
+      for (int i = 0; i < data.length; i++) {
+        if (i >= startIndex && i < endIndex) {
+          events.add(basicEventFromJson(data[i]));
+        }
       }
       return events;
     } else {
@@ -168,6 +198,16 @@ class EventProvider extends BaseProvider<Event> {
       return data;
     } else {
       throw Exception("Unknown error in a GET request");
+    }
+  }
+
+  Future<List<BasicEvent>> searchEvents(String searchTerm) async {
+    try {
+      final result = await get(filter: {'SearchTerm': searchTerm});
+      return result.result.map((e) => BasicEvent.fromJson(e.toJson())).toList();
+    } catch (e) {
+      print('Error searching events: $e');
+      return [];
     }
   }
 }

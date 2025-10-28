@@ -20,6 +20,7 @@ builder.Services.AddTransient<IEventReviewService, EventReviewService>();
 builder.Services.AddTransient<IImageService, ImageService>();
 builder.Services.AddTransient<INotificationService, NotificationService>();
 builder.Services.AddTransient<IPaymentService, PaymentService>();
+builder.Services.AddTransient<IRecommendedEventService, RecommendedEventService>();
 builder.Services.AddTransient<IRoleService, RoleService>();
 builder.Services.AddTransient<ITicketPurchaseService, TicketPurchaseService>();
 builder.Services.AddTransient<ITicketService, TicketService>();

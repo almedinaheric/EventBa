@@ -25,6 +25,7 @@ Event _$EventFromJson(Map<String, dynamic> json) => Event(
   type: $enumDecode(_$EventTypeEnumMap, json['type']),
   isPublished: json['isPublished'] as bool,
   isFeatured: json['isFeatured'] as bool,
+  isPaid: json['isPaid'] as bool,
   category: CategoryModel.fromJson(json['category'] as Map<String, dynamic>),
   coverImage: json['coverImage'] == null
       ? null
@@ -54,6 +55,7 @@ Map<String, dynamic> _$EventToJson(Event instance) => <String, dynamic>{
   'type': _$EventTypeEnumMap[instance.type]!,
   'isPublished': instance.isPublished,
   'isFeatured': instance.isFeatured,
+  'isPaid': instance.isPaid,
   'category': instance.category,
   'coverImage': instance.coverImage,
   'galleryImages': instance.galleryImages,

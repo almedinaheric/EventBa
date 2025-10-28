@@ -12,11 +12,13 @@ public class EventController : BaseCRUDController<EventResponseDto, EventSearchO
     EventUpdateRequestDto>
 {
     private readonly IEventService _eventService;
+    private readonly IRecommendedEventService _recommendedEventService;
 
     public EventController(ILogger<BaseCRUDController<EventResponseDto, EventSearchObject, EventInsertRequestDto,
-        EventUpdateRequestDto>> logger, IEventService service) : base(logger, service)
+        EventUpdateRequestDto>> logger, IEventService service, IRecommendedEventService recommendedEventService) : base(logger, service)
     {
         _eventService = service;
+        _recommendedEventService = recommendedEventService;
     }
 
 
@@ -26,6 +28,14 @@ public class EventController : BaseCRUDController<EventResponseDto, EventSearchO
     {
         var events = await _eventService.GetMyEvents();
         return Ok(events);
+    }
+
+    [HttpGet("my-events-count")]
+    [Authorize]
+    public async Task<IActionResult> GetMyEventsCount()
+    {
+        var events = await _eventService.GetMyEvents();
+        return Ok(new { count = events.Count });
     }
     
     [HttpGet("organizer/{organizerId}")]
@@ -89,5 +99,21 @@ public class EventController : BaseCRUDController<EventResponseDto, EventSearchO
     {
         var result = await _eventService.ToggleFavoriteEventAsync(id);
         return Ok(result);
+    }
+
+    [HttpPost("train-recommendation-model")]
+    [Authorize(Roles = "Admin")]
+    public IActionResult TrainRecommendationModel()
+    {
+        _recommendedEventService.TrainModel();
+        return Ok(new { message = "Recommendation model trained successfully" });
+    }
+
+    [HttpDelete("delete-recommendations")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> DeleteRecommendations()
+    {
+        await _recommendedEventService.DeleteAllRecommendations();
+        return Ok(new { message = "All recommendations deleted successfully" });
     }
 }
