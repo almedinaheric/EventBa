@@ -22,6 +22,7 @@ class MasterScreenWidget extends StatefulWidget {
   final VoidCallback? onLeftButtonPressed;
   final IconData? rightIcon;
   final IconData? leftIcon;
+  final Color? rightIconColor;
   final bool showBottomNavBar;
   final int initialIndex;
 
@@ -33,6 +34,7 @@ class MasterScreenWidget extends StatefulWidget {
     this.onLeftButtonPressed,
     this.rightIcon,
     this.leftIcon,
+    this.rightIconColor,
     this.showBottomNavBar = true,
     this.initialIndex = 0,
     super.key,
@@ -61,7 +63,10 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
 
   Future<void> _fetchUnreadNotifications() async {
     try {
-      final provider = Provider.of<NotificationProvider>(context, listen: false);
+      final provider = Provider.of<NotificationProvider>(
+        context,
+        listen: false,
+      );
       final count = await provider.getUnreadCount();
       if (mounted) {
         setState(() {
@@ -152,7 +157,7 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
                     TextSpan(
                       text: 'Ba',
                       style: TextStyle(color: Color(0xFF4776E6)),
-                    )
+                    ),
                   ],
                 ),
               ),
@@ -168,7 +173,8 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
                     final result = await Navigator.push(
                       context,
                       PageRouteBuilder(
-                        pageBuilder: (_, __, ___) => const NotificationsScreen(),
+                        pageBuilder: (_, __, ___) =>
+                            const NotificationsScreen(),
                         transitionDuration: Duration.zero,
                         reverseTransitionDuration: Duration.zero,
                       ),
@@ -208,7 +214,7 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
           actions: [
             if (widget.rightIcon != null)
               IconButton(
-                icon: Icon(widget.rightIcon),
+                icon: Icon(widget.rightIcon, color: widget.rightIconColor),
                 onPressed: widget.onRightButtonPressed,
               ),
           ],
@@ -218,7 +224,9 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
         return AppBar(
           leading: IconButton(
             icon: Icon(widget.leftIcon ?? Icons.arrow_back),
-            onPressed: widget.onLeftButtonPressed ?? () => Navigator.pop(context, true),
+            onPressed:
+                widget.onLeftButtonPressed ??
+                () => Navigator.pop(context, true),
           ),
           centerTitle: true,
           title: Text(
@@ -228,7 +236,7 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
           actions: [
             if (widget.rightIcon != null)
               IconButton(
-                icon: Icon(widget.rightIcon),
+                icon: Icon(widget.rightIcon, color: widget.rightIconColor),
                 onPressed: widget.onRightButtonPressed,
               ),
           ],
@@ -256,35 +264,31 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
       resizeToAvoidBottomInset: false,
       bottomNavigationBar: widget.showBottomNavBar
           ? BottomAppBar(
-        shape: const CircularNotchedRectangle(),
-        notchMargin: 8.0,
-        child: SizedBox(
-          height: 60,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildNavItem(Icons.home_outlined, 0),
-              _buildNavItem(Icons.favorite_border, 1),
-              const SizedBox(width: 0),
-              _buildNavItem(Icons.confirmation_num_outlined, 3),
-              _buildNavItem(Icons.person_outlined, 4),
-            ],
-          ),
-        ),
-      )
+              shape: const CircularNotchedRectangle(),
+              notchMargin: 8.0,
+              child: SizedBox(
+                height: 60,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _buildNavItem(Icons.home_outlined, 0),
+                    _buildNavItem(Icons.favorite_border, 1),
+                    const SizedBox(width: 0),
+                    _buildNavItem(Icons.confirmation_num_outlined, 3),
+                    _buildNavItem(Icons.person_outlined, 4),
+                  ],
+                ),
+              ),
+            )
           : null,
       floatingActionButton: widget.showBottomNavBar
           ? FloatingActionButton(
-        onPressed: () => _onBottomNavTap(2),
-        shape: const CircleBorder(),
-        backgroundColor: const Color(0xFF4776E6),
-        elevation: 6,
-        child: const Icon(
-          Icons.add,
-          size: 32,
-          color: Colors.white,
-        ),
-      )
+              onPressed: () => _onBottomNavTap(2),
+              shape: const CircleBorder(),
+              backgroundColor: const Color(0xFF4776E6),
+              elevation: 6,
+              child: const Icon(Icons.add, size: 32, color: Colors.white),
+            )
           : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );

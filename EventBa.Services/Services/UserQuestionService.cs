@@ -1,4 +1,5 @@
 using AutoMapper;
+using EventBa.Model.Enums;
 using EventBa.Model.Requests;
 using EventBa.Model.Responses;
 using EventBa.Model.SearchObjects;
@@ -26,6 +27,23 @@ public class UserQuestionService : BaseCRUDService<UserQuestionResponseDto, User
     public override async Task BeforeInsert(UserQuestion entity, UserQuestionInsertRequestDto insert)
     {
         entity.User = await _userService.GetUserEntityAsync();
+    }
+
+    public async Task AfterInsert(UserQuestion entity, UserQuestionInsertRequestDto insert)
+    {
+        // Create notification for the receiver (event organizer)
+        var notification = new Notification
+        {
+            UserId = entity.ReceiverId,
+            Title = "New Question Received",
+            Content = $"{entity.User.FullName} asked: {entity.Question}",
+            Status = NotificationStatus.Sent,
+            IsImportant = false,
+            IsSystemNotification = false
+        };
+
+        _context.Notifications.Add(notification);
+        await _context.SaveChangesAsync();
     }
 
     public override IQueryable<UserQuestion> AddInclude(IQueryable<UserQuestion> query, UserQuestionSearchObject? search = null)

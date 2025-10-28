@@ -4,16 +4,14 @@ import 'package:eventba_mobile/screens/buy_ticket_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:eventba_mobile/widgets/master_screen.dart';
-import 'package:eventba_mobile/widgets/organizer_section.dart';
 import 'package:eventba_mobile/widgets/ticket_option.dart';
 import 'package:eventba_mobile/widgets/primary_button.dart';
 import 'package:eventba_mobile/providers/event_provider.dart';
 import 'package:eventba_mobile/providers/ticket_provider.dart';
-import 'package:eventba_mobile/providers/event_review_provider.dart';
+import 'package:eventba_mobile/providers/ticket_purchase_provider.dart';
 import 'package:eventba_mobile/providers/user_question_provider.dart';
 import 'package:eventba_mobile/models/event/event.dart';
 import 'package:eventba_mobile/models/ticket/ticket.dart';
-import 'package:eventba_mobile/models/event_review/event_review.dart';
 
 class EventDetailsScreen extends StatefulWidget {
   final String eventId;
@@ -30,9 +28,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   Event? _event;
   User? _organizer;
   List<Ticket> _tickets = [];
-  List<EventReview> _reviews = [];
-  double _averageRating = 0.0;
   bool _isLoading = true;
+  int _totalTicketsLeft = 0;
 
   @override
   void initState() {
@@ -43,16 +40,42 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   Future<void> _loadEventData() async {
     try {
       final eventProvider = Provider.of<EventProvider>(context, listen: false);
-      final ticketProvider = Provider.of<TicketProvider>(context, listen: false);
-      final reviewProvider = Provider.of<EventReviewProvider>(context, listen: false);
+      final ticketProvider = Provider.of<TicketProvider>(
+        context,
+        listen: false,
+      );
       final userProvider = Provider.of<UserProvider>(context, listen: false);
 
       // Load event details
       final event = await eventProvider.getById(widget.eventId);
 
-      if (event != null) {
+      setState(() {
+        _event = event;
+      });
+
+      // Get current user profile first to check favorites and following status
+      try {
+        final currentUser = await userProvider.getProfile();
+
+        print("=== FAVORITE CHECK DEBUG ===");
+        print("Event ID: ${event.id}");
+        print(
+          "User favorite events count: ${currentUser.favoriteEvents.length}",
+        );
+        print(
+          "User favorite events IDs: ${currentUser.favoriteEvents.map((e) => e.id).toList()}",
+        );
+
+        // Check if event is favorited
+        final isEventFavorited = currentUser.favoriteEvents.any(
+          (favEvent) => favEvent.id == event.id,
+        );
+
+        print("Is event favorited: $isEventFavorited");
+        print("=== END DEBUG ===");
+
         setState(() {
-          _event = event;
+          isFavorited = isEventFavorited;
         });
 
         // Fetch organizer based on organizerId
@@ -61,30 +84,106 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           setState(() {
             _organizer = organizer;
           });
+
+          // Check if current user is following the organizer
+          setState(() {
+            isFollowing = currentUser.following.any(
+              (u) => u.id == organizer.id,
+            );
+          });
         } catch (e) {
-          print("Failed to load organizer: $e");
+          // Handle organizer loading error silently
         }
+      } catch (e) {
+        // Handle user profile loading error silently
       }
 
       // Load tickets
       final tickets = await ticketProvider.getTicketsForEvent(widget.eventId);
       setState(() {
         _tickets = tickets;
-      });
-
-      // Load reviews
-      final reviews = await reviewProvider.getReviewsForEvent(widget.eventId);
-      final averageRating = await reviewProvider.getAverageRatingForEvent(widget.eventId);
-      setState(() {
-        _reviews = reviews;
-        _averageRating = averageRating;
+        _totalTicketsLeft = tickets.fold(
+          0,
+          (sum, ticket) => sum + ticket.quantityAvailable,
+        );
       });
     } catch (e) {
-      print("Failed to load event data: $e");
+      // Handle general error silently
     } finally {
       setState(() {
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _toggleFavorite() async {
+    try {
+      final eventProvider = Provider.of<EventProvider>(context, listen: false);
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+
+      print("=== TOGGLE FAVORITE DEBUG ===");
+      print("Before toggle - Event ID: ${widget.eventId}");
+      print("Before toggle - isFavorited: $isFavorited");
+
+      await eventProvider.toggleFavoriteEvent(widget.eventId);
+
+      // Add a small delay to ensure backend has processed the change
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      // Refresh user profile to get updated favorites list
+      final updatedUser = await userProvider.getProfile();
+      print(
+        "After toggle - User favorite events count: ${updatedUser.favoriteEvents.length}",
+      );
+      print(
+        "After toggle - User favorite events IDs: ${updatedUser.favoriteEvents.map((e) => e.id).toList()}",
+      );
+
+      final isEventFavorited = updatedUser.favoriteEvents.any(
+        (favEvent) => favEvent.id == widget.eventId,
+      );
+
+      print("After toggle - isEventFavorited: $isEventFavorited");
+      print("=== END TOGGLE DEBUG ===");
+
+      setState(() {
+        isFavorited = isEventFavorited;
+      });
+    } catch (e) {
+      print("Toggle favorite error: $e");
+    }
+  }
+
+  Future<void> _toggleFollow() async {
+    if (_organizer == null) return;
+
+    try {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      if (isFollowing) {
+        await userProvider.unfollowUser(_organizer!.id);
+      } else {
+        await userProvider.followUser(_organizer!.id);
+      }
+      setState(() {
+        isFollowing = !isFollowing;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text(
+            isFollowing
+                ? "Following ${_organizer!.fullName}"
+                : "Unfollowed ${_organizer!.fullName}",
+          ),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text("Failed to update follow status: $e"),
+        ),
+      );
     }
   }
 
@@ -114,6 +213,88 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               ),
             ],
           ),
+        );
+      },
+    );
+  }
+
+  Future<void> _showReserveDialog() async {
+    final size = MediaQuery.of(context).size;
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text(
+            "Reserve Your Place",
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          content: const Text(
+            "Are you sure you want to reserve your place for this free event?",
+            style: TextStyle(fontSize: 16),
+          ),
+          actions: [
+            Center(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  PrimaryButton(
+                    text: "Cancel",
+                    width: size.width * 0.3,
+                    outlined: true,
+                    small: true,
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                  ),
+                  const SizedBox(width: 12),
+                  PrimaryButton(
+                    text: "Reserve",
+                    width: size.width * 0.3,
+                    small: true,
+                    onPressed: () async {
+                      try {
+                        // Get the first free ticket
+                        final freeTicket = _tickets.firstWhere(
+                          (t) => t.price == 0,
+                        );
+
+                        // Create ticket purchase
+                        final ticketPurchaseProvider =
+                            Provider.of<TicketPurchaseProvider>(
+                              context,
+                              listen: false,
+                            );
+
+                        await ticketPurchaseProvider.insert({
+                          'ticketId': freeTicket.id,
+                          'eventId': widget.eventId,
+                        });
+
+                        Navigator.pop(context);
+                        Navigator.pop(context); // Go back to home
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            behavior: SnackBarBehavior.floating,
+                            content: Text("Place reserved successfully!"),
+                          ),
+                        );
+                      } catch (e) {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            behavior: SnackBarBehavior.floating,
+                            content: Text("Failed to reserve place: $e"),
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
         );
       },
     );
@@ -217,6 +398,9 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       title: _event!.title,
       leftIcon: Icons.arrow_back,
       onLeftButtonPressed: () => Navigator.pop(context),
+      rightIcon: isFavorited ? Icons.favorite : Icons.favorite_border,
+      rightIconColor: Colors.red,
+      onRightButtonPressed: _toggleFavorite,
       child: LayoutBuilder(
         builder: (context, constraints) {
           final screenWidth = constraints.maxWidth;
@@ -341,7 +525,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     const Text(
-                                      "Rating",
+                                      "Tickets left",
                                       style: TextStyle(
                                         fontSize: 12,
                                         color: Colors.grey,
@@ -349,7 +533,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      _averageRating.toStringAsFixed(1),
+                                      _totalTicketsLeft.toString(),
                                       style: const TextStyle(
                                         fontSize: 24,
                                         fontWeight: FontWeight.bold,
@@ -366,9 +550,60 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
                     const SizedBox(height: 24),
 
-                    OrganizerSection(
-                      name: _organizer!.fullName,
-                      organizerId: _organizer!.id,
+                    // Organizer Section with Follow Button
+                    const Text(
+                      "Organized by",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 24,
+                              backgroundColor: Colors.grey[300],
+                              child: Text(
+                                _organizer!.fullName[0].toUpperCase(),
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              _organizer!.fullName,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                        OutlinedButton(
+                          onPressed: _toggleFollow,
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Color(0xFF5B7CF6)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: Text(
+                            isFollowing ? "Unfollow" : "Follow",
+                            style: const TextStyle(
+                              color: Color(0xFF5B7CF6),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
 
                     const SizedBox(height: 24),
@@ -446,21 +681,37 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
                     const SizedBox(height: 8),
 
-                    // Buy Ticket Button
+                    // Buy Ticket Button or Reserve Place Button
                     if (_tickets.isNotEmpty)
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
                           onPressed: () {
-                            Navigator.push(
-                              context,
-                              PageRouteBuilder(
-                                pageBuilder: (_, __, ___) =>
-                                    const BuyTicketScreen(),
-                                transitionDuration: Duration.zero,
-                                reverseTransitionDuration: Duration.zero,
-                              ),
+                            // Check if any ticket is free
+                            final hasFreeTickets = _tickets.any(
+                              (t) => t.price == 0,
                             );
+                            final hasPaidTickets = _tickets.any(
+                              (t) => t.price > 0,
+                            );
+
+                            if (hasFreeTickets && !hasPaidTickets) {
+                              // All tickets are free - show reserve dialog
+                              _showReserveDialog();
+                            } else {
+                              // Has paid tickets or mix - navigate to buy ticket screen
+                              Navigator.push(
+                                context,
+                                PageRouteBuilder(
+                                  pageBuilder: (_, __, ___) => BuyTicketScreen(
+                                    eventId: widget.eventId,
+                                    tickets: _tickets,
+                                  ),
+                                  transitionDuration: Duration.zero,
+                                  reverseTransitionDuration: Duration.zero,
+                                ),
+                              );
+                            }
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF5B7CF6),
@@ -469,9 +720,11 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Text(
-                            "Buy Ticket",
-                            style: TextStyle(
+                          child: Text(
+                            _tickets.every((t) => t.price == 0)
+                                ? "Reserve Your Place"
+                                : "Buy Ticket",
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 16,
                               fontWeight: FontWeight.w600,

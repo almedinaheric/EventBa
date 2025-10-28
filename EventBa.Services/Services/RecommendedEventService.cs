@@ -176,6 +176,7 @@ public class RecommendedEventService : IRecommendedEventService
                 .Include(e => e.Tickets)
                 .Where(e => e.IsPublished &&
                            categoryIds.Contains(e.CategoryId) &&
+                           e.OrganizerId != userId &&
                            !user.FavoriteEvents.Any(fe => fe.Id == e.Id))
                 .Take(10)
                 .ToListAsync();
@@ -198,6 +199,7 @@ public class RecommendedEventService : IRecommendedEventService
                     .Include(e => e.EventGalleryImages)
                     .Include(e => e.Tickets)
                     .Where(e => e.IsPublished &&
+                               e.OrganizerId != userId &&
                                !user.FavoriteEvents.Any(fe => fe.Id == e.Id) &&
                                !user.TicketPurchases.Any(tp => tp.EventId == e.Id))
                     .ToListAsync();
@@ -255,7 +257,7 @@ public class RecommendedEventService : IRecommendedEventService
                 .Include(e => e.EventGalleryImages)
                 .Include(e => e.EventStatistics)
                 .Include(e => e.Tickets)
-                .Where(e => e.IsPublished && categoryIds.Contains(e.CategoryId))
+                .Where(e => e.IsPublished && categoryIds.Contains(e.CategoryId) && e.OrganizerId != userId)
                 .OrderByDescending(e => e.EventStatistics.Sum(es => es.TotalFavorites))
                 .Take(10)
                 .ToListAsync();
@@ -270,7 +272,7 @@ public class RecommendedEventService : IRecommendedEventService
                 .Include(e => e.Category)
                 .Include(e => e.EventGalleryImages)
                 .Include(e => e.Tickets)
-                .Where(e => e.IsPublished && e.IsFeatured)
+                .Where(e => e.IsPublished && e.IsFeatured && e.OrganizerId != userId)
                 .Take(10)
                 .ToListAsync();
 

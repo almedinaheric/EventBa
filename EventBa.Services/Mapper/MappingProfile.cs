@@ -24,7 +24,7 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.Followers, opt => opt.MapFrom(src => src.Followers))
             .ForMember(dest => dest.Following, opt => opt.MapFrom(src => src.Followings))
             .ForMember(dest => dest.Interests, opt => opt.MapFrom(src => src.Categories))
-            .ForMember(dest => dest.FavoriteEvents, opt => opt.MapFrom(src => src.Events))
+            .ForMember(dest => dest.FavoriteEvents, opt => opt.MapFrom(src => src.FavoriteEvents))
             .ReverseMap();
         CreateMap<User, BasicUserResponseDto>();
         CreateMap<UserInsertRequestDto, User>();

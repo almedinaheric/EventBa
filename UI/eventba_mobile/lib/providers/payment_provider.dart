@@ -29,4 +29,33 @@ class PaymentProvider extends BaseProvider<Payment> {
       throw Exception("Unknown error in a GET request");
     }
   }
+
+  Future<Map<String, dynamic>> createPaymentIntent({
+    required double amount,
+    required String currency,
+    required String ticketId,
+    required String eventId,
+    required int quantity,
+  }) async {
+    var url = "${baseUrl}Payment/create-payment-intent";
+
+    var uri = Uri.parse(url);
+    var headers = createHeaders();
+
+    var body = jsonEncode({
+      'amount': amount,
+      'currency': currency,
+      'ticketId': ticketId,
+      'eventId': eventId,
+      'quantity': quantity,
+    });
+
+    var response = await http.post(uri, headers: headers, body: body);
+
+    if (isValidResponse(response)) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception("Failed to create payment intent");
+    }
+  }
 }

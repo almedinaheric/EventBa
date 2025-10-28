@@ -37,7 +37,8 @@ public class UserService :
             .Include(u => u.Followings)
             .Include(u => u.Followers)
             .Include(u => u.Categories)
-            .Include(u => u.Events);
+            .Include(u => u.Events)
+            .Include(u => u.FavoriteEvents);
     }
     
     public override async Task BeforeInsert(User entity, UserInsertRequestDto insert)
@@ -191,6 +192,7 @@ public class UserService :
             .Include(u => u.Followings)
             .Include(u => u.Categories)
             .Include(u => u.ProfileImage)
+            .Include(u => u.FavoriteEvents)
             .FirstOrDefaultAsync(u => u.Email.Equals(userIdClaim));
         
         if (user == null)

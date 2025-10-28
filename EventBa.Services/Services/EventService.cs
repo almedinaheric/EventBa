@@ -46,6 +46,13 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
 
     public override IQueryable<Event> AddFilter(IQueryable<Event> query, EventSearchObject? search = null)
     {
+        // Exclude current user's own events from search results
+        var currentUser = _userService.GetUserEntityAsync().Result;
+        if (currentUser != null)
+        {
+            query = query.Where(x => x.OrganizerId != currentUser.Id);
+        }
+
         if (!string.IsNullOrWhiteSpace(search?.SearchTerm))
         {
             var searchTerm = search.SearchTerm.ToLower();
@@ -152,8 +159,9 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
     
     public async Task<List<EventResponseDto>> GetPublicEvents()
     {
+        var currentUser = await _userService.GetUserEntityAsync();
         var publicEvents = await _context.Events
-            .Where(e => e.Type == EventType.Public && e.IsPublished)
+            .Where(e => e.Type == EventType.Public && e.IsPublished && e.OrganizerId != currentUser.Id)
             .Include(e => e.Category)
             .Include(e => e.EventGalleryImages)
             .Include(e => e.Tickets)
@@ -164,8 +172,9 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
 
     public async Task<List<EventResponseDto>> GetPrivateEvents()
     {
+        var currentUser = await _userService.GetUserEntityAsync();
         var privateEvents = await _context.Events
-            .Where(e => e.Type == EventType.Private && e.IsPublished)
+            .Where(e => e.Type == EventType.Private && e.IsPublished && e.OrganizerId != currentUser.Id)
             .Include(e => e.Category)
             .Include(e => e.EventGalleryImages)
             .Include(e => e.Tickets)
@@ -176,8 +185,9 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
 
     public async Task<List<EventResponseDto>> GetEventsByCategoryId(Guid categoryId)
     {
+        var currentUser = await _userService.GetUserEntityAsync();
         var privateEvents = await _context.Events
-            .Where(e => e.Category.Id == categoryId && e.IsPublished)
+            .Where(e => e.Category.Id == categoryId && e.IsPublished && e.OrganizerId != currentUser.Id)
             .Include(e => e.Category)
             .Include(e => e.EventGalleryImages)
             .Include(e => e.Tickets)

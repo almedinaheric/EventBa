@@ -7,12 +7,17 @@ using EventBa.Services.Database.Context;
 using EventBa.Services.Mapper;
 using EventBa.Services.Services;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.OpenApi.Models; 
+using Microsoft.OpenApi.Models;
+using Stripe;
+using EventService = EventBa.Services.Services.EventService;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<EventBaDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Configure Stripe
+StripeConfiguration.ApiKey = builder.Configuration["Stripe:SecretKey"];
 
 builder.Services.AddTransient<ICategoryService, CategoryService>();
 builder.Services.AddTransient<IEventService, EventService>();
