@@ -70,7 +70,9 @@ public class MappingProfile : Profile
         // ---------------------
         // EventReview
         // ---------------------
-        CreateMap<EventReview, EventReviewResponseDto>().ReverseMap();
+        CreateMap<EventReview, EventReviewResponseDto>()
+            .ForMember(dest => dest.User, opt => opt.MapFrom(src => src.User))
+            .ReverseMap();
         CreateMap<EventReviewInsertRequestDto, EventReview>();
         CreateMap<EventReviewUpdateRequestDto, EventReview>();
 

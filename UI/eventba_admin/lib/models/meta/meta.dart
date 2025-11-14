@@ -4,14 +4,32 @@ part 'meta.g.dart';
 
 @JsonSerializable()
 class Meta {
-  int count;
-  int currentPage;
-  int totalPages;
-  bool hasPrevious;
-  bool hasNext;
+  @JsonKey(name: 'totalCount')
+  final int? totalCount;
 
-  Meta(this.count, this.currentPage, this.totalPages, this.hasPrevious,
-      this.hasNext);
+  @JsonKey(name: 'pageNumber')
+  final int pageNumber;
+
+  @JsonKey(name: 'pageSize')
+  final int pageSize;
+
+  @JsonKey(name: 'totalPages')
+  final int totalPages;
+
+  @JsonKey(name: 'hasPrevious')
+  final bool hasPrevious;
+
+  @JsonKey(name: 'hasNext')
+  final bool hasNext;
+
+  Meta({
+    this.totalCount,
+    required this.pageNumber,
+    required this.pageSize,
+    required this.totalPages,
+    required this.hasPrevious,
+    required this.hasNext,
+  });
 
   factory Meta.fromJson(Map<String, dynamic> json) => _$MetaFromJson(json);
   Map<String, dynamic> toJson() => _$MetaToJson(this);

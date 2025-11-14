@@ -7,16 +7,18 @@ part of 'meta.dart';
 // **************************************************************************
 
 Meta _$MetaFromJson(Map<String, dynamic> json) => Meta(
-      (json['count'] as num).toInt(),
-      (json['currentPage'] as num).toInt(),
-      (json['totalPages'] as num).toInt(),
-      json['hasPrevious'] as bool,
-      json['hasNext'] as bool,
+      totalCount: (json['totalCount'] as num?)?.toInt(),
+      pageNumber: (json['pageNumber'] as num).toInt(),
+      pageSize: (json['pageSize'] as num).toInt(),
+      totalPages: (json['totalPages'] as num).toInt(),
+      hasPrevious: json['hasPrevious'] as bool,
+      hasNext: json['hasNext'] as bool,
     );
 
 Map<String, dynamic> _$MetaToJson(Meta instance) => <String, dynamic>{
-      'count': instance.count,
-      'currentPage': instance.currentPage,
+      'totalCount': instance.totalCount,
+      'pageNumber': instance.pageNumber,
+      'pageSize': instance.pageSize,
       'totalPages': instance.totalPages,
       'hasPrevious': instance.hasPrevious,
       'hasNext': instance.hasNext,

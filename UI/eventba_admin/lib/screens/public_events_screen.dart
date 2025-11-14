@@ -226,14 +226,25 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
       'id': event.id,
       'name': event.title,
       'category': event.category.name,
+      'categoryId': event.category.id,
       'venue': event.location,
       'date': event.startDate,
-      'startTime': event.startDate,
-      'endTime': event.endDate,
+      'startTime': event.startTime,
+      'endTime': event.endTime,
+      'startDate': event.startDate,
+      'endDate': event.endDate,
       'description': event.description,
       'isPaid': event.isPaid,
       'status': event.status.name,
+      'type': event.type.name,
       'coverImage': event.coverImage,
+      'organizerId': event.organizerId,
+      'capacity': event.capacity,
+      'currentAttendees': event.currentAttendees,
+      'availableTicketsCount': event.availableTicketsCount,
+      'isFeatured': false,
+      'averageRating': event.averageRating ?? 0.0,
+      'reviewCount': event.reviewCount ?? 0,
     };
   }
 
@@ -245,8 +256,8 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
     final formattedDate = event.startDate;
 
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
+      onTap: () async {
+        final result = await Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => EventDetailsScreen(
@@ -257,6 +268,11 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
             ),
           ),
         );
+
+        // Reload events if the event was deleted or updated
+        if (result == true) {
+          _loadEvents();
+        }
       },
       child: Container(
         decoration: BoxDecoration(

@@ -1,6 +1,16 @@
 import 'package:eventba_admin/screens/edit_event_screen.dart';
+import 'package:eventba_admin/screens/user_details_screen.dart';
 import 'package:eventba_admin/widgets/master_screen.dart';
+import 'package:eventba_admin/providers/event_provider.dart';
+import 'package:eventba_admin/providers/event_review_provider.dart';
+import 'package:eventba_admin/providers/ticket_provider.dart';
+import 'package:eventba_admin/models/event/event.dart';
+import 'package:eventba_admin/models/event_review/event_review.dart';
+import 'package:eventba_admin/models/event_statistics/event_statistics.dart';
+import 'package:eventba_admin/models/ticket/ticket.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 
 class EventDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> eventData;
@@ -21,32 +31,170 @@ class EventDetailsScreen extends StatefulWidget {
 }
 
 class _EventDetailsScreenState extends State<EventDetailsScreen> {
+  bool _isLoading = false;
+  late Map<String, dynamic> _currentEventData;
+  List<EventReview> _reviews = [];
+  EventStatistics? _statistics;
+  List<Ticket> _tickets = [];
+  bool _reviewsLoading = false;
+  bool _statisticsLoading = false;
+  bool _ticketsLoading = false;
+  bool _isDescriptionExpanded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentEventData = widget.eventData;
+
+    // Load tickets if event is paid
+    if (_currentEventData['isPaid'] == true) {
+      _loadTickets();
+    }
+
+    if (widget.isPublic && widget.isPastEvent) {
+      _loadReviews();
+      _loadStatistics();
+    }
+  }
+
+  Future<void> _loadTickets() async {
+    if (_currentEventData['id'] == null) return;
+
+    setState(() {
+      _ticketsLoading = true;
+    });
+
+    try {
+      final ticketProvider = Provider.of<TicketProvider>(
+        context,
+        listen: false,
+      );
+      final tickets = await ticketProvider.getTicketsForEvent(
+        _currentEventData['id'],
+      );
+      setState(() {
+        _tickets = tickets;
+        _ticketsLoading = false;
+      });
+    } catch (e) {
+      print("Error loading tickets: $e");
+      setState(() {
+        _ticketsLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadReviews() async {
+    if (_currentEventData['id'] == null) return;
+
+    setState(() {
+      _reviewsLoading = true;
+    });
+
+    try {
+      final reviewProvider = Provider.of<EventReviewProvider>(
+        context,
+        listen: false,
+      );
+      final reviews = await reviewProvider.getReviewsForEvent(
+        _currentEventData['id'],
+      );
+      setState(() {
+        _reviews = reviews;
+        _reviewsLoading = false;
+      });
+    } catch (e) {
+      print("Error loading reviews: $e");
+      setState(() {
+        _reviewsLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadStatistics() async {
+    if (_currentEventData['id'] == null) return;
+
+    setState(() {
+      _statisticsLoading = true;
+    });
+
+    try {
+      final eventProvider = Provider.of<EventProvider>(context, listen: false);
+      final stats = await eventProvider.getEventStatistics(
+        _currentEventData['id'],
+      );
+      setState(() {
+        _statistics = EventStatistics.fromJson(stats);
+        _statisticsLoading = false;
+      });
+    } catch (e) {
+      print("Error loading statistics: $e");
+      setState(() {
+        _statisticsLoading = false;
+      });
+    }
+  }
+
+  Future<void> _reloadEventData() async {
+    if (_currentEventData['id'] == null) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final eventProvider = Provider.of<EventProvider>(context, listen: false);
+      final Event updatedEvent = await eventProvider.getEventById(
+        _currentEventData['id'],
+      );
+
+      setState(() {
+        _currentEventData = {
+          'id': updatedEvent.id,
+          'name': updatedEvent.title,
+          'category': updatedEvent.category.name,
+          'categoryId': updatedEvent.category.id,
+          'venue': updatedEvent.location,
+          'date': updatedEvent.startDate,
+          'startTime': updatedEvent.startTime,
+          'endTime': updatedEvent.endTime,
+          'startDate': updatedEvent.startDate,
+          'endDate': updatedEvent.endDate,
+          'description': updatedEvent.description,
+          'isPaid': updatedEvent.isPaid,
+          'status': updatedEvent.status.name,
+          'type': updatedEvent.type.name,
+          'coverImage': updatedEvent.coverImage,
+          'organizerId': updatedEvent.organizerId,
+          'capacity': updatedEvent.capacity,
+          'currentAttendees': updatedEvent.currentAttendees,
+          'availableTicketsCount': updatedEvent.availableTicketsCount,
+        };
+        _isLoading = false;
+      });
+
+      // Reload tickets if event is paid
+      if (_currentEventData['isPaid'] == true) {
+        _loadTickets();
+      }
+
+      // Reload reviews and statistics if applicable
+      if (widget.isPublic && widget.isPastEvent) {
+        _loadReviews();
+        _loadStatistics();
+      }
+    } catch (e) {
+      print("Error reloading event data: $e");
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
   final List<String> imageUrls = [
     'assets/images/default_event_cover_image.png',
     'assets/images/default_event_cover_image.png',
     'assets/images/default_event_cover_image.png',
-  ];
-
-  // Sample reviews data
-  final List<Map<String, dynamic>> reviews = [
-    {
-      'name': 'John Smith',
-      'rating': 5,
-      'comment': 'Amazing event! Great organization and fantastic music.',
-      'date': '2 days ago'
-    },
-    {
-      'name': 'Sarah Johnson',
-      'rating': 4,
-      'comment': 'Really enjoyed the event, will definitely attend next time.',
-      'date': '1 week ago'
-    },
-    {
-      'name': 'Mike Wilson',
-      'rating': 5,
-      'comment': 'Perfect venue and great atmosphere. Highly recommended!',
-      'date': '1 week ago'
-    },
   ];
 
   void _showImageDialog(int initialIndex) {
@@ -64,10 +212,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   controller: PageController(initialPage: initialIndex),
                   itemCount: imageUrls.length,
                   itemBuilder: (context, index) {
-                    return Image.asset(
-                      imageUrls[index],
-                      fit: BoxFit.contain,
-                    );
+                    return Image.asset(imageUrls[index], fit: BoxFit.contain);
                   },
                 ),
               ),
@@ -78,13 +223,45 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     );
   }
 
+  Future<void> _deleteEvent() async {
+    if (_currentEventData['id'] == null) return;
+
+    try {
+      final eventProvider = Provider.of<EventProvider>(context, listen: false);
+      await eventProvider.deleteEvent(_currentEventData['id']);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Event removed successfully'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      // Navigate back to events list
+      Navigator.pop(context, true); // Return true to indicate deletion
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to remove event: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   void _showRemoveEventDialog() {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Remove Event'),
-          content: const Text('Are you sure you want to remove this event? This action cannot be undone.'),
+          content: const Text(
+            'Are you sure you want to remove this event? This action cannot be undone.',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -92,11 +269,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
             ),
             TextButton(
               onPressed: () {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Event removed successfully')),
-                );
-                Navigator.pop(context);
+                Navigator.pop(context); // Close dialog
+                _deleteEvent(); // Delete the event
               },
               style: TextButton.styleFrom(foregroundColor: Colors.red),
               child: const Text('Remove'),
@@ -109,8 +283,16 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return MasterScreen(
+        title: widget.eventTitle,
+        showBackButton: true,
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return MasterScreen(
-      title: widget.eventTitle,
+      title: _currentEventData['name'] ?? widget.eventTitle,
       showBackButton: true,
       body: LayoutBuilder(
         builder: (context, constraints) {
@@ -169,7 +351,11 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     const SizedBox(height: 24),
 
                     // Tickets Section
-                    _buildTicketsSection(),
+                    // Tickets (only for paid events)
+                    if (_currentEventData['isPaid'] == true) ...[
+                      _buildTicketsSection(),
+                      const SizedBox(height: 24),
+                    ],
 
                     // Reviews and Statistics (only for past public events)
                     if (widget.isPublic && widget.isPastEvent) ...[
@@ -182,7 +368,10 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     const SizedBox(height: 24),
 
                     // Action Buttons
-                    _buildActionButtons(isPublic: widget.isPublic, isPastEvent: widget.isPastEvent),
+                    _buildActionButtons(
+                      isPublic: widget.isPublic,
+                      isPastEvent: widget.isPastEvent,
+                    ),
 
                     const SizedBox(height: 56),
                   ],
@@ -200,7 +389,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       children: [
         Expanded(
           child: Text(
-            'Event name',
+            _currentEventData['name'] ?? 'Event name',
             style: const TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
@@ -251,7 +440,11 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       children: [
         const Text(
           "Details",
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.black),
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Colors.black,
+          ),
         ),
         const SizedBox(height: 12),
         IntrinsicHeight(
@@ -264,11 +457,23 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _buildDetailItem(Icons.location_on, "Location"),
+                    _buildDetailItem(
+                      Icons.location_on,
+                      "Location",
+                      _currentEventData['venue'] ?? 'N/A',
+                    ),
                     const SizedBox(height: 8),
-                    _buildDetailItem(Icons.calendar_today, "Date"),
+                    _buildDetailItem(
+                      Icons.calendar_today,
+                      "Date",
+                      _currentEventData['date'] ?? 'N/A',
+                    ),
                     const SizedBox(height: 8),
-                    _buildDetailItem(Icons.access_time, "Time"),
+                    _buildDetailItem(
+                      Icons.access_time,
+                      "Time",
+                      "${_currentEventData['startTime'] ?? 'N/A'} - ${_currentEventData['endTime'] ?? 'N/A'}",
+                    ),
                   ],
                 ),
               ),
@@ -281,14 +486,21 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 flex: 1,
                 child: Center(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFF4776E6),
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    child: const Text(
-                      "Music",
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500, fontSize: 14),
+                    child: Text(
+                      _currentEventData['category'] ?? "Category",
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 14,
+                      ),
                     ),
                   ),
                 ),
@@ -305,13 +517,16 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Text(
-                      "Tickets left",
+                      "Capacity",
                       style: TextStyle(fontSize: 12, color: Colors.grey),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      widget.isPublic ? '0' : '10',
-                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                      '${_currentEventData['capacity'] ?? 0}',
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
@@ -323,76 +538,134 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     );
   }
 
-  Widget _buildDetailItem(IconData icon, String label) {
-    return Row(
+  Widget _buildDetailItem(IconData icon, String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 16, color: Colors.grey),
-        const SizedBox(width: 8),
-        Text(label, style: const TextStyle(fontSize: 14, color: Colors.grey)),
+        Row(
+          children: [
+            Icon(icon, size: 16, color: Colors.grey),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 14, color: Colors.grey),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Padding(
+          padding: const EdgeInsets.only(left: 24),
+          child: Text(
+            value,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+          ),
+        ),
       ],
     );
   }
 
   Widget _buildOrganizerSection() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey[300]!),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.grey[300],
-            ),
-            child: const Icon(Icons.person, color: Colors.grey),
-          ),
-          const SizedBox(width: 12),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Organized by',
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-                Text(
-                  'Dylan Malik',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
+    final organizerId = _currentEventData['organizerId'];
+
+    return GestureDetector(
+      onTap: organizerId != null
+          ? () {
+              // TODO: Fetch user details by ID before navigating
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => UserDetailsScreen(
+                    userId: organizerId,
+                    name: "Organizer", // TODO: Fetch real organizer name
+                    email: "", // TODO: Fetch real organizer email
+                    avatar: "", // TODO: Fetch real organizer avatar
                   ),
                 ),
-              ],
+              );
+            }
+          : null,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey[300]!),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.grey[300],
+              ),
+              child: const Icon(Icons.person, color: Colors.grey),
             ),
-          ),
-        ],
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Organized by',
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                  Text(
+                    'View Organizer',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildDescription() {
+    final description =
+        _currentEventData['description'] ?? 'No description available.';
+    const int maxLength = 150;
+    final bool isLongDescription = description.length > maxLength;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
           "Description",
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.black),
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Colors.black,
+          ),
         ),
         const SizedBox(height: 8),
-        const Text(
-          "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.",
-          style: TextStyle(fontSize: 14, color: Colors.grey, height: 1.5),
+        Text(
+          _isDescriptionExpanded || !isLongDescription
+              ? description
+              : '${description.substring(0, maxLength)}...',
+          style: const TextStyle(fontSize: 14, color: Colors.grey, height: 1.5),
         ),
-        const SizedBox(height: 4),
-        const Text(
-          "Read more...",
-          style: TextStyle(fontSize: 14, color: Color(0xFF4776E6), fontWeight: FontWeight.w500),
-        ),
+        if (isLongDescription) ...[
+          const SizedBox(height: 8),
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                _isDescriptionExpanded = !_isDescriptionExpanded;
+              });
+            },
+            child: Text(
+              _isDescriptionExpanded ? "Show less" : "Read more",
+              style: const TextStyle(
+                fontSize: 14,
+                color: Color(0xFF4776E6),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -403,40 +676,95 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       children: [
         const Text(
           "Tickets",
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.black),
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Colors.black,
+          ),
         ),
         const SizedBox(height: 12),
-        _buildTicketOption('VIP', '50KM'),
-        const SizedBox(height: 8),
-        _buildTicketOption('ECONOMY', '20KM'),
+        if (_ticketsLoading)
+          const Center(child: CircularProgressIndicator())
+        else if (_tickets.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey[300]!),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Center(
+              child: Text(
+                'No tickets available',
+                style: TextStyle(fontSize: 14, color: Colors.grey),
+              ),
+            ),
+          )
+        else
+          Column(
+            children: _tickets.map((ticket) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8.0),
+                child: _buildTicketOption(
+                  ticket.ticketType.toUpperCase(),
+                  '${ticket.price.toStringAsFixed(2)} KM',
+                  ticket.quantityAvailable,
+                  ticket.quantitySold,
+                ),
+              );
+            }).toList(),
+          ),
       ],
     );
   }
 
-  Widget _buildTicketOption(String type, String price) {
+  Widget _buildTicketOption(
+    String type,
+    String price,
+    int available,
+    int sold,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         border: Border.all(color: Colors.grey[300]!),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            type,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                type,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              Text(
+                price,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF4776E6),
+                ),
+              ),
+            ],
           ),
-          Text(
-            price,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF4776E6),
-            ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Available: $available',
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              ),
+              Text(
+                'Sold: $sold',
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              ),
+            ],
           ),
         ],
       ),
@@ -449,67 +777,87 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       children: [
         const Text(
           "Statistics",
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.black),
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Colors.black,
+          ),
         ),
         const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.grey[50],
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey[200]!),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
+        _statisticsLoading
+            ? const Center(child: CircularProgressIndicator())
+            : Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[200]!),
+                ),
+                child: Row(
                   children: [
-                    const Text(
-                      "150",
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF4776E6)),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          Text(
+                            "${_statistics?.totalTicketsSold ?? 0}",
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF4776E6),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            "Tickets Sold",
+                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 4),
-                    const Text("Tickets Sold", style: TextStyle(fontSize: 12, color: Colors.grey)),
+                    Container(height: 40, width: 1, color: Colors.grey[300]),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          Text(
+                            "${_statistics?.totalRevenue.toStringAsFixed(2) ?? '0.00'} KM",
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            "Total Earned",
+                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(height: 40, width: 1, color: Colors.grey[300]),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          Text(
+                            _statistics?.averageRating.toStringAsFixed(1) ??
+                                "0.0",
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.amber,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            "Avg Rating",
+                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
-              Container(
-                height: 40,
-                width: 1,
-                color: Colors.grey[300],
-              ),
-              Expanded(
-                child: Column(
-                  children: [
-                    const Text(
-                      "4,500 KM",
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.green),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text("Total Earned", style: TextStyle(fontSize: 12, color: Colors.grey)),
-                  ],
-                ),
-              ),
-              Container(
-                height: 40,
-                width: 1,
-                color: Colors.grey[300],
-              ),
-              Expanded(
-                child: Column(
-                  children: [
-                    const Text(
-                      "4.8",
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.amber),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text("Avg Rating", style: TextStyle(fontSize: 12, color: Colors.grey)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
       ],
     );
   }
@@ -523,21 +871,54 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           children: [
             const Text(
               "Reviews",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.black),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.black,
+              ),
             ),
             Text(
-              "${reviews.length} reviews",
+              "${_reviews.length} reviews",
               style: const TextStyle(fontSize: 14, color: Colors.grey),
             ),
           ],
         ),
         const SizedBox(height: 12),
-        ...reviews.map((review) => _buildReviewItem(review)).toList(),
+        _reviewsLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _reviews.isEmpty
+            ? const Text("No reviews yet.")
+            : Column(
+                children: _reviews
+                    .map((review) => _buildReviewItem(review))
+                    .toList(),
+              ),
       ],
     );
   }
 
-  Widget _buildReviewItem(Map<String, dynamic> review) {
+  String _getReviewerName(EventReview review) {
+    if (review.user?.fullName != null && review.user!.fullName!.isNotEmpty) {
+      return review.user!.fullName!;
+    }
+
+    final firstName = review.user?.firstName ?? '';
+    final lastName = review.user?.lastName ?? '';
+    final fullName = "$firstName $lastName".trim();
+
+    return fullName.isNotEmpty ? fullName : "Anonymous";
+  }
+
+  Widget _buildReviewItem(EventReview review) {
+    // Format date
+    String formattedDate = "N/A";
+    try {
+      final date = DateTime.parse(review.createdAt);
+      formattedDate = DateFormat('MMM d, yyyy').format(date);
+    } catch (e) {
+      print("Error parsing date: $e");
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -565,11 +946,14 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      review['name'],
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                      _getReviewerName(review),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     Text(
-                      review['date'],
+                      formattedDate,
                       style: const TextStyle(fontSize: 12, color: Colors.grey),
                     ),
                   ],
@@ -578,7 +962,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               Row(
                 children: List.generate(5, (index) {
                   return Icon(
-                    index < review['rating'] ? Icons.star : Icons.star_border,
+                    index < review.rating ? Icons.star : Icons.star_border,
                     size: 16,
                     color: Colors.amber,
                   );
@@ -588,8 +972,12 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            review['comment'],
-            style: const TextStyle(fontSize: 14, color: Colors.black87, height: 1.4),
+            review.comment ?? "No comment",
+            style: const TextStyle(
+              fontSize: 14,
+              color: Colors.black87,
+              height: 1.4,
+            ),
           ),
         ],
       ),
@@ -604,16 +992,20 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 // Navigate to edit event screen
-                Navigator.push(
+                final result = await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => EditEventScreen(
-                        event: widget.eventData,
-                    ),
+                    builder: (context) =>
+                        EditEventScreen(event: _currentEventData),
                   ),
                 );
+
+                // Reload data if edit was successful
+                if (result == true) {
+                  await _reloadEventData();
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF4776E6),
@@ -632,8 +1024,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               ),
             ),
           ),
-        if (isPublic && !isPastEvent) const SizedBox(height: 12), // Add spacing conditionally
-
+        if (isPublic && !isPastEvent)
+          const SizedBox(height: 12), // Add spacing conditionally
         // Conditional rendering for Remove Event Button
         if (!isPastEvent)
           SizedBox(

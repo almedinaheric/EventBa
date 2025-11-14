@@ -6,4 +6,5 @@ public class EventStatisticsResponseDto
     public int TotalTicketsSold { get; set; }
     public decimal TotalRevenue { get; set; }
     public int CurrentAttendees { get; set; }
+    public double AverageRating { get; set; }
 }

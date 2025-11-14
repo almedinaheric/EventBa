@@ -9,4 +9,5 @@ public class EventReviewResponseDto
     public Guid UserId { get; set; }
     public int Rating { get; set; }
     public string Comment { get; set; } = null!;
+    public BasicUserResponseDto? User { get; set; }
 }

@@ -13,7 +13,12 @@ class Event {
   final String description;
   final String startDate;
   final String endDate;
+  final String startTime;
+  final String endTime;
   final String location;
+  final int capacity;
+  final int currentAttendees;
+  final int availableTicketsCount;
   final EventStatus status;
   final EventType type;
   final bool isPublished;
@@ -31,7 +36,12 @@ class Event {
     required this.description,
     required this.startDate,
     required this.endDate,
+    required this.startTime,
+    required this.endTime,
     required this.location,
+    required this.capacity,
+    required this.currentAttendees,
+    required this.availableTicketsCount,
     required this.status,
     required this.type,
     required this.isPublished,

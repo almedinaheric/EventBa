@@ -33,6 +33,20 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
         entity.Organizer = await _userService.GetUserEntityAsync();
     }
 
+    // Soft delete: Set IsPublished to false instead of actually deleting
+    public override async Task<EventResponseDto> Delete(Guid id)
+    {
+        var entity = await _context.Events.FindAsync(id);
+        if (entity == null)
+        {
+            throw new UserException("Event not found");
+        }
+
+        entity.IsPublished = false;
+        await _context.SaveChangesAsync();
+        return _mapper.Map<EventResponseDto>(entity);
+    }
+
     public override IQueryable<Event> AddInclude(IQueryable<Event> query, EventSearchObject? search = null)
     {
         query = query.Include(x => x.Organizer)
@@ -249,6 +263,7 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
         var eventEntity = await _context.Events
             .Include(x => x.Tickets)
             .ThenInclude(x => x.TicketPurchases)
+            .Include(x => x.EventReviews)
             .FirstOrDefaultAsync(x => x.Id == eventId);
 
         if (eventEntity == null)
@@ -257,14 +272,19 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
         var totalTickets = eventEntity.Tickets.Sum(x => x.Quantity);
         var soldTickets = eventEntity.Tickets.Sum(x => x.TicketPurchases.Count);
         var revenue = eventEntity.Tickets.Sum(x => x.TicketPurchases.Sum(p => p.Ticket.Price));
+        
+        // Calculate average rating
+        var averageRating = eventEntity.EventReviews.Any() 
+            ? eventEntity.EventReviews.Average(x => x.Rating) 
+            : 0.0;
 
         return new EventStatisticsResponseDto
         {
             EventId = eventId,
             TotalTicketsSold = soldTickets,
-            //SoldTickets = soldTickets,
             TotalRevenue = revenue,
-            //SoldPercentage = totalTickets > 0 ? (double)soldTickets / totalTickets * 100 : 0
+            CurrentAttendees = soldTickets,
+            AverageRating = averageRating
         };
     }
 

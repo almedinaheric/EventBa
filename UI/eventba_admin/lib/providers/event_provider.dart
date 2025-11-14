@@ -87,6 +87,58 @@ class EventProvider extends BaseProvider<Event> {
     }
   }
 
+  Future<Event> getEventById(String eventId) async {
+    var url = "${baseUrl}Event/$eventId";
+
+    var uri = Uri.parse(url);
+    var headers = createHeaders();
+    var response = await http.get(uri, headers: headers);
+
+    if (isValidResponse(response)) {
+      var data = jsonDecode(response.body);
+      return fromJson(data);
+    } else {
+      throw Exception("Unknown error in a GET request");
+    }
+  }
+
+  Future<Event> updateEvent(
+    String eventId,
+    Map<String, dynamic> eventData,
+  ) async {
+    var url = "${baseUrl}Event/$eventId";
+
+    var uri = Uri.parse(url);
+    var headers = createHeaders();
+    var jsonRequest = jsonEncode(eventData);
+    var response = await http.put(uri, headers: headers, body: jsonRequest);
+
+    print("Update response status: ${response.statusCode}");
+    print("Update response body: ${response.body}");
+
+    if (isValidResponse(response)) {
+      // Always fetch the updated event by ID to ensure we get all related entities
+      // (category, coverImage, galleryImages, etc.) properly populated
+      return await getEventById(eventId);
+    } else {
+      throw Exception("Unknown error in a PUT request");
+    }
+  }
+
+  Future<void> deleteEvent(String eventId) async {
+    var url = "${baseUrl}Event/$eventId";
+
+    var uri = Uri.parse(url);
+    var headers = createHeaders();
+    var response = await http.delete(uri, headers: headers);
+
+    if (isValidResponse(response)) {
+      return;
+    } else {
+      throw Exception("Unknown error in a DELETE request");
+    }
+  }
+
   Future<Map<String, dynamic>> getEventStatistics(String eventId) async {
     var url = "${baseUrl}Event/$eventId/statistics";
 
