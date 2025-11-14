@@ -49,6 +49,44 @@ class EventProvider extends BaseProvider<Event> {
     }
   }
 
+  Future<List<Event>> getPublicEvents() async {
+    var url = "${baseUrl}Event/public";
+
+    var uri = Uri.parse(url);
+    var headers = createHeaders();
+    var response = await http.get(uri, headers: headers);
+
+    if (isValidResponse(response)) {
+      var data = jsonDecode(response.body);
+      List<Event> events = [];
+      for (var item in data) {
+        events.add(fromJson(item));
+      }
+      return events;
+    } else {
+      throw Exception("Unknown error in a GET request");
+    }
+  }
+
+  Future<List<Event>> getPrivateEvents() async {
+    var url = "${baseUrl}Event/private";
+
+    var uri = Uri.parse(url);
+    var headers = createHeaders();
+    var response = await http.get(uri, headers: headers);
+
+    if (isValidResponse(response)) {
+      var data = jsonDecode(response.body);
+      List<Event> events = [];
+      for (var item in data) {
+        events.add(fromJson(item));
+      }
+      return events;
+    } else {
+      throw Exception("Unknown error in a GET request");
+    }
+  }
+
   Future<Map<String, dynamic>> getEventStatistics(String eventId) async {
     var url = "${baseUrl}Event/$eventId/statistics";
 
