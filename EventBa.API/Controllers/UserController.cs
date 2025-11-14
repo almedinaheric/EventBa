@@ -40,6 +40,22 @@ public class UserController : BaseCRUDController<UserResponseDto, UserSearchObje
         var profile = await _userService.GetUserAsync();
         return Ok(profile);
     }
+    
+    [HttpGet("profile/admin")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetAdminProfile()
+    {
+        var profile = await _userService.GetUserAsync();
+        return Ok(profile);
+    }
+    
+    [HttpGet("profile/customer")]
+    [Authorize(Roles = "Customer")]
+    public async Task<IActionResult> GetCustomerProfile()
+    {
+        var profile = await _userService.GetUserAsync();
+        return Ok(profile);
+    }
 
     [HttpPost("{userId}/follow")]
     public async Task<IActionResult> FollowUser(Guid userId)

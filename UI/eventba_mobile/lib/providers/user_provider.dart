@@ -29,7 +29,7 @@ class UserProvider extends BaseProvider<User> {
   }
 
   Future<User> getProfile() async {
-    var url = "${baseUrl}User/profile";
+    var url = "${baseUrl}User/profile/customer";
     print("Making GET request to: $url");
 
     var uri = Uri.parse(url);
@@ -86,7 +86,10 @@ class UserProvider extends BaseProvider<User> {
     }
   }
 
-  Future<bool> changePassword(String currentPassword, String newPassword) async {
+  Future<bool> changePassword(
+    String currentPassword,
+    String newPassword,
+  ) async {
     var url = "${baseUrl}User/change-password";
     var uri = Uri.parse(url);
     var headers = createHeaders();
@@ -103,5 +106,9 @@ class UserProvider extends BaseProvider<User> {
     } else {
       throw Exception("Password change failed");
     }
+  }
+
+  void clearUser() {
+    // Clear any cached user data if needed
   }
 }

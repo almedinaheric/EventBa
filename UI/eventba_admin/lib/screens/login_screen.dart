@@ -1,8 +1,10 @@
+import 'package:eventba_admin/providers/user_provider.dart';
 import 'package:eventba_admin/screens/forgot_password_screen.dart';
 import 'package:eventba_admin/screens/home_screen.dart';
 import 'package:eventba_admin/utils/authorization.dart';
 import 'package:eventba_admin/widgets/text_link_button.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/primary_button.dart';
 
@@ -36,14 +38,26 @@ class _LoginScreenState extends State<LoginScreen> {
     Authorization.password = password;
 
     try {
-      //await Provider.of<UserProvider>(context, listen: false).getProfile();
-
+      await Provider.of<UserProvider>(context, listen: false).getProfile();
+      if (!mounted) return;
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const HomeScreen()),
       );
     } catch (e) {
-      _showError("Login failed. Please check your credentials.");
+      // Clear credentials on failed login
+      Authorization.email = null;
+      Authorization.password = null;
+
+      // Show appropriate error message
+      String errorMessage = "Login failed. Please check your credentials.";
+      if (e.toString().contains("Unauthorized") ||
+          e.toString().contains("403")) {
+        errorMessage =
+            "Access denied. Only administrators can access this app.";
+      }
+
+      _showError(errorMessage);
     } finally {
       setState(() {
         _isLoading = false;
@@ -58,7 +72,8 @@ class _LoginScreenState extends State<LoginScreen> {
     }
     if (_passwordController.text.isEmpty || !_isPasswordValid) {
       _showError(
-          'Password must be at least 8 characters long and include an uppercase letter, a lowercase letter, and a number.');
+        'Password must be at least 8 characters long and include an uppercase letter, a lowercase letter, and a number.',
+      );
       return;
     }
 
@@ -66,10 +81,9 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(
-        behavior: SnackBarBehavior.floating,
-        content: Text(message)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(behavior: SnackBarBehavior.floating, content: Text(message)),
+    );
   }
 
   void _togglePasswordVisibility() {
@@ -96,9 +110,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   const Text(
                     'Log In',
                     style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF343A40)),
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF343A40),
+                    ),
                   ),
                   const SizedBox(height: 48),
                   CustomTextField(
@@ -110,9 +125,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     width: size.width * 0.4,
                     onChanged: (text) {
                       setState(() {
-                        _isEmailValid =
-                            RegExp(r'^[\w\-.+]+@([\w-]+\.)+[\w-]{2,4}$')
-                                .hasMatch(text);
+                        _isEmailValid = RegExp(
+                          r'^[\w\-.+]+@([\w-]+\.)+[\w-]{2,4}$',
+                        ).hasMatch(text);
                         _emailErrorMessage = _isEmailValid
                             ? null
                             : 'Please enter a valid email address.';
@@ -147,14 +162,17 @@ class _LoginScreenState extends State<LoginScreen> {
                     children: [
                       const Spacer(), // This will push the TextLinkButton to the right
                       Padding(
-                        padding: EdgeInsets.only(right: size.width * 0.29), // Adjust the right padding as needed
+                        padding: EdgeInsets.only(
+                          right: size.width * 0.29,
+                        ), // Adjust the right padding as needed
                         child: TextLinkButton(
                           linkText: "Forgot Password?",
                           onTap: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => const ForgotPasswordScreen(),
+                                builder: (context) =>
+                                    const ForgotPasswordScreen(),
                               ),
                             );
                           },

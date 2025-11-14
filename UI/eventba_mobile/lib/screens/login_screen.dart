@@ -45,14 +45,23 @@ class _LoginScreenState extends State<LoginScreen> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => const MasterScreenWidget(
-            initialIndex: 0,
-            child: HomeScreen(),
-          ),
+          builder: (context) =>
+              const MasterScreenWidget(initialIndex: 0, child: HomeScreen()),
         ),
       );
     } catch (e) {
-      _showError("Login failed. Please check your credentials.");
+      // Clear credentials on failed login
+      Authorization.email = null;
+      Authorization.password = null;
+
+      // Show appropriate error message
+      String errorMessage = "Login failed. Please check your credentials.";
+      if (e.toString().contains("Unauthorized") ||
+          e.toString().contains("403")) {
+        errorMessage = "Access denied. Please use the admin app to login.";
+      }
+
+      _showError(errorMessage);
     } finally {
       setState(() {
         _isLoading = false;
@@ -67,7 +76,8 @@ class _LoginScreenState extends State<LoginScreen> {
     }
     if (_passwordController.text.isEmpty || !_isPasswordValid) {
       _showError(
-          'Password must be at least 8 characters long and include an uppercase letter, a lowercase letter, and a number.');
+        'Password must be at least 8 characters long and include an uppercase letter, a lowercase letter, and a number.',
+      );
       return;
     }
 
@@ -75,11 +85,8 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(
-        SnackBar(
-        behavior: SnackBarBehavior.floating,
-        content: Text(message))
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(behavior: SnackBarBehavior.floating, content: Text(message)),
     );
   }
 
@@ -114,9 +121,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   const Text(
                     'Log In',
                     style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF343A40)),
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF343A40),
+                    ),
                   ),
                   const SizedBox(height: 132),
                   CustomTextField(
@@ -128,9 +136,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     width: size.width * 0.9,
                     onChanged: (text) {
                       setState(() {
-                        _isEmailValid =
-                            RegExp(r'^[\w\-.+]+@([\w-]+\.)+[\w-]{2,4}$')
-                                .hasMatch(text);
+                        _isEmailValid = RegExp(
+                          r'^[\w\-.+]+@([\w-]+\.)+[\w-]{2,4}$',
+                        ).hasMatch(text);
                         _emailErrorMessage = _isEmailValid
                             ? null
                             : 'Please enter a valid email address.';
@@ -150,7 +158,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     onToggleVisibility: _togglePasswordVisibility,
                     onChanged: (text) {
                       setState(() {
-                        _isPasswordValid = text.trim().isNotEmpty &&
+                        _isPasswordValid =
+                            text.trim().isNotEmpty &&
                             //RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$')
                             RegExp(r'/*').hasMatch(text);
                         _passwordErrorMessage = _isPasswordValid

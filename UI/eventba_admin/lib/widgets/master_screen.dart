@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../utils/authorization.dart';
+import '../providers/user_provider.dart';
+import '../screens/login_screen.dart';
 
 class MasterScreen extends StatelessWidget {
   final String title;
@@ -47,7 +51,7 @@ class MasterScreen extends StatelessWidget {
               ),
             ),
             // Center: Dynamic title
-            if(title != 'EventBa')
+            if (title != 'EventBa')
               Center(
                 child: Text(
                   title,
@@ -60,7 +64,8 @@ class MasterScreen extends StatelessWidget {
               ),
           ],
         ),
-        actions: appBarActions ??
+        actions:
+            appBarActions ??
             [
               Padding(
                 padding: const EdgeInsets.only(right: 32.0),
@@ -69,9 +74,7 @@ class MasterScreen extends StatelessWidget {
             ],
       ),
 
-      body: SafeArea(
-        child: _buildResponsiveBody(context),
-      ),
+      body: SafeArea(child: _buildResponsiveBody(context)),
       floatingActionButton: floatingActionButton,
     );
   }
@@ -88,10 +91,7 @@ class MasterScreen extends StatelessWidget {
             children: [
               Icon(Icons.logout, size: 18, color: Colors.red),
               SizedBox(width: 12),
-              Text(
-                'Sign Out',
-                style: TextStyle(color: Colors.black),
-              ),
+              Text('Sign Out', style: TextStyle(color: Colors.black)),
             ],
           ),
         ),
@@ -112,10 +112,7 @@ class MasterScreen extends StatelessWidget {
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(
-                color: Colors.grey[400]!,
-                width: 1.5,
-              ),
+              border: Border.all(color: Colors.grey[400]!, width: 1.5),
             ),
             child: Icon(
               Icons.person_2_outlined,
@@ -124,17 +121,11 @@ class MasterScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 4),
-          Icon(
-            Icons.arrow_drop_down,
-            size: 20,
-            color: Colors.grey[600],
-          ),
+          Icon(Icons.arrow_drop_down, size: 20, color: Colors.grey[600]),
         ],
       ),
       offset: const Offset(0, 50),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       elevation: 4,
     );
   }
@@ -174,31 +165,34 @@ class MasterScreen extends StatelessWidget {
   }
 
   void _performSignOut(BuildContext context) {
-    // Clear any stored authentication tokens
-    // Example: await AuthService.signOut();
+    // Clear authentication credentials
+    Authorization.email = null;
+    Authorization.password = null;
+
+    // Clear user data from provider
+    try {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      userProvider.clearUser();
+    } catch (e) {
+      // Provider might not be available in some contexts
+      print('Error clearing user provider: $e');
+    }
 
     // Show success message
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Successfully signed out'),
         backgroundColor: Colors.green,
+        duration: Duration(seconds: 2),
       ),
     );
 
     // Navigate to login screen and clear navigation stack
-    // Replace this with your actual login screen navigation
-    Navigator.pushNamedAndRemoveUntil(
+    Navigator.pushAndRemoveUntil(
       context,
-      '/login', // Replace with your login route
-          (route) => false,
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+      (route) => false,
     );
-
-    // If you don't have named routes, you can use:
-    // Navigator.pushAndRemoveUntil(
-    //   context,
-    //   MaterialPageRoute(builder: (context) => LoginScreen()),
-    //   (route) => false,
-    // );
   }
 
   Widget _buildResponsiveBody(BuildContext context) {
@@ -217,10 +211,7 @@ class MasterScreen extends StatelessWidget {
         child: body,
       );
     } else {
-      return Padding(
-        padding: const EdgeInsets.all(16),
-        child: body,
-      );
+      return Padding(padding: const EdgeInsets.all(16), child: body);
     }
   }
 }

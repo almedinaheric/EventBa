@@ -122,8 +122,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     outlined: true,
                     small: true,
                     onPressed: () {
+                      // Clear authentication credentials
                       Authorization.email = null;
                       Authorization.password = null;
+
+                      // Clear user data from provider
+                      try {
+                        Provider.of<UserProvider>(
+                          context,
+                          listen: false,
+                        ).clearUser();
+                      } catch (e) {
+                        print('Error clearing user provider: $e');
+                      }
+
                       Navigator.pop(context);
                       Navigator.pushAndRemoveUntil(
                         context,
@@ -150,10 +162,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     final userName =
-        _user?.fullName ??
-        "${_user?.firstName ?? ''} ${_user?.lastName ?? ''}".trim();
-    final followersCount = _user?.followers?.length ?? 0;
-    final followingCount = _user?.following?.length ?? 0;
+        _user?.fullName ?? "${_user!.firstName} ${_user!.lastName}".trim();
+    final followersCount = _user?.followers.length ?? 0;
+    final followingCount = _user?.following.length ?? 0;
     final eventsCount = _eventsCount;
 
     return Scaffold(

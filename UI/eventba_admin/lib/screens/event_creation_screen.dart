@@ -843,7 +843,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
           final bytes = await File(additionalImage.path).readAsBytes();
           final imageRequest = {'data': bytes, 'contentType': 'image/jpeg'};
           final imageResponse = await imageProvider.insert(imageRequest);
-          galleryImageIds.add(imageResponse.id);
+          galleryImageIds.add(imageResponse.id!);
         }
 
         // Link gallery images to event

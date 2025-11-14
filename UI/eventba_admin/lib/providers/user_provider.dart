@@ -12,21 +12,39 @@ class UserProvider extends BaseProvider<User> {
   User? get user => _user;
 
   Future<User> getProfile() async {
+    var url = "${baseUrl}User/profile/admin";
+    print("Making GET request to: $url");
+
+    var uri = Uri.parse(url);
+    var headers = createHeaders();
+    print("Request headers: $headers");
+
     try {
-      final uri = Uri.parse(baseUrl).resolve('User/profile');
-      final headers = createHeaders();
-      final response = await http.get(uri, headers: headers);
-      if (response.statusCode == 200) {
-        _user = User.fromJson(jsonDecode(response.body));
+      var response = await http.get(uri, headers: headers);
+      print("Response status: ${response.statusCode}");
+      print("Response body: ${response.body}");
+
+      if (isValidResponse(response)) {
+        var data = jsonDecode(response.body);
+        print("Decoded JSON data: $data");
+
+        _user = fromJson(data);
+        print("Mapped user object: $_user");
         notifyListeners();
         return _user!;
       } else {
-        throw Exception("Failed to load user profile: ${response.statusCode}");
+        print("Invalid response received.");
+        throw Exception("Unknown error in a GET request");
       }
     } catch (e) {
-      print("Exception in getProfile: $e");
+      print("Exception occurred during getProfile(): $e");
       rethrow;
     }
+  }
+
+  void clearUser() {
+    _user = null;
+    notifyListeners();
   }
 
   @override
