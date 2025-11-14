@@ -2,6 +2,7 @@ import 'package:eventba_admin/widgets/master_screen.dart';
 import 'package:eventba_admin/providers/event_provider.dart';
 import 'package:eventba_admin/models/event/event.dart';
 import 'package:eventba_admin/models/enums/event_status.dart';
+import 'package:eventba_admin/screens/event_details_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -220,6 +221,22 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
     );
   }
 
+  Map<String, dynamic> _eventToMap(Event event) {
+    return {
+      'id': event.id,
+      'name': event.title,
+      'category': event.category.name,
+      'venue': event.location,
+      'date': event.startDate,
+      'startTime': event.startDate,
+      'endTime': event.endDate,
+      'description': event.description,
+      'isPaid': event.isPaid,
+      'status': event.status.name,
+      'coverImage': event.coverImage,
+    };
+  }
+
   Widget _buildEventCard({required Event event, required bool isUpcoming}) {
     final badgeText = event.isPaid ? 'PAID' : 'FREE';
     final badgeColor = event.isPaid ? const Color(0xFF4776E6) : Colors.green;
@@ -229,8 +246,17 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
 
     return GestureDetector(
       onTap: () {
-        // You can navigate to event details screen here
-        // Navigator.push(...);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => EventDetailsScreen(
+              eventTitle: event.title,
+              isPublic: true,
+              isPastEvent: event.status == EventStatus.Past,
+              eventData: _eventToMap(event),
+            ),
+          ),
+        );
       },
       child: Container(
         decoration: BoxDecoration(
