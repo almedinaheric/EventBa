@@ -267,4 +267,34 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
             //SoldPercentage = totalTickets > 0 ? (double)soldTickets / totalTickets * 100 : 0
         };
     }
+
+    public async Task AddGalleryImages(Guid eventId, List<Guid> imageIds)
+    {
+        var eventEntity = await _context.Events.FindAsync(eventId);
+        if (eventEntity == null)
+            throw new UserException("Event not found");
+
+        int order = 0;
+        foreach (var imageId in imageIds)
+        {
+            var image = await _context.Images.FindAsync(imageId);
+            if (image != null)
+            {
+                image.ImageType = ImageType.EventGallery;
+                image.EventId = eventId;
+                
+                var galleryImage = new EventGalleryImage
+                {
+                    EventId = eventId,
+                    ImageId = imageId,
+                    Order = order++,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                _context.EventGalleryImages.Add(galleryImage);
+            }
+        }
+
+        await _context.SaveChangesAsync();
+    }
 }

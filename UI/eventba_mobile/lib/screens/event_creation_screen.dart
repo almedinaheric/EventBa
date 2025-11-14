@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:eventba_mobile/providers/event_provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:eventba_mobile/providers/category_provider.dart';
+import 'package:http/http.dart' as http;
 
 class EventCreationScreen extends StatefulWidget {
   const EventCreationScreen({super.key});
@@ -20,11 +21,12 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
   final _formKey = GlobalKey<FormState>();
   final ImagePicker _picker = ImagePicker();
 
-  List<String> _categories = [];
+  List<Map<String, dynamic>> _categories = [];
 
   // Controllers
   final TextEditingController _nameController = TextEditingController();
-  String? _selectedCategory;
+  String? _selectedCategoryId;
+  String? _selectedCategoryName;
   final TextEditingController _venueController = TextEditingController();
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _startTimeController = TextEditingController();
@@ -86,7 +88,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
 
       setState(() {
         _categories = categories.result
-            .map((category) => category.name)
+            .map((category) => {'id': category.id, 'name': category.name})
             .toList();
       });
     } catch (e) {
@@ -125,7 +127,9 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
                 onChanged: (text) {
                   setState(() {
                     _isNameValid = text.trim().isNotEmpty;
-                    _nameErrorMessage = _isNameValid ? null : 'Event name is required';
+                    _nameErrorMessage = _isNameValid
+                        ? null
+                        : 'Event name is required';
                   });
                 },
               ),
@@ -144,31 +148,38 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
                   ),
                   const SizedBox(height: 6),
                   DropdownButtonFormField<String>(
-                    value: _selectedCategory,
+                    value: _selectedCategoryId,
                     decoration: InputDecoration(
                       filled: true,
                       fillColor: const Color(0xFFF9FBFF),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      errorText: _isCategoryValid ? null : _categoryErrorMessage,
+                      errorText: _isCategoryValid
+                          ? null
+                          : _categoryErrorMessage,
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 12,
                       ),
                     ),
                     hint: const Text('Choose category'),
-                    items: _categories.map((String value) {
+                    items: _categories.map((category) {
                       return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
+                        value: category['id'],
+                        child: Text(category['name']),
                       );
                     }).toList(),
                     onChanged: (newValue) {
                       setState(() {
-                        _selectedCategory = newValue;
+                        _selectedCategoryId = newValue;
+                        _selectedCategoryName = _categories.firstWhere(
+                          (c) => c['id'] == newValue,
+                        )['name'];
                         _isCategoryValid = newValue != null;
-                        _categoryErrorMessage = _isCategoryValid ? null : 'Category is required';
+                        _categoryErrorMessage = _isCategoryValid
+                            ? null
+                            : 'Category is required';
                       });
                     },
                     validator: (value) {
@@ -192,7 +203,9 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
                 onChanged: (text) {
                   setState(() {
                     _isVenueValid = text.trim().isNotEmpty;
-                    _venueErrorMessage = _isVenueValid ? null : 'Venue is required';
+                    _venueErrorMessage = _isVenueValid
+                        ? null
+                        : 'Venue is required';
                   });
                 },
               ),
@@ -209,7 +222,9 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
                 onChanged: (text) {
                   setState(() {
                     _isDateValid = text.trim().isNotEmpty;
-                    _dateErrorMessage = _isDateValid ? null : 'Date is required';
+                    _dateErrorMessage = _isDateValid
+                        ? null
+                        : 'Date is required';
                   });
                 },
               ),
@@ -230,7 +245,9 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
                       onChanged: (text) {
                         setState(() {
                           _isStartTimeValid = text.trim().isNotEmpty;
-                          _startTimeErrorMessage = _isStartTimeValid ? null : 'Start time is required';
+                          _startTimeErrorMessage = _isStartTimeValid
+                              ? null
+                              : 'Start time is required';
                         });
                       },
                     ),
@@ -249,7 +266,9 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
                       onChanged: (text) {
                         setState(() {
                           _isEndTimeValid = text.trim().isNotEmpty;
-                          _endTimeErrorMessage = _isEndTimeValid ? null : 'End time is required';
+                          _endTimeErrorMessage = _isEndTimeValid
+                              ? null
+                              : 'End time is required';
                         });
                       },
                     ),
@@ -269,7 +288,9 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
                 onChanged: (text) {
                   setState(() {
                     _isDescriptionValid = text.trim().isNotEmpty;
-                    _descriptionErrorMessage = _isDescriptionValid ? null : 'Description is required';
+                    _descriptionErrorMessage = _isDescriptionValid
+                        ? null
+                        : 'Description is required';
                   });
                 },
               ),
@@ -300,8 +321,13 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
                   keyboardType: TextInputType.number,
                   onChanged: (text) {
                     setState(() {
-                      _isCapacityValid = text.trim().isNotEmpty && int.tryParse(text.trim()) != null && int.parse(text.trim()) > 0;
-                      _capacityErrorMessage = _isCapacityValid ? null : 'Capacity required and must be a positive number';
+                      _isCapacityValid =
+                          text.trim().isNotEmpty &&
+                          int.tryParse(text.trim()) != null &&
+                          int.parse(text.trim()) > 0;
+                      _capacityErrorMessage = _isCapacityValid
+                          ? null
+                          : 'Capacity required and must be a positive number';
                     });
                   },
                 ),
@@ -322,11 +348,18 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
                         isValid: _isVipPriceValid,
                         errorMessage: _vipPriceErrorMessage,
                         width: double.infinity,
-                        keyboardType: TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
                         onChanged: (text) {
                           setState(() {
-                            _isVipPriceValid = text.trim().isNotEmpty && double.tryParse(text.trim()) != null && double.parse(text.trim()) >= 0;
-                            _vipPriceErrorMessage = _isVipPriceValid ? null : 'VIP price required and must be a number ≥ 0';
+                            _isVipPriceValid =
+                                text.trim().isNotEmpty &&
+                                double.tryParse(text.trim()) != null &&
+                                double.parse(text.trim()) >= 0;
+                            _vipPriceErrorMessage = _isVipPriceValid
+                                ? null
+                                : 'VIP price required and must be a number ≥ 0';
                           });
                         },
                       ),
@@ -342,8 +375,13 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
                         keyboardType: TextInputType.number,
                         onChanged: (text) {
                           setState(() {
-                            _isVipCountValid = text.trim().isNotEmpty && int.tryParse(text.trim()) != null && int.parse(text.trim()) >= 0;
-                            _vipCountErrorMessage = _isVipCountValid ? null : 'VIP ticket count required and must be ≥ 0';
+                            _isVipCountValid =
+                                text.trim().isNotEmpty &&
+                                int.tryParse(text.trim()) != null &&
+                                int.parse(text.trim()) >= 0;
+                            _vipCountErrorMessage = _isVipCountValid
+                                ? null
+                                : 'VIP ticket count required and must be ≥ 0';
                           });
                         },
                       ),
@@ -365,11 +403,18 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
                         isValid: _isEcoPriceValid,
                         errorMessage: _ecoPriceErrorMessage,
                         width: double.infinity,
-                        keyboardType: TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
                         onChanged: (text) {
                           setState(() {
-                            _isEcoPriceValid = text.trim().isNotEmpty && double.tryParse(text.trim()) != null && double.parse(text.trim()) >= 0;
-                            _ecoPriceErrorMessage = _isEcoPriceValid ? null : 'Economy price required and must be ≥ 0';
+                            _isEcoPriceValid =
+                                text.trim().isNotEmpty &&
+                                double.tryParse(text.trim()) != null &&
+                                double.parse(text.trim()) >= 0;
+                            _ecoPriceErrorMessage = _isEcoPriceValid
+                                ? null
+                                : 'Economy price required and must be ≥ 0';
                           });
                         },
                       ),
@@ -385,8 +430,13 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
                         keyboardType: TextInputType.number,
                         onChanged: (text) {
                           setState(() {
-                            _isEcoCountValid = text.trim().isNotEmpty && int.tryParse(text.trim()) != null && int.parse(text.trim()) >= 0;
-                            _ecoCountErrorMessage = _isEcoCountValid ? null : 'Economy ticket count required and must be ≥ 0';
+                            _isEcoCountValid =
+                                text.trim().isNotEmpty &&
+                                int.tryParse(text.trim()) != null &&
+                                int.parse(text.trim()) >= 0;
+                            _ecoCountErrorMessage = _isEcoCountValid
+                                ? null
+                                : 'Economy ticket count required and must be ≥ 0';
                           });
                         },
                       ),
@@ -422,19 +472,24 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
             decoration: BoxDecoration(
               border: Border.all(color: Colors.grey.shade300),
               borderRadius: BorderRadius.circular(12),
-              image: _mainImage != null ? DecorationImage(image: FileImage(File(_mainImage!.path)), fit: BoxFit.cover) : null,
+              image: _mainImage != null
+                  ? DecorationImage(
+                      image: FileImage(File(_mainImage!.path)),
+                      fit: BoxFit.cover,
+                    )
+                  : null,
             ),
             child: _mainImage == null
                 ? const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.add, size: 40),
-                  SizedBox(height: 8),
-                  Text('Add main image'),
-                ],
-              ),
-            )
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.add, size: 40),
+                        SizedBox(height: 8),
+                        Text('Add main image'),
+                      ],
+                    ),
+                  )
                 : null,
           ),
         ),
@@ -593,7 +648,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
       _isNameValid = _nameController.text.trim().isNotEmpty;
       _nameErrorMessage = _isNameValid ? null : 'Event name is required';
 
-      _isCategoryValid = _selectedCategory != null;
+      _isCategoryValid = _selectedCategoryId != null;
       _categoryErrorMessage = _isCategoryValid ? null : 'Category is required';
 
       _isVenueValid = _venueController.text.trim().isNotEmpty;
@@ -603,13 +658,17 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
       _dateErrorMessage = _isDateValid ? null : 'Date is required';
 
       _isStartTimeValid = _startTimeController.text.trim().isNotEmpty;
-      _startTimeErrorMessage = _isStartTimeValid ? null : 'Start time is required';
+      _startTimeErrorMessage = _isStartTimeValid
+          ? null
+          : 'Start time is required';
 
       _isEndTimeValid = _endTimeController.text.trim().isNotEmpty;
       _endTimeErrorMessage = _isEndTimeValid ? null : 'End time is required';
 
       _isDescriptionValid = _descriptionController.text.trim().isNotEmpty;
-      _descriptionErrorMessage = _isDescriptionValid ? null : 'Description is required';
+      _descriptionErrorMessage = _isDescriptionValid
+          ? null
+          : 'Description is required';
 
       if (!_isPaid) {
         _isCapacityValid =
@@ -692,12 +751,17 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
 
     try {
       final eventProvider = Provider.of<EventProvider>(context, listen: false);
-      final imageProvider = Provider.of<EventImageProvider>(context, listen: false);
+      final imageProvider = Provider.of<EventImageProvider>(
+        context,
+        listen: false,
+      );
 
       // Split the date range into start and end date strings
       final dateRangeParts = _dateController.text.split(' - ');
       if (dateRangeParts.length != 2) {
-        throw FormatException('Invalid date range format. Expected "YYYY-MM-DD - YYYY-MM-DD"');
+        throw FormatException(
+          'Invalid date range format. Expected "YYYY-MM-DD - YYYY-MM-DD"',
+        );
       }
 
       final startDateParts = dateRangeParts[0].split('-');
@@ -715,17 +779,23 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
       final startTimeParts = _startTimeController.text.split(':');
       final endTimeParts = _endTimeController.text.split(':');
 
-      // Upload main image
+      // Upload main/cover image
       String? coverImageId;
       if (_mainImage != null) {
         final bytes = await File(_mainImage!.path).readAsBytes();
-        final base64Image = base64Encode(bytes);
-        final mainImageRequest = {
-          'data': base64Image,
-          'contentType': 'image/jpeg',
-        };
+        final mainImageRequest = {'data': bytes, 'contentType': 'image/jpeg'};
         final mainImageResponse = await imageProvider.insert(mainImageRequest);
         coverImageId = mainImageResponse.id;
+      }
+
+      // Calculate total capacity
+      int totalCapacity;
+      if (_isPaid) {
+        totalCapacity =
+            int.parse(_vipCountController.text.trim()) +
+            int.parse(_ecoCountController.text.trim());
+      } else {
+        totalCapacity = int.parse(_capacityController.text.trim());
       }
 
       // Create event request
@@ -737,19 +807,42 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
         'endDate': endDateFormatted,
         'startTime': '${startTimeParts[0]}:${startTimeParts[1]}:00',
         'endTime': '${endTimeParts[0]}:${endTimeParts[1]}:00',
-        'capacity': int.parse(_capacityController.text.trim()),
-        'availableTicketsCount': int.parse(_capacityController.text.trim()),
+        'capacity': totalCapacity,
+        'availableTicketsCount': totalCapacity,
         'status': 'Upcoming',
         'isFeatured': true,
         'type': _isPaid ? 'Public' : 'Private',
         'isPublished': true,
-        'categoryId': _selectedCategory,
+        'categoryId': _selectedCategoryId,
         'coverImageId': coverImageId,
       };
 
-      print(request);
+      print('Creating event with request: $request');
 
-      await eventProvider.insert(request);
+      final createdEvent = await eventProvider.insert(request);
+      final eventId = createdEvent.id;
+
+      print('Event created with ID: $eventId');
+
+      // Upload and link gallery images
+      if (_additionalImages.isNotEmpty) {
+        List<String> galleryImageIds = [];
+
+        for (var additionalImage in _additionalImages) {
+          final bytes = await File(additionalImage.path).readAsBytes();
+          final imageRequest = {'data': bytes, 'contentType': 'image/jpeg'};
+          final imageResponse = await imageProvider.insert(imageRequest);
+          galleryImageIds.add(imageResponse.id);
+        }
+
+        // Link gallery images to event
+        if (galleryImageIds.isNotEmpty) {
+          await _linkGalleryImages(eventId, galleryImageIds);
+        }
+      }
+
+      // Create tickets (both for free and paid events)
+      await _createTickets(eventId);
 
       if (!mounted) return;
 
@@ -774,6 +867,131 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  Future<void> _linkGalleryImages(String eventId, List<String> imageIds) async {
+    try {
+      final url =
+          "${Provider.of<EventProvider>(context, listen: false).baseUrl}Event/$eventId/gallery-images";
+      final uri = Uri.parse(url);
+      final headers = Provider.of<EventProvider>(
+        context,
+        listen: false,
+      ).createHeaders();
+
+      final response = await http.post(
+        uri,
+        headers: headers,
+        body: jsonEncode(imageIds),
+      );
+
+      if (response.statusCode >= 300) {
+        throw Exception(
+          'Failed to link gallery images: ${response.statusCode}',
+        );
+      }
+
+      print('Gallery images linked successfully');
+    } catch (e) {
+      print('Error linking gallery images: $e');
+      // Don't throw - event is already created, this is optional
+    }
+  }
+
+  Future<void> _createTickets(String eventId) async {
+    try {
+      final url =
+          "${Provider.of<EventProvider>(context, listen: false).baseUrl}Ticket";
+      final uri = Uri.parse(url);
+      final headers = Provider.of<EventProvider>(
+        context,
+        listen: false,
+      ).createHeaders();
+
+      if (_isPaid) {
+        // Create VIP ticket
+        if (int.parse(_vipCountController.text.trim()) > 0) {
+          final vipTicketRequest = {
+            'eventId': eventId,
+            'ticketType': 'Vip',
+            'price': double.parse(_vipPriceController.text.trim()),
+            'quantity': int.parse(_vipCountController.text.trim()),
+            'saleStartDate': DateTime.now().toIso8601String(),
+            'saleEndDate': DateTime.now()
+                .add(const Duration(days: 365))
+                .toIso8601String(),
+          };
+
+          final vipResponse = await http.post(
+            uri,
+            headers: headers,
+            body: jsonEncode(vipTicketRequest),
+          );
+
+          if (vipResponse.statusCode >= 300) {
+            throw Exception(
+              'Failed to create VIP ticket: ${vipResponse.statusCode}',
+            );
+          }
+          print('VIP ticket created');
+        }
+
+        // Create Economy ticket
+        if (int.parse(_ecoCountController.text.trim()) > 0) {
+          final ecoTicketRequest = {
+            'eventId': eventId,
+            'ticketType': 'Economy',
+            'price': double.parse(_ecoPriceController.text.trim()),
+            'quantity': int.parse(_ecoCountController.text.trim()),
+            'saleStartDate': DateTime.now().toIso8601String(),
+            'saleEndDate': DateTime.now()
+                .add(const Duration(days: 365))
+                .toIso8601String(),
+          };
+
+          final ecoResponse = await http.post(
+            uri,
+            headers: headers,
+            body: jsonEncode(ecoTicketRequest),
+          );
+
+          if (ecoResponse.statusCode >= 300) {
+            throw Exception(
+              'Failed to create Economy ticket: ${ecoResponse.statusCode}',
+            );
+          }
+          print('Economy ticket created');
+        }
+      } else {
+        // Create free ticket
+        final freeTicketRequest = {
+          'eventId': eventId,
+          'ticketType': 'Free',
+          'price': 0.0,
+          'quantity': int.parse(_capacityController.text.trim()),
+          'saleStartDate': DateTime.now().toIso8601String(),
+          'saleEndDate': DateTime.now()
+              .add(const Duration(days: 365))
+              .toIso8601String(),
+        };
+
+        final freeResponse = await http.post(
+          uri,
+          headers: headers,
+          body: jsonEncode(freeTicketRequest),
+        );
+
+        if (freeResponse.statusCode >= 300) {
+          throw Exception(
+            'Failed to create free ticket: ${freeResponse.statusCode}',
+          );
+        }
+        print('Free ticket created');
+      }
+    } catch (e) {
+      print('Error creating tickets: $e');
+      throw e; // Rethrow as this is critical
     }
   }
 

@@ -116,4 +116,12 @@ public class EventController : BaseCRUDController<EventResponseDto, EventSearchO
         await _recommendedEventService.DeleteAllRecommendations();
         return Ok(new { message = "All recommendations deleted successfully" });
     }
+
+    [HttpPost("{eventId}/gallery-images")]
+    [Authorize]
+    public async Task<IActionResult> AddGalleryImages(Guid eventId, [FromBody] List<Guid> imageIds)
+    {
+        await _eventService.AddGalleryImages(eventId, imageIds);
+        return Ok(new { message = "Gallery images added successfully" });
+    }
 }

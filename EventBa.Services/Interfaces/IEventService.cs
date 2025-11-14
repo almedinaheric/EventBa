@@ -19,4 +19,5 @@ public interface IEventService : ICRUDService<EventResponseDto, EventSearchObjec
     Task<List<EventResponseDto>> GetUserFavoriteEventsAsync();
     Task<bool> ToggleFavoriteEventAsync(Guid eventId);
     Task<EventResponseDto> GetById(Guid id);
+    Task AddGalleryImages(Guid eventId, List<Guid> imageIds);
 }

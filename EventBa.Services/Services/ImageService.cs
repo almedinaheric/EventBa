@@ -26,6 +26,10 @@ public class ImageService : BaseCRUDService<ImageResponseDto, Image, ImageSearch
     public override async Task BeforeInsert(Image entity, ImageInsertRequestDto insert)
     {
         entity.User = await _userService.GetUserEntityAsync();
+        entity.ImageData = insert.Data;
+        entity.FileName = $"image_{Guid.NewGuid()}.jpg";
+        entity.FileSize = insert.Data?.Length;
+        entity.ImageType = Model.Enums.ImageType.EventCover; // Default, can be changed later
     }
 
     public override IQueryable<Image> AddInclude(IQueryable<Image> query, ImageSearchObject? search = null)
