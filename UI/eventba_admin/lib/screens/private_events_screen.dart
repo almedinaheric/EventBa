@@ -225,8 +225,8 @@ class _PrivateEventsScreenState extends State<PrivateEventsScreen> {
     return {
       'id': event.id,
       'name': event.title,
-      'category': event.category.name,
-      'categoryId': event.category.id,
+      'category': event.category?.name ?? 'Uncategorized',
+      'categoryId': event.category?.id ?? '',
       'venue': event.location,
       'date': event.startDate,
       'startTime': event.startTime,

@@ -33,6 +33,23 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
         entity.Organizer = await _userService.GetUserEntityAsync();
     }
 
+    public override async Task<EventResponseDto> Insert(EventInsertRequestDto insert)
+    {
+        // Create the event first
+        var result = await base.Insert(insert);
+        
+        // Reload the entity with all includes to ensure related entities are populated
+        var entityWithIncludes = await AddInclude(_context.Set<Event>().Where(e => e.Id == Guid.Parse(result.Id.ToString())))
+            .FirstOrDefaultAsync();
+        
+        if (entityWithIncludes != null)
+        {
+            result = _mapper.Map<EventResponseDto>(entityWithIncludes);
+        }
+        
+        return result;
+    }
+
     // Soft delete: Set IsPublished to false instead of actually deleting
     public override async Task<EventResponseDto> Delete(Guid id)
     {
@@ -51,7 +68,9 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
     {
         query = query.Include(x => x.Organizer)
                     .Include(x => x.Category)
+                    .Include(x => x.CoverImage)
                     .Include(x => x.EventGalleryImages)
+                        .ThenInclude(x => x.Image)
                     .Include(x => x.EventReviews)
                     .Include(x => x.Tickets);
 
@@ -60,13 +79,6 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
 
     public override IQueryable<Event> AddFilter(IQueryable<Event> query, EventSearchObject? search = null)
     {
-        // Exclude current user's own events from search results
-        var currentUser = _userService.GetUserEntityAsync().Result;
-        if (currentUser != null)
-        {
-            query = query.Where(x => x.OrganizerId != currentUser.Id);
-        }
-
         if (!string.IsNullOrWhiteSpace(search?.SearchTerm))
         {
             var searchTerm = search.SearchTerm.ToLower();
@@ -138,10 +150,9 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
     
     public async Task<List<EventResponseDto>> GetEventsByOrganizer(Guid organizerId)
     {
+        // For list view, don't load images - they're too heavy
         var events = await _context.Events
             .Include(x => x.Category)
-            .Include(x => x.EventGalleryImages)
-            .Include(x => x.EventReviews)
             .Include(x => x.Tickets)
             .Where(x => x.OrganizerId == organizerId)
             .ToListAsync();
@@ -173,11 +184,10 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
     
     public async Task<List<EventResponseDto>> GetPublicEvents()
     {
-        var currentUser = await _userService.GetUserEntityAsync();
+        // For list view, don't load images - they're too heavy
         var publicEvents = await _context.Events
-            .Where(e => e.Type == EventType.Public && e.IsPublished && e.OrganizerId != currentUser.Id)
+            .Where(e => e.Type == EventType.Public && e.IsPublished)
             .Include(e => e.Category)
-            .Include(e => e.EventGalleryImages)
             .Include(e => e.Tickets)
             .ToListAsync();
 
@@ -186,11 +196,10 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
 
     public async Task<List<EventResponseDto>> GetPrivateEvents()
     {
-        var currentUser = await _userService.GetUserEntityAsync();
+        // For list view, don't load images - they're too heavy
         var privateEvents = await _context.Events
-            .Where(e => e.Type == EventType.Private && e.IsPublished && e.OrganizerId != currentUser.Id)
+            .Where(e => e.Type == EventType.Private && e.IsPublished)
             .Include(e => e.Category)
-            .Include(e => e.EventGalleryImages)
             .Include(e => e.Tickets)
             .ToListAsync();
 
@@ -199,15 +208,14 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
 
     public async Task<List<EventResponseDto>> GetEventsByCategoryId(Guid categoryId)
     {
-        var currentUser = await _userService.GetUserEntityAsync();
-        var privateEvents = await _context.Events
-            .Where(e => e.Category.Id == categoryId && e.IsPublished && e.OrganizerId != currentUser.Id)
+        // For list view, don't load images - they're too heavy
+        var events = await _context.Events
+            .Where(e => e.Category.Id == categoryId && e.IsPublished)
             .Include(e => e.Category)
-            .Include(e => e.EventGalleryImages)
             .Include(e => e.Tickets)
             .ToListAsync();
 
-        return _mapper.Map<List<EventResponseDto>>(privateEvents);
+        return _mapper.Map<List<EventResponseDto>>(events);
     }
     
     public async Task<List<EventResponseDto>> GetUserFavoriteEventsAsync()
@@ -290,31 +298,58 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
 
     public async Task AddGalleryImages(Guid eventId, List<Guid> imageIds)
     {
+        Console.WriteLine($"AddGalleryImages called for event {eventId} with {imageIds.Count} images");
+        
         var eventEntity = await _context.Events.FindAsync(eventId);
         if (eventEntity == null)
+        {
+            Console.WriteLine($"Event {eventId} not found!");
             throw new UserException("Event not found");
+        }
 
+        Console.WriteLine($"Event {eventId} found, processing images...");
+        
         int order = 0;
         foreach (var imageId in imageIds)
         {
+            Console.WriteLine($"Processing image {imageId}...");
             var image = await _context.Images.FindAsync(imageId);
             if (image != null)
             {
+                Console.WriteLine($"Image {imageId} found, setting type to EventGallery");
                 image.ImageType = ImageType.EventGallery;
                 image.EventId = eventId;
                 
-                var galleryImage = new EventGalleryImage
+                // Check if gallery image link already exists
+                var existingLink = await _context.EventGalleryImages
+                    .FirstOrDefaultAsync(x => x.EventId == eventId && x.ImageId == imageId);
+                
+                if (existingLink == null)
                 {
-                    EventId = eventId,
-                    ImageId = imageId,
-                    Order = order++,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                };
-                _context.EventGalleryImages.Add(galleryImage);
+                    var now = DateTime.Now;
+                    var galleryImage = new EventGalleryImage
+                    {
+                        EventId = eventId,
+                        ImageId = imageId,
+                        Order = order++,
+                        CreatedAt = now,
+                        UpdatedAt = now
+                    };
+                    _context.EventGalleryImages.Add(galleryImage);
+                    Console.WriteLine($"Created EventGalleryImage link for image {imageId} with order {order - 1}");
+                }
+                else
+                {
+                    Console.WriteLine($"EventGalleryImage link already exists for image {imageId}");
+                }
+            }
+            else
+            {
+                Console.WriteLine($"Image {imageId} not found in database!");
             }
         }
 
         await _context.SaveChangesAsync();
+        Console.WriteLine($"Gallery images saved successfully for event {eventId}");
     }
 }

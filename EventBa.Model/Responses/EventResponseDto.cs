@@ -1,4 +1,5 @@
 using EventBa.Model.Enums;
+using System.Text.Json.Serialization;
 
 namespace EventBa.Model.Responses;
 
@@ -25,7 +26,23 @@ public class EventResponseDto
     public bool IsPaid { get; set; }
 
     public CategoryResponseDto Category { get; set; } = null!;
+    
+    [JsonIgnore]
     public ImageResponseDto? CoverImage { get; set; }
+    
+    [JsonPropertyName("coverImage")]
+    public string? CoverImageData => CoverImage?.Data != null && CoverImage.Data.Length > 0
+        ? $"data:image/jpeg;base64,{Convert.ToBase64String(CoverImage.Data)}"
+        : null;
+    
+    [JsonIgnore]
     public List<ImageResponseDto> GalleryImages { get; set; } = new();
+    
+    [JsonPropertyName("galleryImages")]
+    public List<string> GalleryImageData => GalleryImages
+        .Where(img => img != null && img.Data != null && img.Data.Length > 0)
+        .Select(img => $"data:image/jpeg;base64,{Convert.ToBase64String(img.Data!)}")
+        .ToList();
+    
     public Guid OrganizerId { get; set; }
 }

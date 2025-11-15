@@ -79,8 +79,8 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
       'endTime': event.endTime,
       'startDate': event.startDate,
       'endDate': event.endDate,
-      'category': event.category.name,
-      'categoryId': event.category.id,
+      'category': event.category?.name ?? 'Uncategorized',
+      'categoryId': event.category?.id ?? '',
       'isPaid': event.isPaid,
       'coverImage': event.coverImage,
       'status': event.status.name,
@@ -544,7 +544,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          event.category.name,
+                          event.category?.name ?? 'Uncategorized',
                           style: const TextStyle(
                             fontSize: 12,
                             color: Color(0xFF4776E6),

@@ -24,10 +24,11 @@ Event _$EventFromJson(Map<String, dynamic> json) => Event(
       isPaid: json['isPaid'] as bool,
       coverImage: json['coverImage'] as String?,
       organizerId: json['organizerId'] as String,
-      category:
-          CategoryModel.fromJson(json['category'] as Map<String, dynamic>),
+      category: json['category'] == null
+          ? null
+          : CategoryModel.fromJson(json['category'] as Map<String, dynamic>),
       galleryImages: (json['galleryImages'] as List<dynamic>)
-          .map((e) => ImageModel.fromJson(e as Map<String, dynamic>))
+          .map((e) => e as String)
           .toList(),
       averageRating: (json['averageRating'] as num?)?.toDouble(),
       reviewCount: (json['reviewCount'] as num?)?.toInt(),

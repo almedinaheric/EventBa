@@ -35,7 +35,11 @@ public class MappingProfile : Profile
         // ---------------------
         CreateMap<Event, EventResponseDto>()
             .ForMember(dest => dest.CoverImage, opt => opt.MapFrom(src => src.CoverImage))
-            .ForMember(dest => dest.GalleryImages, opt => opt.MapFrom(src => src.EventGalleryImages))
+            .ForMember(dest => dest.GalleryImages, opt => opt.MapFrom(src => 
+                src.EventGalleryImages
+                    .OrderBy(eg => eg.Order)
+                    .Select(eg => eg.Image)
+                    .ToList()))
             .ForMember(dest => dest.Category, opt => opt.MapFrom(src => src.Category))
             .ForMember(dest => dest.IsPaid, opt => opt.MapFrom(src => 
                 src.Tickets != null && src.Tickets.Any() && 
@@ -93,7 +97,10 @@ public class MappingProfile : Profile
         // ---------------------
         // Image
         // ---------------------
-        CreateMap<Image, ImageResponseDto>().ReverseMap();
+        CreateMap<Image, ImageResponseDto>()
+            .ForMember(dest => dest.Data, opt => opt.MapFrom(src => src.ImageData))
+            .ReverseMap()
+            .ForMember(dest => dest.ImageData, opt => opt.MapFrom(src => src.Data));
         CreateMap<ImageInsertRequestDto, Image>();
         CreateMap<ImageUpdateRequestDto, Image>();
 

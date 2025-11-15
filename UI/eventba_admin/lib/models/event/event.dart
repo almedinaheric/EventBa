@@ -1,7 +1,6 @@
 import 'package:json_annotation/json_annotation.dart';
 import '../enums/event_status.dart';
 import '../enums/event_type.dart';
-import '../image/image_model.dart';
 import '../category/category_model.dart';
 
 part 'event.g.dart';
@@ -25,8 +24,8 @@ class Event {
   final bool isPaid;
   final String? coverImage;
   final String organizerId;
-  final CategoryModel category;
-  final List<ImageModel> galleryImages;
+  final CategoryModel? category;
+  final List<String> galleryImages;
   final double? averageRating;
   final int? reviewCount;
 
@@ -48,7 +47,7 @@ class Event {
     required this.isPaid,
     this.coverImage,
     required this.organizerId,
-    required this.category,
+    this.category,
     required this.galleryImages,
     this.averageRating,
     this.reviewCount,

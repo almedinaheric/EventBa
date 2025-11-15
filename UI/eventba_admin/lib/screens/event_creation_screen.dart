@@ -29,7 +29,6 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
   // Controllers
   final TextEditingController _nameController = TextEditingController();
   String? _selectedCategoryId;
-  String? _selectedCategoryName;
   final TextEditingController _venueController = TextEditingController();
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _startTimeController = TextEditingController();
@@ -182,9 +181,6 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
                         onChanged: (newValue) {
                           setState(() {
                             _selectedCategoryId = newValue;
-                            _selectedCategoryName = _categories.firstWhere(
-                              (c) => c['id'] == newValue,
-                            )['name'];
                             _isCategoryValid = newValue != null;
                             _categoryErrorMessage = _isCategoryValid
                                 ? null
@@ -536,25 +532,35 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
 
   Future<void> _pickMainImage() async {
     try {
+      print('Attempting to pick main image...');
       final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      print('Image picker returned: ${image?.path ?? "null"}');
       if (image != null) {
         setState(() {
           _mainImage = image;
         });
+        print('Main image set successfully');
+      } else {
+        print('No image selected');
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          content: Text('Failed to pick image: ${e.toString()}'),
-        ),
-      );
+      print('Error picking main image: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            behavior: SnackBarBehavior.floating,
+            content: Text('Failed to pick image: ${e.toString()}'),
+          ),
+        );
+      }
     }
   }
 
   Future<void> _pickAdditionalImage(int index) async {
     try {
+      print('Attempting to pick additional image at index $index...');
       final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      print('Image picker returned: ${image?.path ?? "null"}');
       if (image != null) {
         setState(() {
           if (index < _additionalImages.length) {
@@ -563,14 +569,20 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
             _additionalImages.add(image);
           }
         });
+        print('Additional image at index $index set successfully');
+      } else {
+        print('No image selected');
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          content: Text('Failed to pick image: ${e.toString()}'),
-        ),
-      );
+      print('Error picking additional image: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            behavior: SnackBarBehavior.floating,
+            content: Text('Failed to pick image: ${e.toString()}'),
+          ),
+        );
+      }
     }
   }
 
@@ -775,26 +787,44 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
         );
       }
 
-      final startDateParts = dateRangeParts[0].split('-');
-      final endDateParts = dateRangeParts[1].split('-');
+      // Dates are already in YYYY-MM-DD format from the date picker
+      final startDateFormatted = dateRangeParts[0];
+      final endDateFormatted = dateRangeParts[1];
 
-      if (startDateParts.length != 3 || endDateParts.length != 3) {
-        throw FormatException('Invalid date format. Use YYYY-MM-DD');
+      // Parse and format time to HH:MM format (removing AM/PM if present)
+      String formatTime(String timeStr) {
+        final parts = timeStr.split(' ');
+        final timePart = parts[0]; // Get time without AM/PM
+        final timeParts = timePart.split(':');
+
+        int hour = int.parse(timeParts[0]);
+        final minute = timeParts[1];
+
+        // Handle AM/PM if present
+        if (parts.length > 1) {
+          final period = parts[1].toUpperCase();
+          if (period == 'PM' && hour != 12) {
+            hour += 12;
+          } else if (period == 'AM' && hour == 12) {
+            hour = 0;
+          }
+        }
+
+        return '${hour.toString().padLeft(2, '0')}:$minute';
       }
 
-      final startDateFormatted =
-          '${startDateParts[2]}-${startDateParts[1]}-${startDateParts[0]}';
-      final endDateFormatted =
-          '${endDateParts[2]}-${endDateParts[1]}-${endDateParts[0]}';
-
-      final startTimeParts = _startTimeController.text.split(':');
-      final endTimeParts = _endTimeController.text.split(':');
+      final startTimeFormatted = formatTime(_startTimeController.text);
+      final endTimeFormatted = formatTime(_endTimeController.text);
 
       // Upload main/cover image
       String? coverImageId;
       if (_mainImage != null) {
         final bytes = await File(_mainImage!.path).readAsBytes();
-        final mainImageRequest = {'data': bytes, 'contentType': 'image/jpeg'};
+        final base64Image = base64Encode(bytes);
+        final mainImageRequest = {
+          'Data': base64Image,
+          'ContentType': 'image/jpeg',
+        };
         final mainImageResponse = await imageProvider.insert(mainImageRequest);
         coverImageId = mainImageResponse.id;
       }
@@ -809,23 +839,23 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
         totalCapacity = int.parse(_capacityController.text.trim());
       }
 
-      // Create event request
+      // Create event request matching EventInsertRequestDto
       final request = {
         'title': _nameController.text.trim(),
         'description': _descriptionController.text.trim(),
         'location': _venueController.text.trim(),
-        'startDate': startDateFormatted,
-        'endDate': endDateFormatted,
-        'startTime': '${startTimeParts[0]}:${startTimeParts[1]}:00',
-        'endTime': '${endTimeParts[0]}:${endTimeParts[1]}:00',
+        'startDate': startDateFormatted, // YYYY-MM-DD
+        'endDate': endDateFormatted, // YYYY-MM-DD
+        'startTime': startTimeFormatted, // HH:MM
+        'endTime': endTimeFormatted, // HH:MM
         'capacity': totalCapacity,
         'availableTicketsCount': totalCapacity,
         'status': 'Upcoming',
-        'isFeatured': true,
-        'type': _isPaid ? 'Public' : 'Private',
+        'isFeatured': false,
+        'type': 'Public', // Always public for admin-created events
         'isPublished': true,
         'categoryId': _selectedCategoryId,
-        'coverImageId': coverImageId,
+        if (coverImageId != null) 'coverImageId': coverImageId,
       };
 
       print('Creating event with request: $request');
@@ -837,23 +867,36 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
 
       // Upload and link gallery images
       if (_additionalImages.isNotEmpty) {
+        print('Uploading ${_additionalImages.length} gallery images...');
         List<String> galleryImageIds = [];
 
-        for (var additionalImage in _additionalImages) {
+        for (var i = 0; i < _additionalImages.length; i++) {
+          final additionalImage = _additionalImages[i];
+          print('Uploading gallery image ${i + 1}/${_additionalImages.length}');
           final bytes = await File(additionalImage.path).readAsBytes();
-          final imageRequest = {'data': bytes, 'contentType': 'image/jpeg'};
+          final base64Image = base64Encode(bytes);
+          final imageRequest = {
+            'Data': base64Image,
+            'ContentType': 'image/jpeg',
+            'ImageType': 'EventGallery', // Set the correct image type
+            'EventId': eventId, // Link to event immediately
+          };
           final imageResponse = await imageProvider.insert(imageRequest);
+          print('Gallery image ${i + 1} uploaded with ID: ${imageResponse.id}');
           galleryImageIds.add(imageResponse.id!);
         }
 
         // Link gallery images to event
         if (galleryImageIds.isNotEmpty) {
+          print(
+            'Linking ${galleryImageIds.length} gallery images to event $eventId',
+          );
           await _linkGalleryImages(eventId, galleryImageIds);
         }
       }
 
-      // Create tickets (both for free and paid events)
-      await _createTickets(eventId);
+      // Create tickets based on event type (free/paid)
+      await _createTickets(eventId, startDateFormatted);
 
       if (!mounted) return;
 
@@ -885,6 +928,9 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
     try {
       final url =
           "${Provider.of<EventProvider>(context, listen: false).baseUrl}Event/$eventId/gallery-images";
+      print('Linking gallery images to: $url');
+      print('Image IDs to link: $imageIds');
+
       final uri = Uri.parse(url);
       final headers = Provider.of<EventProvider>(
         context,
@@ -897,20 +943,23 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
         body: jsonEncode(imageIds),
       );
 
+      print('Gallery link response status: ${response.statusCode}');
+      print('Gallery link response body: ${response.body}');
+
       if (response.statusCode >= 300) {
         throw Exception(
-          'Failed to link gallery images: ${response.statusCode}',
+          'Failed to link gallery images: ${response.statusCode} - ${response.body}',
         );
       }
 
-      print('Gallery images linked successfully');
+      print('Gallery images linked successfully!');
     } catch (e) {
       print('Error linking gallery images: $e');
       // Don't throw - event is already created, this is optional
     }
   }
 
-  Future<void> _createTickets(String eventId) async {
+  Future<void> _createTickets(String eventId, String eventDate) async {
     try {
       final url =
           "${Provider.of<EventProvider>(context, listen: false).baseUrl}Ticket";
@@ -920,18 +969,23 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
         listen: false,
       ).createHeaders();
 
+      DateTime saleStartDate = DateTime.now();
+      DateTime saleEndDate = DateTime.parse(eventDate);
+
       if (_isPaid) {
-        // Create VIP ticket
-        if (int.parse(_vipCountController.text.trim()) > 0) {
+        // Create VIP ticket if count > 0
+        final vipCount = int.tryParse(_vipCountController.text.trim()) ?? 0;
+        final vipPrice =
+            double.tryParse(_vipPriceController.text.trim()) ?? 0.0;
+
+        if (vipCount > 0 && vipPrice > 0) {
           final vipTicketRequest = {
             'eventId': eventId,
             'ticketType': 'Vip',
-            'price': double.parse(_vipPriceController.text.trim()),
-            'quantity': int.parse(_vipCountController.text.trim()),
-            'saleStartDate': DateTime.now().toIso8601String(),
-            'saleEndDate': DateTime.now()
-                .add(const Duration(days: 365))
-                .toIso8601String(),
+            'price': vipPrice,
+            'quantity': vipCount,
+            'saleStartDate': saleStartDate.toIso8601String(),
+            'saleEndDate': saleEndDate.toIso8601String(),
           };
 
           final vipResponse = await http.post(
@@ -948,17 +1002,19 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
           print('VIP ticket created');
         }
 
-        // Create Economy ticket
-        if (int.parse(_ecoCountController.text.trim()) > 0) {
+        // Create Economy ticket if count > 0
+        final ecoCount = int.tryParse(_ecoCountController.text.trim()) ?? 0;
+        final ecoPrice =
+            double.tryParse(_ecoPriceController.text.trim()) ?? 0.0;
+
+        if (ecoCount > 0 && ecoPrice > 0) {
           final ecoTicketRequest = {
             'eventId': eventId,
             'ticketType': 'Economy',
-            'price': double.parse(_ecoPriceController.text.trim()),
-            'quantity': int.parse(_ecoCountController.text.trim()),
-            'saleStartDate': DateTime.now().toIso8601String(),
-            'saleEndDate': DateTime.now()
-                .add(const Duration(days: 365))
-                .toIso8601String(),
+            'price': ecoPrice,
+            'quantity': ecoCount,
+            'saleStartDate': saleStartDate.toIso8601String(),
+            'saleEndDate': saleEndDate.toIso8601String(),
           };
 
           final ecoResponse = await http.post(
@@ -974,35 +1030,11 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
           }
           print('Economy ticket created');
         }
-      } else {
-        // Create free ticket
-        final freeTicketRequest = {
-          'eventId': eventId,
-          'ticketType': 'Free',
-          'price': 0.0,
-          'quantity': int.parse(_capacityController.text.trim()),
-          'saleStartDate': DateTime.now().toIso8601String(),
-          'saleEndDate': DateTime.now()
-              .add(const Duration(days: 365))
-              .toIso8601String(),
-        };
-
-        final freeResponse = await http.post(
-          uri,
-          headers: headers,
-          body: jsonEncode(freeTicketRequest),
-        );
-
-        if (freeResponse.statusCode >= 300) {
-          throw Exception(
-            'Failed to create free ticket: ${freeResponse.statusCode}',
-          );
-        }
-        print('Free ticket created');
       }
+      // Note: For free events, we don't create tickets as the backend will handle capacity through the event entity
     } catch (e) {
       print('Error creating tickets: $e');
-      throw e; // Rethrow as this is critical
+      // Don't throw - tickets are supplementary, event is already created
     }
   }
 

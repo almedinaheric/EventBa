@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:eventba_admin/screens/edit_event_screen.dart';
 import 'package:eventba_admin/screens/user_details_screen.dart';
 import 'package:eventba_admin/widgets/master_screen.dart';
@@ -183,8 +184,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
         _currentEventData = {
           'id': updatedEvent.id,
           'name': updatedEvent.title,
-          'category': updatedEvent.category.name,
-          'categoryId': updatedEvent.category.id,
+          'category': updatedEvent.category?.name ?? 'Uncategorized',
+          'categoryId': updatedEvent.category?.id ?? '',
           'venue': updatedEvent.location,
           'date': updatedEvent.startDate,
           'startTime': updatedEvent.startTime,
@@ -201,6 +202,19 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           'currentAttendees': updatedEvent.currentAttendees,
           'availableTicketsCount': updatedEvent.availableTicketsCount,
         };
+
+        // Load real images
+        _imageUrls = [];
+        if (updatedEvent.coverImage != null) {
+          _imageUrls.add(updatedEvent.coverImage!);
+        }
+        // Add gallery images (they are already base64 strings)
+        _imageUrls.addAll(updatedEvent.galleryImages);
+        // Fallback to default image if no images
+        if (_imageUrls.isEmpty) {
+          _imageUrls.add('assets/images/default_event_cover_image.png');
+        }
+
         _isLoading = false;
       });
 
@@ -225,11 +239,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     }
   }
 
-  final List<String> imageUrls = [
-    'assets/images/default_event_cover_image.png',
-    'assets/images/default_event_cover_image.png',
-    'assets/images/default_event_cover_image.png',
-  ];
+  List<String> _imageUrls = [];
 
   void _showImageDialog(int initialIndex) {
     showDialog(
@@ -244,9 +254,9 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 aspectRatio: 16 / 9,
                 child: PageView.builder(
                   controller: PageController(initialPage: initialIndex),
-                  itemCount: imageUrls.length,
+                  itemCount: _imageUrls.length,
                   itemBuilder: (context, index) {
-                    return Image.asset(imageUrls[index], fit: BoxFit.contain);
+                    return _buildImageWidget(_imageUrls[index], BoxFit.contain);
                   },
                 ),
               ),
@@ -255,6 +265,26 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
         );
       },
     );
+  }
+
+  Widget _buildImageWidget(String imageData, BoxFit fit) {
+    // Check if it's a base64 image
+    if (imageData.startsWith('data:image')) {
+      final base64String = imageData.split(',').last;
+      return Image.memory(
+        base64Decode(base64String),
+        fit: fit,
+        errorBuilder: (context, error, stackTrace) {
+          return Image.asset(
+            'assets/images/default_event_cover_image.png',
+            fit: fit,
+          );
+        },
+      );
+    } else {
+      // It's an asset path
+      return Image.asset(imageData, fit: fit);
+    }
   }
 
   Future<void> _deleteEvent() async {
@@ -340,25 +370,33 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Event Image Carousel
-                    SizedBox(
-                      height: 250,
-                      child: PageView.builder(
-                        itemCount: imageUrls.length,
-                        itemBuilder: (context, index) {
-                          return GestureDetector(
-                            onTap: () => _showImageDialog(index),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(16),
-                                image: DecorationImage(
-                                  image: AssetImage(imageUrls[index]),
-                                  fit: BoxFit.cover,
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        return SizedBox(
+                          height: constraints.maxWidth > 600 ? 250 : 200,
+                          child: PageView.builder(
+                            itemCount: _imageUrls.length,
+                            itemBuilder: (context, index) {
+                              return GestureDetector(
+                                onTap: () => _showImageDialog(index),
+                                child: Container(
+                                  margin: const EdgeInsets.symmetric(
+                                    horizontal: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  clipBehavior: Clip.antiAlias,
+                                  child: _buildImageWidget(
+                                    _imageUrls[index],
+                                    BoxFit.cover,
+                                  ),
                                 ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
+                              );
+                            },
+                          ),
+                        );
+                      },
                     ),
 
                     const SizedBox(height: 24),
