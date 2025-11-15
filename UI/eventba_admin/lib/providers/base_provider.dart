@@ -17,7 +17,7 @@ abstract class BaseProvider<T> with ChangeNotifier {
     //_baseUrl = const String.fromEnvironment("baseUrl", defaultValue: "http://192.168.0.34:5187/api/");
     _baseUrl = const String.fromEnvironment(
       "baseUrl",
-      defaultValue: "http://localhost:5187/api/",
+      defaultValue: "http://localhost:5187/",
     );
     //_baseUrl = const String.fromEnvironment("baseUrl", defaultValue: "http://10.0.2.2:5187/api/");
   }
@@ -75,6 +75,37 @@ abstract class BaseProvider<T> with ChangeNotifier {
 
     var jsonRequest = jsonEncode(request);
     var response = await http.put(uri, headers: headers, body: jsonRequest);
+
+    if (isValidResponse(response)) {
+      var data = jsonDecode(response.body);
+      return fromJson(data);
+    } else {
+      throw Exception("Unknown error");
+    }
+  }
+
+  Future<T> updateById(String id, [dynamic request]) async {
+    var url = "$_baseUrl$_endpoint/$id";
+    var uri = Uri.parse(url);
+    var headers = createHeaders();
+
+    var jsonRequest = jsonEncode(request);
+    var response = await http.put(uri, headers: headers, body: jsonRequest);
+
+    if (isValidResponse(response)) {
+      var data = jsonDecode(response.body);
+      return fromJson(data);
+    } else {
+      throw Exception("Unknown error");
+    }
+  }
+
+  Future<T> delete(String id) async {
+    var url = "$_baseUrl$_endpoint/$id";
+    var uri = Uri.parse(url);
+    var headers = createHeaders();
+
+    var response = await http.delete(uri, headers: headers);
 
     if (isValidResponse(response)) {
       var data = jsonDecode(response.body);

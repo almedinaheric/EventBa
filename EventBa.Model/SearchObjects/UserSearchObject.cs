@@ -6,4 +6,5 @@ public class UserSearchObject : BaseSearchObject
     public string? LastName { get; set; }
     public string? Email { get; set; }
     public string? SearchTerm { get; set; }
+    public bool ExcludeAdmins { get; set; } = false;
 }

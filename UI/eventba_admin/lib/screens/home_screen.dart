@@ -1,8 +1,9 @@
+import 'package:eventba_admin/screens/categories_screen.dart';
 import 'package:eventba_admin/screens/event_creation_screen.dart';
 import 'package:eventba_admin/screens/private_events_screen.dart';
 import 'package:eventba_admin/screens/public_events_screen.dart';
 import 'package:eventba_admin/screens/users_screen.dart';
-import 'package:eventba_admin/screens/report_generation_screen.dart'; // Add this import
+import 'package:eventba_admin/screens/report_generation_screen.dart';
 import 'package:eventba_admin/screens/support_screen.dart';
 import 'package:eventba_admin/widgets/master_screen.dart';
 import 'package:flutter/material.dart';
@@ -248,6 +249,12 @@ class _HomeScreenState extends State<HomeScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const ReportGenerationScreen()),
+      );
+    }
+    if (screenName == 'Manage Categories') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const CategoriesScreen()),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(

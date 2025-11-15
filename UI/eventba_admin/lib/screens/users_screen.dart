@@ -35,6 +35,7 @@ class _UsersScreenState extends State<UsersScreen> {
       final filter = {
         'page': 1,
         'pageSize': 10,
+        'excludeAdmins': true, // Exclude admin users from the list
         if (_searchTerm.isNotEmpty) 'searchTerm': _searchTerm,
       };
 

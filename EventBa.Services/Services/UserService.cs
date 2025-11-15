@@ -43,8 +43,11 @@ public class UserService :
     
     public override IQueryable<User> AddFilter(IQueryable<User> query, UserSearchObject? search = null)
     {
-        // Always exclude Admin users from the list
-        query = query.Where(u => u.Role.Name != Model.Enums.RoleName.Admin);
+        // Only exclude Admin users if explicitly requested
+        if (search?.ExcludeAdmins == true)
+        {
+            query = query.Where(u => u.Role.Name != Model.Enums.RoleName.Admin);
+        }
         
         if (!string.IsNullOrWhiteSpace(search?.SearchTerm))
         {
