@@ -645,12 +645,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => UserDetailsScreen(
-                    userId: organizerId,
-                    name: _organizer!.fullName,
-                    email: _organizer!.email,
-                    avatar: _organizer!.profileImage?.data ?? "",
-                  ),
+                  builder: (context) => UserDetailsScreen(userId: organizerId),
                 ),
               );
             }

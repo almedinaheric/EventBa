@@ -41,6 +41,39 @@ public class UserService :
             .Include(u => u.FavoriteEvents);
     }
     
+    public override IQueryable<User> AddFilter(IQueryable<User> query, UserSearchObject? search = null)
+    {
+        // Always exclude Admin users from the list
+        query = query.Where(u => u.Role.Name != Model.Enums.RoleName.Admin);
+        
+        if (!string.IsNullOrWhiteSpace(search?.SearchTerm))
+        {
+            var searchTerm = search.SearchTerm.ToLower();
+            query = query.Where(u => 
+                u.FirstName.ToLower().Contains(searchTerm) || 
+                u.LastName.ToLower().Contains(searchTerm) ||
+                u.Email.ToLower().Contains(searchTerm)
+            );
+        }
+        
+        if (!string.IsNullOrWhiteSpace(search?.FirstName))
+        {
+            query = query.Where(u => u.FirstName.ToLower().Contains(search.FirstName.ToLower()));
+        }
+        
+        if (!string.IsNullOrWhiteSpace(search?.LastName))
+        {
+            query = query.Where(u => u.LastName.ToLower().Contains(search.LastName.ToLower()));
+        }
+        
+        if (!string.IsNullOrWhiteSpace(search?.Email))
+        {
+            query = query.Where(u => u.Email.ToLower().Contains(search.Email.ToLower()));
+        }
+        
+        return query;
+    }
+    
     public override async Task BeforeInsert(User entity, UserInsertRequestDto insert)
     {
         Console.WriteLine($"BeforeInsert called for user: {insert.Email}");

@@ -1,6 +1,10 @@
+import 'dart:convert';
 import 'package:eventba_admin/widgets/master_screen.dart';
-import 'package:eventba_admin/screens/user_details_screen.dart'; // Add this import
+import 'package:eventba_admin/screens/user_details_screen.dart';
+import 'package:eventba_admin/providers/user_provider.dart';
+import 'package:eventba_admin/models/user/user.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class UsersScreen extends StatefulWidget {
   const UsersScreen({super.key});
@@ -11,52 +15,53 @@ class UsersScreen extends StatefulWidget {
 
 class _UsersScreenState extends State<UsersScreen> {
   final TextEditingController _searchController = TextEditingController();
-
-  // All users (original list)
-  final List<Map<String, dynamic>> allUsers = [
-    {
-      'name': 'Dylan Malik',
-      'email': 'dylan.malik@email.com',
-      'avatar': 'assets/images/profile_placeholder.png',
-      'id': '1',
-    },
-    {
-      'name': 'Sarah Johnson',
-      'email': 'sarah.johnson@email.com',
-      'avatar': 'assets/images/profile_placeholder.png',
-      'id': '2',
-    },
-    {
-      'name': 'Mike Wilson',
-      'email': 'mike.wilson@email.com',
-      'avatar': 'assets/images/profile_placeholder.png',
-      'id': '3',
-    },
-    {
-      'name': 'Emily Davis',
-      'email': 'emily.davis@email.com',
-      'avatar': 'assets/images/profile_placeholder.png',
-      'id': '4',
-    },
-  ];
-
-  // This will be updated when user searches
-  List<Map<String, dynamic>> filteredUsers = [];
+  List<User> _users = [];
+  bool _isLoading = false;
+  String _searchTerm = '';
 
   @override
   void initState() {
     super.initState();
-    filteredUsers = List.from(allUsers);
+    _loadUsers();
   }
 
-  void _filterUsers(String query) {
+  Future<void> _loadUsers() async {
     setState(() {
-      filteredUsers = allUsers.where((user) {
-        final name = user['name'].toLowerCase();
-        final email = user['email'].toLowerCase();
-        return name.contains(query.toLowerCase()) || email.contains(query.toLowerCase());
-      }).toList();
+      _isLoading = true;
     });
+
+    try {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final filter = {
+        'page': 1,
+        'pageSize': 10,
+        if (_searchTerm.isNotEmpty) 'searchTerm': _searchTerm,
+      };
+
+      final result = await userProvider.get(filter: filter);
+
+      setState(() {
+        _users = result.result;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print("Error loading users: $e");
+      setState(() {
+        _isLoading = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error loading users: $e')));
+      }
+    }
+  }
+
+  void _onSearchChanged(String query) {
+    setState(() {
+      _searchTerm = query;
+    });
+    _loadUsers();
   }
 
   @override
@@ -77,7 +82,7 @@ class _UsersScreenState extends State<UsersScreen> {
               padding: const EdgeInsets.all(16),
               child: TextField(
                 controller: _searchController,
-                onChanged: _filterUsers,
+                onChanged: _onSearchChanged,
                 decoration: InputDecoration(
                   hintText: 'Search by name or email',
                   prefixIcon: const Icon(Icons.search),
@@ -91,27 +96,24 @@ class _UsersScreenState extends State<UsersScreen> {
 
             // 📄 User List
             Expanded(
-              child: filteredUsers.isEmpty
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _users.isEmpty
                   ? const Center(child: Text('No users found'))
                   : ListView.separated(
-                padding: const EdgeInsets.all(0),
-                itemCount: filteredUsers.length,
-                separatorBuilder: (context, index) => Divider(
-                  height: 1,
-                  color: Colors.grey.withOpacity(0.3),
-                  indent: 24,
-                  endIndent: 24,
-                ),
-                itemBuilder: (context, index) {
-                  var user = filteredUsers[index];
-                  return _buildUserCard(
-                    name: user['name'],
-                    email: user['email'],
-                    avatar: user['avatar'],
-                    userId: user['id'],
-                  );
-                },
-              ),
+                      padding: const EdgeInsets.all(0),
+                      itemCount: _users.length,
+                      separatorBuilder: (context, index) => Divider(
+                        height: 1,
+                        color: Colors.grey.withOpacity(0.3),
+                        indent: 24,
+                        endIndent: 24,
+                      ),
+                      itemBuilder: (context, index) {
+                        var user = _users[index];
+                        return _buildUserCard(user);
+                      },
+                    ),
             ),
           ],
         ),
@@ -119,12 +121,13 @@ class _UsersScreenState extends State<UsersScreen> {
     );
   }
 
-  Widget _buildUserCard({
-    required String name,
-    required String email,
-    required String avatar,
-    required String userId,
-  }) {
+  Widget _buildUserCard(User user) {
+    // Get profile image data
+    String? profileImageData;
+    if (user.profileImage != null && user.profileImage!.data != null) {
+      profileImageData = user.profileImage!.data;
+    }
+
     return Container(
       padding: const EdgeInsets.all(24),
       child: Row(
@@ -138,20 +141,29 @@ class _UsersScreenState extends State<UsersScreen> {
               border: Border.all(color: Colors.grey.withOpacity(0.3)),
             ),
             child: ClipOval(
-              child: Image.asset(
-                avatar,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: Colors.grey.withOpacity(0.3),
-                    child: const Icon(
-                      Icons.person,
-                      color: Colors.grey,
-                      size: 30,
+              child: profileImageData != null
+                  ? Image.memory(
+                      base64Decode(profileImageData.split(',').last),
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: Colors.grey.withOpacity(0.3),
+                          child: const Icon(
+                            Icons.person,
+                            color: Colors.grey,
+                            size: 30,
+                          ),
+                        );
+                      },
+                    )
+                  : Container(
+                      color: Colors.grey.withOpacity(0.3),
+                      child: const Icon(
+                        Icons.person,
+                        color: Colors.grey,
+                        size: 30,
+                      ),
                     ),
-                  );
-                },
-              ),
             ),
           ),
           const SizedBox(width: 16),
@@ -162,7 +174,7 @@ class _UsersScreenState extends State<UsersScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  name,
+                  user.fullName,
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
@@ -171,11 +183,8 @@ class _UsersScreenState extends State<UsersScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  email,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey.shade600,
-                  ),
+                  user.email,
+                  style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                 ),
               ],
             ),
@@ -188,12 +197,7 @@ class _UsersScreenState extends State<UsersScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => UserDetailsScreen(
-                    userId: userId,
-                    name: name,
-                    email: email,
-                    avatar: avatar,
-                  ),
+                  builder: (context) => UserDetailsScreen(userId: user.id),
                 ),
               );
             },

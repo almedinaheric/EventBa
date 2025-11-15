@@ -1,24 +1,17 @@
 import 'package:eventba_admin/widgets/master_screen.dart';
 import 'package:eventba_admin/screens/event_details_screen.dart';
 import 'package:eventba_admin/providers/event_provider.dart';
+import 'package:eventba_admin/providers/user_provider.dart';
 import 'package:eventba_admin/models/event/event.dart';
+import 'package:eventba_admin/models/user/user.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:convert';
 
 class UserDetailsScreen extends StatefulWidget {
   final String userId;
-  final String name;
-  final String email;
-  final String avatar;
 
-  const UserDetailsScreen({
-    super.key,
-    required this.userId,
-    required this.name,
-    required this.email,
-    required this.avatar,
-  });
+  const UserDetailsScreen({super.key, required this.userId});
 
   @override
   State<UserDetailsScreen> createState() => _UserDetailsScreenState();
@@ -27,16 +20,42 @@ class UserDetailsScreen extends StatefulWidget {
 class _UserDetailsScreenState extends State<UserDetailsScreen> {
   int selectedIndex = 0; // 0 = Upcoming, 1 = Past
   bool _isLoading = false;
+  bool _isLoadingUser = false;
   List<Event> _upcomingEvents = [];
   List<Event> _pastEvents = [];
-
-  // Sample user phone - in real app this would come from API
-  final String userPhone = "+387 61 123 456";
+  User? _user;
 
   @override
   void initState() {
     super.initState();
+    _loadUserData();
     _loadEvents();
+  }
+
+  Future<void> _loadUserData() async {
+    setState(() {
+      _isLoadingUser = true;
+    });
+
+    try {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final user = await userProvider.getUserById(widget.userId);
+
+      setState(() {
+        _user = user;
+        _isLoadingUser = false;
+      });
+    } catch (e) {
+      print("Error loading user data: $e");
+      setState(() {
+        _isLoadingUser = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error loading user data: $e')));
+      }
+    }
   }
 
   Future<void> _loadEvents() async {
@@ -45,6 +64,19 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
     });
 
     try {
+      // Validate that userId is a valid GUID format
+      final guidRegex = RegExp(
+        r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+      );
+
+      if (!guidRegex.hasMatch(widget.userId)) {
+        print("Invalid userId format: ${widget.userId}. Expected GUID format.");
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
       final eventProvider = Provider.of<EventProvider>(context, listen: false);
       final events = await eventProvider.getEventsByOrganizer(widget.userId);
 
@@ -65,6 +97,8 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
       setState(() {
         _isLoading = false;
       });
+      // Don't show error to user if it's just about events not loading
+      // The user profile will still be shown
     }
   }
 
@@ -96,6 +130,22 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoadingUser) {
+      return MasterScreen(
+        title: 'User Details',
+        showBackButton: true,
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_user == null) {
+      return MasterScreen(
+        title: 'User Details',
+        showBackButton: true,
+        body: const Center(child: Text('User not found')),
+      );
+    }
+
     return MasterScreen(
       title: 'User Details',
       showBackButton: true,
@@ -127,6 +177,12 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
   }
 
   Widget _buildUserProfile() {
+    // Get profile image data
+    String? profileImageData;
+    if (_user!.profileImage != null && _user!.profileImage!.data != null) {
+      profileImageData = _user!.profileImage!.data;
+    }
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -144,20 +200,29 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
               border: Border.all(color: Colors.grey.withOpacity(0.3), width: 2),
             ),
             child: ClipOval(
-              child: Image.asset(
-                widget.avatar,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: Colors.grey.withOpacity(0.3),
-                    child: const Icon(
-                      Icons.person,
-                      color: Colors.grey,
-                      size: 40,
+              child: profileImageData != null
+                  ? Image.memory(
+                      base64Decode(profileImageData.split(',').last),
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: Colors.grey.withOpacity(0.3),
+                          child: const Icon(
+                            Icons.person,
+                            color: Colors.grey,
+                            size: 40,
+                          ),
+                        );
+                      },
+                    )
+                  : Container(
+                      color: Colors.grey.withOpacity(0.3),
+                      child: const Icon(
+                        Icons.person,
+                        color: Colors.grey,
+                        size: 40,
+                      ),
                     ),
-                  );
-                },
-              ),
             ),
           ),
 
@@ -165,7 +230,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
 
           // User Name
           Text(
-            widget.name,
+            _user!.fullName,
             style: const TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
@@ -182,7 +247,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                 child: _buildUserDetailItem(
                   icon: Icons.email,
                   label: 'Email',
-                  value: widget.email,
+                  value: _user!.email,
                 ),
               ),
               const SizedBox(width: 16),
@@ -190,7 +255,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                 child: _buildUserDetailItem(
                   icon: Icons.phone,
                   label: 'Phone',
-                  value: userPhone,
+                  value: _user!.phoneNumber ?? 'N/A',
                 ),
               ),
             ],
