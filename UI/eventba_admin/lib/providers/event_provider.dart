@@ -153,4 +153,22 @@ class EventProvider extends BaseProvider<Event> {
       throw Exception("Unknown error in a GET request");
     }
   }
+
+  Future<List<Event>> getEventsByOrganizer(String organizerId) async {
+    var url = "${baseUrl}Event/organizer/$organizerId";
+
+    var uri = Uri.parse(url);
+    var headers = createHeaders();
+    var response = await http.get(uri, headers: headers);
+
+    if (isValidResponse(response)) {
+      var data = jsonDecode(response.body);
+      if (data is List) {
+        return data.map((item) => fromJson(item)).toList();
+      }
+      return [];
+    } else {
+      throw Exception("Failed to load events for organizer");
+    }
+  }
 }

@@ -4,10 +4,12 @@ import 'package:eventba_admin/widgets/master_screen.dart';
 import 'package:eventba_admin/providers/event_provider.dart';
 import 'package:eventba_admin/providers/event_review_provider.dart';
 import 'package:eventba_admin/providers/ticket_provider.dart';
+import 'package:eventba_admin/providers/user_provider.dart';
 import 'package:eventba_admin/models/event/event.dart';
 import 'package:eventba_admin/models/event_review/event_review.dart';
 import 'package:eventba_admin/models/event_statistics/event_statistics.dart';
 import 'package:eventba_admin/models/ticket/ticket.dart';
+import 'package:eventba_admin/models/user/user.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -36,15 +38,20 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   List<EventReview> _reviews = [];
   EventStatistics? _statistics;
   List<Ticket> _tickets = [];
+  User? _organizer;
   bool _reviewsLoading = false;
   bool _statisticsLoading = false;
   bool _ticketsLoading = false;
+  bool _organizerLoading = false;
   bool _isDescriptionExpanded = false;
 
   @override
   void initState() {
     super.initState();
     _currentEventData = widget.eventData;
+
+    // Load organizer details
+    _loadOrganizer();
 
     // Load tickets if event is paid
     if (_currentEventData['isPaid'] == true) {
@@ -54,6 +61,30 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     if (widget.isPublic && widget.isPastEvent) {
       _loadReviews();
       _loadStatistics();
+    }
+  }
+
+  Future<void> _loadOrganizer() async {
+    if (_currentEventData['organizerId'] == null) return;
+
+    setState(() {
+      _organizerLoading = true;
+    });
+
+    try {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final organizer = await userProvider.getUserById(
+        _currentEventData['organizerId'],
+      );
+      setState(() {
+        _organizer = organizer;
+        _organizerLoading = false;
+      });
+    } catch (e) {
+      print("Error loading organizer: $e");
+      setState(() {
+        _organizerLoading = false;
+      });
     }
   }
 
@@ -172,6 +203,9 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
         };
         _isLoading = false;
       });
+
+      // Reload organizer
+      _loadOrganizer();
 
       // Reload tickets if event is paid
       if (_currentEventData['isPaid'] == true) {
@@ -568,17 +602,16 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     final organizerId = _currentEventData['organizerId'];
 
     return GestureDetector(
-      onTap: organizerId != null
+      onTap: organizerId != null && _organizer != null
           ? () {
-              // TODO: Fetch user details by ID before navigating
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => UserDetailsScreen(
                     userId: organizerId,
-                    name: "Organizer", // TODO: Fetch real organizer name
-                    email: "", // TODO: Fetch real organizer email
-                    avatar: "", // TODO: Fetch real organizer avatar
+                    name: _organizer!.fullName,
+                    email: _organizer!.email,
+                    avatar: _organizer!.profileImage?.data ?? "",
                   ),
                 ),
               );
@@ -590,36 +623,54 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           border: Border.all(color: Colors.grey[300]!),
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.grey[300],
-              ),
-              child: const Icon(Icons.person, color: Colors.grey),
-            ),
-            const SizedBox(width: 12),
-            const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        child: _organizerLoading
+            ? const Center(child: CircularProgressIndicator())
+            : Row(
                 children: [
-                  Text(
-                    'Organized by',
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  CircleAvatar(
+                    radius: 20,
+                    backgroundColor: Colors.grey[300],
+                    backgroundImage: _organizer?.profileImage?.data != null
+                        ? MemoryImage(
+                            Uri.parse(
+                              _organizer!.profileImage!.data!,
+                            ).data!.contentAsBytes(),
+                          )
+                        : null,
+                    child: _organizer?.profileImage?.data == null
+                        ? const Icon(
+                            Icons.person,
+                            color: Colors.white,
+                            size: 20,
+                          )
+                        : null,
                   ),
-                  Text(
-                    'View Organizer',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Organized by',
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
+                        Text(
+                          _organizer?.fullName ?? "Loading...",
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(
+                    Icons.arrow_forward_ios,
+                    size: 16,
+                    color: Colors.grey,
                   ),
                 ],
               ),
-            ),
-            const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
-          ],
-        ),
       ),
     );
   }

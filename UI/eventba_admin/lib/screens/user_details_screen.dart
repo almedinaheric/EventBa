@@ -1,6 +1,10 @@
 import 'package:eventba_admin/widgets/master_screen.dart';
-import 'package:eventba_admin/screens/event_details_screen.dart'; // Add this import
+import 'package:eventba_admin/screens/event_details_screen.dart';
+import 'package:eventba_admin/providers/event_provider.dart';
+import 'package:eventba_admin/models/event/event.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'dart:convert';
 
 class UserDetailsScreen extends StatefulWidget {
   final String userId;
@@ -22,56 +26,73 @@ class UserDetailsScreen extends StatefulWidget {
 
 class _UserDetailsScreenState extends State<UserDetailsScreen> {
   int selectedIndex = 0; // 0 = Upcoming, 1 = Past
+  bool _isLoading = false;
+  List<Event> _upcomingEvents = [];
+  List<Event> _pastEvents = [];
 
   // Sample user phone - in real app this would come from API
   final String userPhone = "+387 61 123 456";
 
-  // Sample events data - in real app this would come from API
-  final List<Map<String, dynamic>> upcomingEvents = [
-    {
-      'id': '1',
-      'name': 'Tech Meetup 2025',
-      'location': 'Downtown Hall',
-      'date': '2025-07-30',
-      'category': 'Technology',
-      'isPaid': false,
-      'price': 'Free',
-      'image': 'assets/images/default_event_cover_image.png',
-    },
-    {
-      'id': '2',
-      'name': 'Summer Music Festival',
-      'location': 'City Park',
-      'date': '2025-08-15',
-      'category': 'Music',
-      'isPaid': true,
-      'price': '25KM',
-      'image': 'assets/images/default_event_cover_image.png',
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadEvents();
+  }
 
-  final List<Map<String, dynamic>> pastEvents = [
-    {
-      'id': '3',
-      'name': 'Spring Fest 2024',
-      'location': 'Central Park',
-      'date': '2024-04-20',
-      'category': 'Festival',
-      'isPaid': true,
-      'price': '15KM',
-      'image': 'assets/images/default_event_cover_image.png',
-    },
-    {
-      'id': '4',
-      'name': 'Art Exhibition',
-      'location': 'Gallery Center',
-      'date': '2024-03-10',
-      'category': 'Art',
-      'isPaid': false,
-      'price': 'Free',
-      'image': 'assets/images/default_event_cover_image.png',
-    },
-  ];
+  Future<void> _loadEvents() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final eventProvider = Provider.of<EventProvider>(context, listen: false);
+      final events = await eventProvider.getEventsByOrganizer(widget.userId);
+
+      setState(() {
+        // Filter by status: Upcoming vs Past
+        _upcomingEvents = events
+            .where(
+              (event) => event.status.name == 'Upcoming' && event.isPublished,
+            )
+            .toList();
+        _pastEvents = events
+            .where((event) => event.status.name == 'Past' && event.isPublished)
+            .toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      print("Error loading events: $e");
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Map<String, dynamic> _eventToMap(Event event) {
+    return {
+      'id': event.id,
+      'name': event.title,
+      'description': event.description,
+      'venue': event.location,
+      'date': event.startDate,
+      'startTime': event.startTime,
+      'endTime': event.endTime,
+      'startDate': event.startDate,
+      'endDate': event.endDate,
+      'category': event.category.name,
+      'categoryId': event.category.id,
+      'isPaid': event.isPaid,
+      'coverImage': event.coverImage,
+      'status': event.status.name,
+      'type': event.type.name,
+      'organizerId': event.organizerId,
+      'capacity': event.capacity,
+      'currentAttendees': event.currentAttendees,
+      'availableTicketsCount': event.availableTicketsCount,
+      'averageRating': event.averageRating,
+      'reviewCount': event.reviewCount,
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -98,9 +119,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
             const SizedBox(height: 16),
 
             // Events List
-            Expanded(
-              child: _buildEventsList(),
-            ),
+            Expanded(child: _buildEventsList()),
           ],
         ),
       ),
@@ -176,8 +195,6 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
               ),
             ],
           ),
-
-
         ],
       ),
     );
@@ -226,58 +243,6 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
     );
   }
 
-  Widget _buildDeleteUserButton() {
-    return SizedBox(
-      width: double.infinity,
-      child: OutlinedButton(
-        onPressed: _showDeleteUserDialog,
-        style: OutlinedButton.styleFrom(
-          side: const BorderSide(color: Colors.red),
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        child: const Text(
-          'Delete User',
-          style: TextStyle(
-            color: Colors.red,
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showDeleteUserDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Delete User'),
-          content: Text('Are you sure you want to delete ${widget.name}? This action cannot be undone.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('User ${widget.name} deleted successfully')),
-                );
-                Navigator.pop(context);
-              },
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: const Text('Delete'),
-            ),
-          ],
-        );
-      },
-    );
-  }
   Widget _buildEventsSection() {
     return Row(
       children: [
@@ -291,7 +256,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
         ),
         const Spacer(),
         Text(
-          "Total: ${upcomingEvents.length + pastEvents.length}",
+          "Total: ${_upcomingEvents.length + _pastEvents.length}",
           style: const TextStyle(
             fontSize: 14,
             color: Colors.grey,
@@ -303,96 +268,67 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
   }
 
   Widget _buildToggleButtons() {
-  return Container(
-    decoration: BoxDecoration(
-      border: Border.all(color: const Color(0xFF4776E6)),
-      borderRadius: BorderRadius.circular(30),
-    ),
-    child: Row(
-      children: [
-        Expanded(
-          child: GestureDetector(
-            onTap: () => setState(() => selectedIndex = 0),
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: selectedIndex == 0
-                    ? const Color(0xFF4776E6)
-                    : Colors.transparent,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(30),
-                  bottomLeft: Radius.circular(30),
-                ),
-              ),
-              child: Text(
-                "Upcoming (${upcomingEvents.length})",
-                style: TextStyle(
-                  color: selectedIndex == 0
-                      ? Colors.white
-                      : const Color(0xFF4776E6),
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
-            ),
-          ),
-        ),
-        Expanded(
-          child: GestureDetector(
-            onTap: () => setState(() => selectedIndex = 1),
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: selectedIndex == 1
-                    ? const Color(0xFF4776E6)
-                    : Colors.transparent,
-                borderRadius: const BorderRadius.only(
-                  topRight: Radius.circular(30),
-                  bottomRight: Radius.circular(30),
-                ),
-              ),
-              child: Text(
-                "Past (${pastEvents.length})",
-                style: TextStyle(
-                  color: selectedIndex == 1
-                      ? Colors.white
-                      : const Color(0xFF4776E6),
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-Widget _buildEventsList() {
-  final currentEvents = selectedIndex == 0 ? upcomingEvents : pastEvents;
-
-  if (currentEvents.isEmpty) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: const Color(0xFF4776E6)),
+        borderRadius: BorderRadius.circular(30),
+      ),
+      child: Row(
         children: [
-          Icon(
-            Icons.event_busy,
-            size: 64,
-            color: Colors.grey.withOpacity(0.5),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => setState(() => selectedIndex = 0),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: selectedIndex == 0
+                      ? const Color(0xFF4776E6)
+                      : Colors.transparent,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(30),
+                    bottomLeft: Radius.circular(30),
+                  ),
+                ),
+                child: Text(
+                  "Upcoming (${_upcomingEvents.length})",
+                  style: TextStyle(
+                    color: selectedIndex == 0
+                        ? Colors.white
+                        : const Color(0xFF4776E6),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ),
           ),
-          const SizedBox(height: 16),
-          Text(
-            selectedIndex == 0
-                ? "No upcoming events"
-                : "No past events",
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey.withOpacity(0.7),
-              fontWeight: FontWeight.w500,
+          Expanded(
+            child: GestureDetector(
+              onTap: () => setState(() => selectedIndex = 1),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: selectedIndex == 1
+                      ? const Color(0xFF4776E6)
+                      : Colors.transparent,
+                  borderRadius: const BorderRadius.only(
+                    topRight: Radius.circular(30),
+                    bottomRight: Radius.circular(30),
+                  ),
+                ),
+                child: Text(
+                  "Past (${_pastEvents.length})",
+                  style: TextStyle(
+                    color: selectedIndex == 1
+                        ? Colors.white
+                        : const Color(0xFF4776E6),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
             ),
           ),
         ],
@@ -400,145 +336,230 @@ Widget _buildEventsList() {
     );
   }
 
-  return ListView.separated(
-    itemCount: currentEvents.length,
-    separatorBuilder: (context, index) => const SizedBox(height: 16),
-    itemBuilder: (context, index) {
-      final event = currentEvents[index];
-      return _buildEventCard(event);
-    },
-  );
-}
+  Widget _buildEventsList() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
-Widget _buildEventCard(Map<String, dynamic> event) {
-  return GestureDetector(
-    onTap: () {
-      // Navigate to event details screen
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => EventDetailsScreen(
-            eventTitle: event['name'],
-            eventData: event,
-            isPublic: true, // Adjust based on your logic
-            isPastEvent: selectedIndex == 1, // Past events if selectedIndex is 1
-          ),
-        ),
-      );
-    },
-    child: Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.withOpacity(0.3)),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Event Image
-          Container(
-            height: 160,
-            decoration: BoxDecoration(
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(12),
-              ),
-              image: DecorationImage(
-                image: AssetImage(event['image']),
-                fit: BoxFit.cover,
+    final currentEvents = selectedIndex == 0 ? _upcomingEvents : _pastEvents;
+
+    if (currentEvents.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.event_busy,
+              size: 64,
+              color: Colors.grey.withOpacity(0.5),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              selectedIndex == 0 ? "No upcoming events" : "No past events",
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey.withOpacity(0.7),
+                fontWeight: FontWeight.w500,
               ),
             ),
-            child: Stack(
-              children: [
-                // Price tag
-                Positioned(
-                  top: 12,
-                  right: 12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: event['isPaid'] ? Colors.green : Colors.blue,
-                      borderRadius: BorderRadius.circular(12),
+          ],
+        ),
+      );
+    }
+
+    return ListView.separated(
+      itemCount: currentEvents.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 16),
+      itemBuilder: (context, index) {
+        final event = currentEvents[index];
+        return _buildEventCard(event);
+      },
+    );
+  }
+
+  Widget _buildEventCard(Event event) {
+    final eventData = _eventToMap(event);
+    final isPastEvent = event.status.name == 'Past';
+    final isPublicEvent = event.type.name == 'Public';
+
+    return GestureDetector(
+      onTap: () async {
+        // Navigate to event details screen
+        final result = await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => EventDetailsScreen(
+              eventTitle: event.title,
+              eventData: eventData,
+              isPublic: isPublicEvent,
+              isPastEvent: isPastEvent,
+            ),
+          ),
+        );
+
+        // Reload events if something changed
+        if (result == true) {
+          _loadEvents();
+        }
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey.withOpacity(0.3)),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Event Image
+            Container(
+              height: 160,
+              decoration: BoxDecoration(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(12),
+                  topRight: Radius.circular(12),
+                ),
+                color: Colors.grey[300],
+              ),
+              child: Stack(
+                children: [
+                  // Cover image
+                  if (event.coverImage != null && event.coverImage!.isNotEmpty)
+                    ClipRRect(
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(12),
+                        topRight: Radius.circular(12),
+                      ),
+                      child: Image.memory(
+                        base64Decode(event.coverImage!.split(',').last),
+                        width: double.infinity,
+                        height: 160,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: Colors.grey[300],
+                            child: const Center(
+                              child: Icon(
+                                Icons.event,
+                                size: 60,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    )
+                  else
+                    const Center(
+                      child: Icon(Icons.event, size: 60, color: Colors.grey),
                     ),
-                    child: Text(
-                      event['price'],
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
+                  // Paid/Free tag
+                  Positioned(
+                    top: 12,
+                    right: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: event.isPaid ? Colors.green : Colors.blue,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        event.isPaid ? 'Paid' : 'Free',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
 
-          // Event Details
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  event['name'],
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
+            // Event Details
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    event.title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(Icons.location_on, size: 14, color: Colors.grey.shade600),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        event['location'],
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.location_on,
+                        size: 14,
+                        color: Colors.grey.shade600,
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          event.location,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade600,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.calendar_today,
+                        size: 14,
+                        color: Colors.grey.shade600,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        event.startDate,
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.grey.shade600,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(Icons.calendar_today, size: 14, color: Colors.grey.shade600),
-                    const SizedBox(width: 4),
-                    Text(
-                      event['date'],
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                    const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF4776E6).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        event['category'],
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF4776E6),
-                          fontWeight: FontWeight.w500,
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF4776E6).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          event.category.name,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF4776E6),
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 }

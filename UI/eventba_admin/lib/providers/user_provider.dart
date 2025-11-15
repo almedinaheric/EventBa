@@ -47,6 +47,21 @@ class UserProvider extends BaseProvider<User> {
     notifyListeners();
   }
 
+  Future<User> getUserById(String userId) async {
+    var url = "${baseUrl}User/$userId";
+    var uri = Uri.parse(url);
+    var headers = createHeaders();
+
+    var response = await http.get(uri, headers: headers);
+
+    if (isValidResponse(response)) {
+      var data = jsonDecode(response.body);
+      return fromJson(data);
+    } else {
+      throw Exception("Failed to load user details");
+    }
+  }
+
   @override
   User fromJson(data) {
     return User.fromJson(data);
