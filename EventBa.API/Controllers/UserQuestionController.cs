@@ -34,4 +34,12 @@ public class UserQuestionController : BaseCRUDController<UserQuestionResponseDto
         var questions = await _userQuestionService.GetQuestionsForMe();
         return Ok(questions);
     }
+
+    [HttpGet("admin-questions")]
+    [Authorize]
+    public async Task<IActionResult> GetAdminQuestions()
+    {
+        var questions = await _userQuestionService.GetAdminQuestions();
+        return Ok(questions);
+    }
 }

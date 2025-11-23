@@ -76,4 +76,16 @@ public class UserQuestionService : BaseCRUDService<UserQuestionResponseDto, User
 
         return _mapper.Map<List<UserQuestionResponseDto>>(questions);
     }
+
+    public async Task<List<UserQuestionResponseDto>> GetAdminQuestions()
+    {
+        var currentUser = await _userService.GetUserEntityAsync();
+        var questions = await _context.UserQuestions
+            .Include(x => x.User)
+            .Where(x => x.IsQuestionForAdmin == true && x.ReceiverId == currentUser.Id)
+            .OrderByDescending(x => x.CreatedAt)
+            .ToListAsync();
+
+        return _mapper.Map<List<UserQuestionResponseDto>>(questions);
+    }
 }

@@ -13,4 +13,6 @@ public class UserQuestionResponseDto
     public DateTime? AnsweredAt { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
+    public string? UserEmail { get; set; }
+    public string? UserFullName { get; set; }
 }

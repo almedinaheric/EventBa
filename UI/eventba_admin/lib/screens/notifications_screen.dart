@@ -1,6 +1,9 @@
 import 'package:eventba_admin/widgets/master_screen.dart';
 import 'package:eventba_admin/screens/notification_details_screen.dart';
+import 'package:eventba_admin/models/notification/notification.dart' as model;
+import 'package:eventba_admin/providers/notification_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -10,68 +13,51 @@ class NotificationsScreen extends StatefulWidget {
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
-  int selectedIndex = 0; // 0 = Received, 1 = Sent
+  List<model.Notification> _notifications = [];
+  bool _isLoading = true;
 
-  final List<Map<String, String>> receivedNotifications = [
-    {
-      'title': 'Notification 1',
-      'content': 'Lorem ipsum lorem...',
-      'time': '1h ago',
-    },
-    {
-      'title': 'Notification 1',
-      'content': 'Lorem ipsum lorem...',
-      'time': '1h ago',
-    },
-    {
-      'title': 'Notification 1',
-      'content': 'Lorem ipsum lorem...',
-      'time': '1h ago',
-    },
-    {
-      'title': 'Notification 1',
-      'content': 'Lorem ipsum lorem...',
-      'time': '1h ago',
-    },
-    {
-      'title': 'Notification 1',
-      'content': 'Lorem ipsum lorem...',
-      'time': '1h ago',
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadNotifications();
+  }
 
-  final List<Map<String, String>> sentNotifications = [
-    {
-      'title': 'Notification 1',
-      'content': 'Lorem ipsum lorem...',
-      'time': '1h ago',
-    },
-    {
-      'title': 'Notification 1',
-      'content': 'Lorem ipsum lorem...',
-      'time': '1h ago',
-    },
-    {
-      'title': 'Notification 1',
-      'content': 'Lorem ipsum lorem...',
-      'time': '1h ago',
-    },
-    {
-      'title': 'Notification 1',
-      'content': 'Lorem ipsum lorem...',
-      'time': '1h ago',
-    },
-    {
-      'title': 'Notification 1',
-      'content': 'Lorem ipsum lorem...',
-      'time': '1h ago',
-    },
-  ];
+  Future<void> _loadNotifications() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final provider = Provider.of<NotificationProvider>(
+        context,
+        listen: false,
+      );
+      final notifications = await provider.getSystemNotifications();
+
+      setState(() {
+        _notifications = notifications;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print("Failed to load notifications: $e");
+      setState(() {
+        _isLoading = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load notifications: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return MasterScreen(
-      title: 'Notifications',
+      title: 'Sent Notifications',
       showBackButton: true,
       body: Container(
         margin: const EdgeInsets.all(24),
@@ -79,128 +65,45 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           border: Border.all(color: const Color(0xFF4776E6), width: 2),
           borderRadius: BorderRadius.circular(16),
         ),
-        child: Column(
-          children: [
-            // Custom toggle buttons (Received / Sent)
-            Container(
-              margin: const EdgeInsets.all(24),
-              child: Row(
-                children: [
-                  // Received button
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          selectedIndex = 0;
-                        });
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: selectedIndex == 0
-                              ? const Color(0xFF4776E6)
-                              : Colors.transparent,
-                          border: Border.all(color: const Color(0xFF4776E6)),
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(30),
-                            bottomLeft: Radius.circular(30),
-                          ),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        alignment: Alignment.center,
-                        child: Text(
-                          "Received",
-                          style: TextStyle(
-                            color: selectedIndex == 0
-                                ? Colors.white
-                                : const Color(0xFF4776E6),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
+        child: _isLoading
+            ? const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(40),
+                  child: CircularProgressIndicator(),
+                ),
+              )
+            : _notifications.isEmpty
+            ? const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(40),
+                  child: Text(
+                    'No notifications found',
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
                   ),
-
-                  // Sent button
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          selectedIndex = 1;
-                        });
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: selectedIndex == 1
-                              ? const Color(0xFF4776E6)
-                              : Colors.transparent,
-                          border: Border.all(color: const Color(0xFF4776E6)),
-                          borderRadius: const BorderRadius.only(
-                            topRight: Radius.circular(30),
-                            bottomRight: Radius.circular(30),
-                          ),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        alignment: Alignment.center,
-                        child: Text(
-                          "Sent",
-                          style: TextStyle(
-                            color: selectedIndex == 1
-                                ? Colors.white
-                                : const Color(0xFF4776E6),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
+                ),
+              )
+            : RefreshIndicator(
+                onRefresh: _loadNotifications,
+                child: ListView.separated(
+                  padding: const EdgeInsets.all(0),
+                  itemCount: _notifications.length,
+                  separatorBuilder: (context, index) => Divider(
+                    height: 1,
+                    color: Colors.grey.withOpacity(0.3),
+                    indent: 24,
+                    endIndent: 24,
                   ),
-                ],
+                  itemBuilder: (context, index) {
+                    var notification = _notifications[index];
+                    return _buildNotificationCard(notification);
+                  },
+                ),
               ),
-            ),
-
-            // Notifications List
-            Expanded(
-              child: _buildNotificationsList(
-                notifications: selectedIndex == 0 ? receivedNotifications : sentNotifications,
-                isReceived: selectedIndex == 0,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
 
-  Widget _buildNotificationsList({
-    required List<Map<String, String>> notifications,
-    required bool isReceived,
-  }) {
-    return ListView.separated(
-      padding: const EdgeInsets.all(0),
-      itemCount: notifications.length,
-      separatorBuilder: (context, index) => Divider(
-        height: 1,
-        color: Colors.grey.withOpacity(0.3),
-        indent: 24,
-        endIndent: 24,
-      ),
-      itemBuilder: (context, index) {
-        var notification = notifications[index];
-        return _buildNotificationCard(
-          title: notification['title']!,
-          content: notification['content']!,
-          time: notification['time']!,
-          isReceived: isReceived,
-        );
-      },
-    );
-  }
-
-  Widget _buildNotificationCard({
-    required String title,
-    required String content,
-    required String time,
-    required bool isReceived,
-  }) {
+  Widget _buildNotificationCard(model.Notification notification) {
     return Container(
       padding: const EdgeInsets.all(24),
       child: Row(
@@ -210,8 +113,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             width: 50,
             height: 50,
             decoration: BoxDecoration(
-              color: isReceived
-                  ? const Color(0xFFE91E63).withOpacity(0.8)
+              color: notification.isImportant
+                  ? Colors.orange
                   : const Color(0xFF4776E6),
               borderRadius: BorderRadius.circular(12),
             ),
@@ -228,29 +131,50 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: Colors.black,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        notification.title,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ),
+                    if (notification.isImportant)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.orange,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text(
+                          'Important',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  content,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey.shade600,
-                  ),
+                  notification.content,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  time,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade500,
-                  ),
+                  _formatTime(notification.createdAt),
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
                 ),
               ],
             ),
@@ -258,18 +182,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
           // See more button
           GestureDetector(
-            onTap: () {
-              Navigator.push(
+            onTap: () async {
+              await Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => NotificationDetailsScreen(
-                    title: title,
-                    content: content,
-                    time: time,
-                    isReceived: isReceived,
-                  ),
+                  builder: (context) =>
+                      NotificationDetailsScreen(notification: notification),
                 ),
               );
+              // Refresh list after returning from details screen
+              _loadNotifications();
             },
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -290,5 +212,25 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         ],
       ),
     );
+  }
+
+  String _formatTime(String dateTimeString) {
+    try {
+      final dateTime = DateTime.parse(dateTimeString);
+      final now = DateTime.now();
+      final difference = now.difference(dateTime);
+
+      if (difference.inDays > 0) {
+        return '${difference.inDays}d ago';
+      } else if (difference.inHours > 0) {
+        return '${difference.inHours}h ago';
+      } else if (difference.inMinutes > 0) {
+        return '${difference.inMinutes}min ago';
+      } else {
+        return 'Just now';
+      }
+    } catch (e) {
+      return dateTimeString;
+    }
   }
 }

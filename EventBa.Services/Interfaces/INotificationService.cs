@@ -11,4 +11,5 @@ public interface INotificationService : ICRUDService<NotificationResponseDto, No
     Task<int> GetUnreadNotificationCount();
     Task MarkAsRead(Guid notificationId);
     Task MarkAllAsRead();
+    Task<List<NotificationResponseDto>> GetSystemNotifications();
 }

@@ -26,7 +26,19 @@ public class NotificationService : BaseCRUDService<NotificationResponseDto, Noti
 
     public override async Task BeforeInsert(Notification entity, NotificationInsertRequestDto insert)
     {
-        entity.User = await _userService.GetUserEntityAsync();
+        // For system notifications, UserId should be null
+        // For regular notifications, set the current user
+        if (!insert.IsSystemNotification)
+        {
+            entity.User = await _userService.GetUserEntityAsync();
+        }
+        else
+        {
+            entity.UserId = null;
+        }
+        
+        // Set status to Sent by default
+        entity.Status = NotificationStatus.Sent;
     }
 
     public override IQueryable<Notification> AddInclude(IQueryable<Notification> query, NotificationSearchObject? search = null)
@@ -77,5 +89,15 @@ public class NotificationService : BaseCRUDService<NotificationResponseDto, Noti
         }
 
         await _context.SaveChangesAsync();
+    }
+
+    public async Task<List<NotificationResponseDto>> GetSystemNotifications()
+    {
+        var notifications = await _context.Notifications
+            .Where(x => x.IsSystemNotification == true && x.UserId == null)
+            .OrderByDescending(x => x.CreatedAt)
+            .ToListAsync();
+
+        return _mapper.Map<List<NotificationResponseDto>>(notifications);
     }
 }

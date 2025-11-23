@@ -121,7 +121,10 @@ public class MappingProfile : Profile
         // ---------------------
         // UserQuestion
         // ---------------------
-        CreateMap<UserQuestion, UserQuestionResponseDto>().ReverseMap();
+        CreateMap<UserQuestion, UserQuestionResponseDto>()
+            .ForMember(dest => dest.UserEmail, opt => opt.MapFrom(src => src.User != null ? src.User.Email : null))
+            .ForMember(dest => dest.UserFullName, opt => opt.MapFrom(src => src.User != null ? src.User.FullName : null))
+            .ReverseMap();
         CreateMap<UserQuestionInsertRequestDto, UserQuestion>();
         CreateMap<UserQuestionUpdateRequestDto, UserQuestion>();
     }

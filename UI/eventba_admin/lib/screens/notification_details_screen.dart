@@ -1,25 +1,18 @@
 import 'package:eventba_admin/widgets/master_screen.dart';
 import 'package:eventba_admin/widgets/primary_button.dart';
+import 'package:eventba_admin/models/notification/notification.dart' as model;
+import 'package:eventba_admin/providers/notification_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 
 class NotificationDetailsScreen extends StatelessWidget {
-  final String title;
-  final String content;
-  final String time;
-  final bool isReceived;
+  final model.Notification notification;
 
-  const NotificationDetailsScreen({
-    super.key,
-    required this.title,
-    required this.content,
-    required this.time,
-    required this.isReceived,
-  });
+  const NotificationDetailsScreen({super.key, required this.notification});
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-
     return MasterScreen(
       title: 'Notification Details',
       showBackButton: true,
@@ -46,8 +39,8 @@ class NotificationDetailsScreen extends StatelessWidget {
                       width: 60,
                       height: 60,
                       decoration: BoxDecoration(
-                        color: isReceived
-                            ? const Color(0xFFE91E63).withOpacity(0.8)
+                        color: notification.isImportant
+                            ? Colors.orange
                             : const Color(0xFF4776E6),
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -64,17 +57,42 @@ class NotificationDetailsScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            title,
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  notification.title,
+                                  style: const TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                              ),
+                              if (notification.isImportant)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.orange,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Text(
+                                    'Important',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            _formatDateTime(time),
+                            _formatDateTime(notification.createdAt),
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.grey.shade600,
@@ -89,10 +107,7 @@ class NotificationDetailsScreen extends StatelessWidget {
                 const SizedBox(height: 32),
 
                 // Divider
-                Container(
-                  height: 1,
-                  color: Colors.grey.withOpacity(0.3),
-                ),
+                Container(height: 1, color: Colors.grey.withOpacity(0.3)),
 
                 const SizedBox(height: 32),
 
@@ -115,12 +130,10 @@ class NotificationDetailsScreen extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: Colors.grey.withOpacity(0.05),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Colors.grey.withOpacity(0.2),
-                        ),
+                        border: Border.all(color: Colors.grey.withOpacity(0.2)),
                       ),
                       child: Text(
-                        content,
+                        notification.content,
                         style: const TextStyle(
                           fontSize: 16,
                           color: Colors.black87,
@@ -136,16 +149,6 @@ class NotificationDetailsScreen extends StatelessWidget {
                 // Action Buttons
                 Row(
                   children: [
-                    if (isReceived) ...[
-                      Expanded(
-                        child: PrimaryButton(
-                          text: 'Reply',
-                          onPressed: () => _showReplyDialog(context),
-                          width: double.infinity,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                    ],
                     Expanded(
                       child: PrimaryButton(
                         text: 'Delete',
@@ -163,143 +166,74 @@ class NotificationDetailsScreen extends StatelessWidget {
     );
   }
 
-  String _formatDateTime(String time) {
-    // Convert relative time to a more detailed format
-    final now = DateTime.now();
-
-    if (time.contains('h ago')) {
-      final hours = int.tryParse(time.replaceAll('h ago', '').trim()) ?? 0;
-      final sentTime = now.subtract(Duration(hours: hours));
-      return 'Sent on ${_formatDate(sentTime)} at ${_formatTime(sentTime)}';
-    } else if (time.contains('d ago')) {
-      final days = int.tryParse(time.replaceAll('d ago', '').trim()) ?? 0;
-      final sentTime = now.subtract(Duration(days: days));
-      return 'Sent on ${_formatDate(sentTime)} at ${_formatTime(sentTime)}';
-    } else if (time.contains('min ago')) {
-      final minutes = int.tryParse(time.replaceAll('min ago', '').trim()) ?? 0;
-      final sentTime = now.subtract(Duration(minutes: minutes));
-      return 'Sent on ${_formatDate(sentTime)} at ${_formatTime(sentTime)}';
+  String _formatDateTime(String dateTimeString) {
+    try {
+      final dateTime = DateTime.parse(dateTimeString);
+      final dateFormat = DateFormat('MMM dd, yyyy');
+      final timeFormat = DateFormat('hh:mm a');
+      return 'Sent on ${dateFormat.format(dateTime)} at ${timeFormat.format(dateTime)}';
+    } catch (e) {
+      return 'Sent on $dateTimeString';
     }
-
-    return 'Sent $time';
-  }
-
-  String _formatDate(DateTime date) {
-    final months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-    ];
-    return '${months[date.month - 1]} ${date.day}, ${date.year}';
-  }
-
-  String _formatTime(DateTime date) {
-    final hour = date.hour == 0 ? 12 : (date.hour > 12 ? date.hour - 12 : date.hour);
-    final minute = date.minute.toString().padLeft(2, '0');
-    final period = date.hour >= 12 ? 'PM' : 'AM';
-    return '$hour:$minute $period';
-  }
-
-  void _showReplyDialog(BuildContext context) {
-    final TextEditingController replyController = TextEditingController();
-    final double dialogWidth = MediaQuery.of(context).size.width * 0.5;
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Reply to Notification'),
-          content: SizedBox(
-            width: dialogWidth,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Replying to: $title',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey.shade600,
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: replyController,
-                  decoration: const InputDecoration(
-                    hintText: 'Type your reply...',
-                    border: OutlineInputBorder(),
-                  ),
-                  maxLines: 4,
-                  minLines: 3,
-                ),
-              ],
-            ),
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (replyController.text.trim().isNotEmpty) {
-                  Navigator.of(context).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Reply sent successfully!'),
-                      duration: Duration(seconds: 2),
-                    ),
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4776E6),
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Send Reply'),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   void _showDeleteConfirmation(BuildContext context) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: const Text('Delete Notification'),
-          content: const Text('Are you sure you want to delete this notification?'),
+          content: const Text(
+            'Are you sure you want to delete this notification?',
+          ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop();
+                Navigator.of(dialogContext).pop();
               },
               child: const Text('Cancel'),
             ),
             TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                Navigator.of(context).pop(); // Go back to notifications list
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Notification deleted'),
-                    duration: Duration(seconds: 2),
-                  ),
-                );
+              onPressed: () async {
+                Navigator.of(dialogContext).pop();
+
+                try {
+                  final provider = Provider.of<NotificationProvider>(
+                    context,
+                    listen: false,
+                  );
+
+                  await provider.delete(notification.id);
+
+                  if (context.mounted) {
+                    Navigator.of(
+                      context,
+                    ).pop(); // Go back to notifications list
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Notification deleted successfully'),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Failed to delete notification: ${e.toString()}',
+                        ),
+                        backgroundColor: Colors.red,
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                  }
+                }
               },
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.red,
-              ),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
               child: const Text('Delete'),
             ),
           ],

@@ -1,19 +1,24 @@
 import 'package:eventba_admin/widgets/master_screen.dart';
 import 'package:eventba_admin/widgets/primary_button.dart';
+import 'package:eventba_admin/providers/notification_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class NotificationCreationScreen extends StatefulWidget {
   const NotificationCreationScreen({super.key});
 
   @override
-  _NotificationCreationScreenState createState() => _NotificationCreationScreenState();
+  _NotificationCreationScreenState createState() =>
+      _NotificationCreationScreenState();
 }
 
-class _NotificationCreationScreenState extends State<NotificationCreationScreen> {
+class _NotificationCreationScreenState
+    extends State<NotificationCreationScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
   bool _isSending = false;
+  bool _isImportant = false;
 
   void _addNotification() async {
     if (!_formKey.currentState!.validate()) return;
@@ -22,20 +27,50 @@ class _NotificationCreationScreenState extends State<NotificationCreationScreen>
       _isSending = true;
     });
 
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 1));
+    try {
+      final provider = Provider.of<NotificationProvider>(
+        context,
+        listen: false,
+      );
 
-    setState(() {
-      _isSending = false;
-    });
+      final request = {
+        'title': _titleController.text.trim(),
+        'content': _contentController.text.trim(),
+        'isImportant': _isImportant,
+        'isSystemNotification': true, // Always true for admin notifications
+        'userId': null, // System notifications don't have a specific user
+      };
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Notification added successfully!')),
-    );
+      await provider.insert(request);
 
-    // Clear form
-    _titleController.clear();
-    _contentController.clear();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Notification added successfully!')),
+        );
+
+        // Clear form
+        _titleController.clear();
+        _contentController.clear();
+        setState(() {
+          _isImportant = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to create notification: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSending = false;
+        });
+      }
+    }
   }
 
   @override
@@ -144,12 +179,36 @@ class _NotificationCreationScreenState extends State<NotificationCreationScreen>
                       return null;
                     },
                   ),
+                  const SizedBox(height: 24),
+
+                  // Is Important checkbox
+                  Row(
+                    children: [
+                      Checkbox(
+                        value: _isImportant,
+                        onChanged: (value) {
+                          setState(() {
+                            _isImportant = value ?? false;
+                          });
+                        },
+                        activeColor: const Color(0xFF4776E6),
+                      ),
+                      const Text(
+                        'Mark as important',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 32),
 
                   // Add Notification button
                   PrimaryButton(
-                    text: 'Add Notification',
-                    onPressed: _addNotification,
+                    text: _isSending ? 'Creating...' : 'Add Notification',
+                    onPressed: _isSending ? () {} : _addNotification,
                   ),
                 ],
               ),

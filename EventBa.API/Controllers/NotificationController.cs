@@ -51,4 +51,12 @@ public class NotificationController : BaseCRUDController<NotificationResponseDto
         await _notificationService.MarkAllAsRead();
         return Ok();
     }
+
+    [HttpGet("system-notifications")]
+    [Authorize]
+    public async Task<IActionResult> GetSystemNotifications()
+    {
+        var notifications = await _notificationService.GetSystemNotifications();
+        return Ok(notifications);
+    }
 }

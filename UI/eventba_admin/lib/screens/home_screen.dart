@@ -94,7 +94,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     _buildCard('Public Events'),
                     _buildCard('Private Events'),
                     _buildCard('Users'),
-                    _buildCard('Notifications'),
+                    _buildCard('Sent Notifications'),
                     _buildCard('Support'),
                     _buildCard('Manage Categories'),
                   ],
@@ -121,7 +121,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _buildCard('Public Events'),
         _buildCard('Private Events'),
         _buildCard('Users'),
-        _buildCard('Notifications'),
+        _buildCard('Sent Notifications'),
         _buildCard('Support'),
       ],
     );
@@ -148,6 +148,7 @@ class _HomeScreenState extends State<HomeScreen> {
         icon = Icons.people_outline;
         break;
       case 'Notifications':
+      case 'Sent Notifications':
         icon = Icons.notifications_outlined;
         break;
       case 'Support':
@@ -227,7 +228,7 @@ class _HomeScreenState extends State<HomeScreen> {
         MaterialPageRoute(builder: (context) => const UsersScreen()),
       );
     }
-    if (screenName == 'Notifications') {
+    if (screenName == 'Notifications' || screenName == 'Sent Notifications') {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const NotificationsScreen()),
