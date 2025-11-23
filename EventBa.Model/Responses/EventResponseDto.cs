@@ -35,6 +35,9 @@ public class EventResponseDto
         ? $"data:image/jpeg;base64,{Convert.ToBase64String(CoverImage.Data)}"
         : null;
     
+    [JsonPropertyName("coverImageId")]
+    public Guid? CoverImageId => CoverImage?.Id;
+    
     [JsonIgnore]
     public List<ImageResponseDto> GalleryImages { get; set; } = new();
     
@@ -42,6 +45,12 @@ public class EventResponseDto
     public List<string> GalleryImageData => GalleryImages
         .Where(img => img != null && img.Data != null && img.Data.Length > 0)
         .Select(img => $"data:image/jpeg;base64,{Convert.ToBase64String(img.Data!)}")
+        .ToList();
+    
+    [JsonPropertyName("galleryImageIds")]
+    public List<Guid> GalleryImageIds => GalleryImages
+        .Where(img => img != null && img.Id != Guid.Empty)
+        .Select(img => img.Id)
         .ToList();
     
     public Guid OrganizerId { get; set; }

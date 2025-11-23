@@ -1,6 +1,3 @@
-import 'dart:convert';
-import 'dart:typed_data';
-
 import 'package:eventba_mobile/widgets/event_card.dart';
 import 'package:eventba_mobile/widgets/master_screen.dart';
 import 'package:flutter/material.dart';
@@ -67,16 +64,8 @@ class _MyEventsScreenState extends State<MyEventsScreen> {
                       separatorBuilder: (_, __) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
                         final event = _events[index];
-                        Uint8List? imageBytes;
-                        if (event.coverImage?.data != null) {
-                          try {
-                            imageBytes = base64Decode(event.coverImage!.data!);
-                          } catch (e) {
-                            imageBytes = null;
-                          }
-                        }
                         return EventCard(
-                          imageData: imageBytes,
+                          imageData: event.coverImage?.data,
                           eventName: event.title,
                           location: event.location,
                           date: event.startDate,
@@ -94,20 +83,32 @@ class _MyEventsScreenState extends State<MyEventsScreen> {
                                     MyEventDetailsScreen(
                                       eventTitle: event.title,
                                       eventData: {
+                                        'id': event.id,
                                         'name': event.title,
                                         'category': event.category.name,
+                                        'categoryId': event.category.id,
                                         'venue': event.location,
                                         'date': event.startDate,
-                                        'startTime': event.startDate,
-                                        'endTime': event.endDate,
+                                        'startTime': event.startTime,
+                                        'endTime': event.endTime,
                                         'description': event.description,
-                                        'capacity': 1000,
+                                        'capacity': event.capacity,
+                                        'currentAttendees':
+                                            event.currentAttendees,
                                         'vipPrice': 150.0,
                                         'vipCount': 100,
                                         'ecoPrice': 50.0,
                                         'ecoCount': 900,
-                                        'isPaid': true,
+                                        'isPaid': event.isPaid,
                                         'status': event.status.toString(),
+                                        'coverImage': event.coverImage?.data,
+                                        'coverImageId': event.coverImage?.id,
+                                        'galleryImages': event.galleryImages
+                                            ?.map((img) => img.data)
+                                            .toList(),
+                                        'galleryImageIds': event.galleryImages
+                                            ?.map((img) => img.id)
+                                            .toList(),
                                       },
                                     ),
                                 transitionDuration: Duration.zero,

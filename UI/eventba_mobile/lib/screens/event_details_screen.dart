@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'package:eventba_mobile/models/user/user.dart';
 import 'package:eventba_mobile/providers/user_provider.dart';
 import 'package:eventba_mobile/screens/buy_ticket_screen.dart';
+import 'package:eventba_mobile/utils/image_helpers.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:eventba_mobile/widgets/master_screen.dart';
@@ -48,6 +50,21 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
       // Load event details
       final event = await eventProvider.getById(widget.eventId);
+
+      print('=== EVENT LOADED DEBUG ===');
+      print('Event ID: ${event.id}');
+      print(
+        'Cover image: ${event.coverImage?.data != null ? "exists (${event.coverImage!.data!.length} chars)" : "null"}',
+      );
+      print('Gallery images: ${event.galleryImages?.length ?? 0}');
+      if (event.galleryImages != null) {
+        for (var i = 0; i < event.galleryImages!.length; i++) {
+          print(
+            '  Gallery image $i: ${event.galleryImages![i].data != null ? "has data (${event.galleryImages![i].data!.length} chars)" : "no data"}',
+          );
+        }
+      }
+      print('=== END EVENT DEBUG ===');
 
       setState(() {
         _event = event;
@@ -188,31 +205,141 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   }
 
   void _showImageDialog(int initialIndex) {
-    if (_event?.galleryImages == null || _event!.galleryImages!.isEmpty) return;
+    if (_event == null) return;
+
+    // Build list of images: cover image first, then gallery images
+    List<String> allImages = [];
+    print('=== IMAGE DIALOG DEBUG ===');
+    print(
+      'Cover image: ${_event!.coverImage?.data != null ? "exists" : "null"}',
+    );
+    print('Gallery images count: ${_event!.galleryImages?.length ?? 0}');
+    if (_event!.galleryImages != null) {
+      for (var i = 0; i < _event!.galleryImages!.length; i++) {
+        print(
+          'Gallery image $i: ${_event!.galleryImages![i].data != null ? "has data" : "no data"}',
+        );
+      }
+    }
+
+    if (_event!.coverImage?.data != null) {
+      allImages.add(_event!.coverImage!.data!);
+    }
+    if (_event!.galleryImages != null) {
+      for (var galleryImage in _event!.galleryImages!) {
+        if (galleryImage.data != null) {
+          allImages.add(galleryImage.data!);
+        }
+      }
+    }
+    print('Total images for dialog: ${allImages.length}');
+    print('=== END DEBUG ===');
+
+    if (allImages.isEmpty) return;
 
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return Dialog(
-          insetPadding: EdgeInsets.all(10),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AspectRatio(
-                aspectRatio: 16 / 9,
-                child: PageView.builder(
-                  controller: PageController(initialPage: initialIndex),
-                  itemCount: _event!.galleryImages?.length,
-                  itemBuilder: (context, index) {
-                    return Image.asset(
-                      'assets/images/default_event_cover_image.png',
-                      fit: BoxFit.contain,
-                    );
-                  },
-                ),
+      barrierColor: Colors.black87,
+      builder: (BuildContext dialogContext) {
+        final pageController = PageController(initialPage: initialIndex);
+        int currentIndex = initialIndex;
+
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return Dialog(
+              backgroundColor: Colors.transparent,
+              insetPadding: const EdgeInsets.all(0),
+              child: Stack(
+                children: [
+                  PageView.builder(
+                    controller: pageController,
+                    itemCount: allImages.length,
+                    physics: const PageScrollPhysics(),
+                    onPageChanged: (index) {
+                      setDialogState(() {
+                        currentIndex = index;
+                      });
+                    },
+                    itemBuilder: (context, index) {
+                      final imageData = allImages[index];
+                      try {
+                        String base64String = imageData;
+                        if (imageData.startsWith('data:image')) {
+                          base64String = imageData.split(',').last;
+                        }
+                        return InteractiveViewer(
+                          minScale: 0.5,
+                          maxScale: 4.0,
+                          panEnabled:
+                              false, // Disable pan to allow PageView swiping
+                          scaleEnabled: true,
+                          child: Center(
+                            child: Image.memory(
+                              base64Decode(base64String),
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Image.asset(
+                                  'assets/images/default_event_cover_image.png',
+                                  fit: BoxFit.contain,
+                                );
+                              },
+                            ),
+                          ),
+                        );
+                      } catch (e) {
+                        return Center(
+                          child: Image.asset(
+                            'assets/images/default_event_cover_image.png',
+                            fit: BoxFit.contain,
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                  Positioned(
+                    top: 40,
+                    right: 20,
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.close,
+                        color: Colors.white,
+                        size: 30,
+                      ),
+                      onPressed: () {
+                        pageController.dispose();
+                        Navigator.of(dialogContext).pop();
+                      },
+                    ),
+                  ),
+                  if (allImages.length > 1)
+                    Positioned(
+                      bottom: 20,
+                      left: 0,
+                      right: 0,
+                      child: Center(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            '${currentIndex + 1} / ${allImages.length}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
@@ -414,29 +541,104 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     const SizedBox(height: 16),
 
                     // Event Image Carousel
-                    SizedBox(
-                      height: 200,
-                      child: PageView.builder(
-                        itemCount: _event!.galleryImages!.isNotEmpty
-                            ? _event!.galleryImages?.length
-                            : 1,
-                        itemBuilder: (context, index) {
-                          return GestureDetector(
-                            onTap: () => _showImageDialog(index),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(16),
-                                image: DecorationImage(
-                                  image: const AssetImage(
-                                    'assets/images/default_event_cover_image.png',
+                    Builder(
+                      builder: (context) {
+                        // Build list of images: cover first, then gallery
+                        List<String> allImages = [];
+                        if (_event!.coverImage?.data != null) {
+                          allImages.add(_event!.coverImage!.data!);
+                        }
+                        if (_event!.galleryImages != null &&
+                            _event!.galleryImages!.isNotEmpty) {
+                          print(
+                            'Loading gallery images in carousel: ${_event!.galleryImages!.length}',
+                          );
+                          for (var galleryImage in _event!.galleryImages!) {
+                            if (galleryImage.data != null &&
+                                galleryImage.data!.isNotEmpty) {
+                              allImages.add(galleryImage.data!);
+                            }
+                          }
+                        }
+                        print('Total images in carousel: ${allImages.length}');
+
+                        if (allImages.isEmpty) {
+                          return SizedBox(
+                            height: 200,
+                            child: GestureDetector(
+                              onTap: () => _showImageDialog(0),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(16),
+                                  image: const DecorationImage(
+                                    image: AssetImage(
+                                      'assets/images/default_event_cover_image.png',
+                                    ),
+                                    fit: BoxFit.cover,
                                   ),
-                                  fit: BoxFit.cover,
                                 ),
                               ),
                             ),
                           );
-                        },
-                      ),
+                        }
+
+                        return SizedBox(
+                          height: 200,
+                          child: PageView.builder(
+                            controller: PageController(),
+                            scrollDirection: Axis.horizontal,
+                            itemCount: allImages.length,
+                            itemBuilder: (context, index) {
+                              return GestureDetector(
+                                onTap: () => _showImageDialog(index),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  clipBehavior: Clip.antiAlias,
+                                  child: Builder(
+                                    builder: (context) {
+                                      final imageData = allImages[index];
+                                      try {
+                                        String base64String = imageData;
+                                        if (imageData.startsWith(
+                                          'data:image',
+                                        )) {
+                                          base64String = imageData
+                                              .split(',')
+                                              .last;
+                                        }
+                                        return Image.memory(
+                                          base64Decode(base64String),
+                                          fit: BoxFit.cover,
+                                          width: double.infinity,
+                                          height: 200,
+                                          errorBuilder:
+                                              (context, error, stackTrace) {
+                                                return Image.asset(
+                                                  'assets/images/default_event_cover_image.png',
+                                                  fit: BoxFit.cover,
+                                                  width: double.infinity,
+                                                  height: 200,
+                                                );
+                                              },
+                                        );
+                                      } catch (e) {
+                                        return Image.asset(
+                                          'assets/images/default_event_cover_image.png',
+                                          fit: BoxFit.cover,
+                                          width: double.infinity,
+                                          height: 200,
+                                        );
+                                      }
+                                    },
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        );
+                      },
                     ),
 
                     const SizedBox(height: 16),
@@ -568,12 +770,11 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                             CircleAvatar(
                               radius: 24,
                               backgroundColor: Colors.grey[300],
-                              child: Text(
-                                _organizer!.fullName[0].toUpperCase(),
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
+                              child: ClipOval(
+                                child: ImageHelpers.getProfileImage(
+                                  _organizer!.profileImage?.data,
+                                  height: 48,
+                                  width: 48,
                                 ),
                               ),
                             ),
@@ -650,9 +851,12 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                           )
                           .toList()
                     else
-                      const Text(
-                        "No tickets available",
-                        style: TextStyle(color: Colors.grey),
+                      const Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: Text(
+                          "No tickets available",
+                          style: TextStyle(color: Colors.grey),
+                        ),
                       ),
 
                     const SizedBox(height: 16),

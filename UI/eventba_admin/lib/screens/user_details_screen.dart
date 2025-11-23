@@ -117,6 +117,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
       'categoryId': event.category?.id ?? '',
       'isPaid': event.isPaid,
       'coverImage': event.coverImage,
+      'galleryImages': event.galleryImages,
       'status': event.status.name,
       'type': event.type.name,
       'organizerId': event.organizerId,
@@ -476,71 +477,70 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Event Image
-            Container(
-              height: 160,
-              decoration: BoxDecoration(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(12),
-                  topRight: Radius.circular(12),
-                ),
-                color: Colors.grey[300],
+            ClipRRect(
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
               ),
-              child: Stack(
-                children: [
-                  // Cover image
-                  if (event.coverImage != null && event.coverImage!.isNotEmpty)
-                    ClipRRect(
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(12),
-                        topRight: Radius.circular(12),
-                      ),
-                      child: Image.memory(
-                        base64Decode(event.coverImage!.split(',').last),
-                        width: double.infinity,
-                        height: 160,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            color: Colors.grey[300],
-                            child: const Center(
-                              child: Icon(
-                                Icons.event,
-                                size: 60,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    )
-                  else
-                    const Center(
-                      child: Icon(Icons.event, size: 60, color: Colors.grey),
-                    ),
-                  // Paid/Free tag
-                  Positioned(
-                    top: 12,
-                    right: 12,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: event.isPaid ? Colors.green : Colors.blue,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        event.isPaid ? 'Paid' : 'Free',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
+              child: SizedBox(
+                height: 160,
+                width: double.infinity,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    // Cover image
+                    event.coverImage != null && event.coverImage!.isNotEmpty
+                        ? Image.memory(
+                            base64Decode(event.coverImage!.split(',').last),
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Image.asset(
+                                'assets/images/default_event_cover_image.png',
+                                fit: BoxFit.cover,
+                              );
+                            },
+                          )
+                        : Image.asset(
+                            'assets/images/default_event_cover_image.png',
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                color: Colors.grey[300],
+                                child: const Center(
+                                  child: Icon(
+                                    Icons.event,
+                                    size: 60,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                    // Paid/Free tag
+                    Positioned(
+                      top: 12,
+                      right: 12,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: event.isPaid ? Colors.green : Colors.blue,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          event.isPaid ? 'Paid' : 'Free',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
 

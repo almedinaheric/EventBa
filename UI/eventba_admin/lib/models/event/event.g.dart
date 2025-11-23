@@ -27,8 +27,8 @@ Event _$EventFromJson(Map<String, dynamic> json) => Event(
       category: json['category'] == null
           ? null
           : CategoryModel.fromJson(json['category'] as Map<String, dynamic>),
-      galleryImages: (json['galleryImages'] as List<dynamic>)
-          .map((e) => e as String)
+      galleryImages: (json['galleryImages'] as List<dynamic>?)
+          ?.map((e) => e as String)
           .toList(),
       averageRating: (json['averageRating'] as num?)?.toDouble(),
       reviewCount: (json['reviewCount'] as num?)?.toInt(),

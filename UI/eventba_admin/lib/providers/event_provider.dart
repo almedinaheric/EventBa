@@ -102,6 +102,20 @@ class EventProvider extends BaseProvider<Event> {
     }
   }
 
+  Future<Map<String, dynamic>> getEventByIdRaw(String eventId) async {
+    var url = "${baseUrl}Event/$eventId";
+
+    var uri = Uri.parse(url);
+    var headers = createHeaders();
+    var response = await http.get(uri, headers: headers);
+
+    if (isValidResponse(response)) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
+      throw Exception("Unknown error in a GET request");
+    }
+  }
+
   Future<Event> updateEvent(
     String eventId,
     Map<String, dynamic> eventData,

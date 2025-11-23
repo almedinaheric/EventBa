@@ -31,14 +31,14 @@ class _FollowingScreenState extends State<FollowingScreen> {
         setState(() {
           following.removeWhere((user) => user.id == userId);
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Unfollowed successfully')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Unfollowed successfully')));
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to unfollow: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to unfollow: $e')));
     }
   }
 
@@ -52,30 +52,28 @@ class _FollowingScreenState extends State<FollowingScreen> {
       onLeftButtonPressed: () => Navigator.pop(context),
       child: following.isEmpty
           ? Center(
-        child: Text(
-          "👀 No followings yet.",
-          style: TextStyle(fontSize: 18, color: Colors.grey[600]),
-        ),
-      )
+              child: Text(
+                "👀 No followings yet.",
+                style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+              ),
+            )
           : ListView.builder(
-        padding: const EdgeInsets.all(16),
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: following.length,
-        itemBuilder: (context, index) {
-          final user = following[index];
-          return FollowerCard(
-            name: user.fullName,
-            avatar: user.profileImage != null
-                ? user.profileImage!.data
-                : 'assets/images/profile_placeholder.png',
-            organizerId: user.id,
-            onUnfollow: () async {
-              await _handleUnfollow(user.id);
-            },
-          );
-        },
-      ),
+              padding: const EdgeInsets.all(16),
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: following.length,
+              itemBuilder: (context, index) {
+                final user = following[index];
+                return FollowerCard(
+                  name: user.fullName,
+                  avatar: user.profileImage?.data ?? '',
+                  organizerId: user.id,
+                  onUnfollow: () async {
+                    await _handleUnfollow(user.id);
+                  },
+                );
+              },
+            ),
     );
   }
 }
@@ -122,27 +120,27 @@ class _FollowerCardState extends State<FollowerCard> {
               width: 100,
               child: isLoading
                   ? Center(
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-              )
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    )
                   : PrimaryButton(
-                text: "Unfollow",
-                outlined: true,
-                small: true,
-                onPressed: () async {
-                  setState(() {
-                    isLoading = true;
-                  });
-                  await widget.onUnfollow();
-                  setState(() {
-                    isLoading = false;
-                    isFollowing = false;
-                  });
-                },
-              ),
+                      text: "Unfollow",
+                      outlined: true,
+                      small: true,
+                      onPressed: () async {
+                        setState(() {
+                          isLoading = true;
+                        });
+                        await widget.onUnfollow();
+                        setState(() {
+                          isLoading = false;
+                          isFollowing = false;
+                        });
+                      },
+                    ),
             ),
           ],
         ),

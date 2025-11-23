@@ -1,10 +1,9 @@
-import 'dart:typed_data';
-
 import 'package:eventba_mobile/models/enums/event_status.dart';
+import 'package:eventba_mobile/utils/image_helpers.dart';
 import 'package:flutter/material.dart';
 
 class EventCard extends StatelessWidget {
-  final Uint8List? imageData;
+  final String? imageData;
   final String eventName;
   final String location;
   final String date;
@@ -20,7 +19,7 @@ class EventCard extends StatelessWidget {
 
   const EventCard({
     super.key,
-    this.imageData,
+    this.imageData, // Now accepts String? (base64 data)
     required this.eventName,
     required this.location,
     required this.date,
@@ -34,9 +33,9 @@ class EventCard extends StatelessWidget {
     this.onTap,
     this.onFavoriteToggle,
   }) : assert(
-  isMyEvent == false || (myEventStatus != null),
-  "myEventStatus must be provided if isMyEvent is true",
-  );
+         isMyEvent == false || (myEventStatus != null),
+         "myEventStatus must be provided if isMyEvent is true",
+       );
 
   @override
   Widget build(BuildContext context) {
@@ -70,15 +69,8 @@ class EventCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           child: Stack(
             children: [
-              imageData != null
-                  ? Image.memory(
-                imageData!,
-                height: height,
-                width: width,
-                fit: BoxFit.cover,
-              )
-                  : Image.asset(
-                'assets/images/default_event_cover_image.png',
+              ImageHelpers.getImage(
+                imageData,
                 height: height,
                 width: width,
                 fit: BoxFit.cover,
@@ -96,7 +88,10 @@ class EventCard extends StatelessWidget {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -109,7 +104,10 @@ class EventCard extends StatelessWidget {
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: badgeColor,
                         borderRadius: BorderRadius.circular(4),
@@ -176,4 +174,3 @@ class EventCard extends StatelessWidget {
     );
   }
 }
-

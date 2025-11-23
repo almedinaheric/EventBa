@@ -13,9 +13,7 @@ BasicEvent _$BasicEventFromJson(Map<String, dynamic> json) => BasicEvent(
   endDate: json['endDate'] as String,
   location: json['location'] as String,
   status: $enumDecode(_$EventStatusEnumMap, json['status']),
-  coverImage: json['coverImage'] == null
-      ? null
-      : ImageModel.fromJson(json['coverImage'] as Map<String, dynamic>),
+  coverImage: BasicEvent._coverImageFromJson(json['coverImage']),
   isPaid: json['isPaid'] as bool? ?? false,
 );
 
@@ -27,7 +25,7 @@ Map<String, dynamic> _$BasicEventToJson(BasicEvent instance) =>
       'endDate': instance.endDate,
       'location': instance.location,
       'status': _$EventStatusEnumMap[instance.status]!,
-      'coverImage': instance.coverImage,
+      'coverImage': BasicEvent._coverImageToJson(instance.coverImage),
       'isPaid': instance.isPaid,
     };
 

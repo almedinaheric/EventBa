@@ -7,20 +7,46 @@ class ImageHelpers {
     String? image, {
     double height = 40,
     double width = 40,
+    BoxFit fit = BoxFit.cover,
   }) {
-    return image?.isNotEmpty == true
-        ? Image.memory(
-            base64Decode(image!),
-            height: height,
-            width: width,
-            fit: BoxFit.cover,
-          )
-        : Image.asset(
+    if (image == null || image.isEmpty) {
+      return Image.asset(
+        "assets/images/default_event_cover_image.png",
+        height: height,
+        width: width,
+        fit: fit,
+      );
+    }
+
+    try {
+      // Handle data URI format (data:image/jpeg;base64,...)
+      String base64String = image;
+      if (image.startsWith('data:image')) {
+        base64String = image.split(',').last;
+      }
+
+      return Image.memory(
+        base64Decode(base64String),
+        height: height,
+        width: width,
+        fit: fit,
+        errorBuilder: (context, error, stackTrace) {
+          return Image.asset(
             "assets/images/default_event_cover_image.png",
             height: height,
             width: width,
-            fit: BoxFit.cover,
+            fit: fit,
           );
+        },
+      );
+    } catch (e) {
+      return Image.asset(
+        "assets/images/default_event_cover_image.png",
+        height: height,
+        width: width,
+        fit: fit,
+      );
+    }
   }
 
   static Widget getProfileImage(
@@ -28,19 +54,45 @@ class ImageHelpers {
     double height = 40,
     double width = 40,
   }) {
-    return image?.isNotEmpty == true
-        ? Image.memory(
-            base64Decode(image!),
-            height: height,
-            width: width,
-            fit: BoxFit.cover,
-          )
-        : Image.asset(
+    if (image == null || image.isEmpty) {
+      return Image.asset(
+        "assets/images/profile_placeholder.png",
+        height: height,
+        width: width,
+        fit: BoxFit.cover,
+      );
+    }
+
+    try {
+      // Handle data URI format (data:image/jpeg;base64,...)
+      String base64String = image;
+      if (image.startsWith('data:image')) {
+        base64String = image.split(',').last;
+      }
+
+      return Image.memory(
+        base64Decode(base64String),
+        height: height,
+        width: width,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Image.asset(
             "assets/images/profile_placeholder.png",
             height: height,
             width: width,
             fit: BoxFit.cover,
           );
+        },
+      );
+    } catch (e) {
+      // If decoding fails, return placeholder
+      return Image.asset(
+        "assets/images/profile_placeholder.png",
+        height: height,
+        width: width,
+        fit: BoxFit.cover,
+      );
+    }
   }
 
   static Future<String> fileToBase64(File file) async {

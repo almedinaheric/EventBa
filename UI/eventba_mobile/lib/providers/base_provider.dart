@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 import 'package:eventba_mobile/models/meta/meta.dart';
 import 'package:eventba_mobile/models/search_result.dart';
@@ -14,9 +16,35 @@ abstract class BaseProvider<T> with ChangeNotifier {
 
   BaseProvider(String endpoint) {
     _endpoint = endpoint;
-   //_baseUrl = const String.fromEnvironment("baseUrl", defaultValue: "http://192.168.0.34:5187/");
-    _baseUrl = const String.fromEnvironment("baseUrl", defaultValue: "http://localhost:5187/");
-    //_baseUrl = const String.fromEnvironment("baseUrl", defaultValue: "http://10.0.2.2:5187/");
+
+    // Get base URL from environment variable if provided, otherwise use platform-specific default
+    final envBaseUrl = const String.fromEnvironment(
+      "baseUrl",
+      defaultValue: "",
+    );
+
+    if (envBaseUrl.isNotEmpty) {
+      _baseUrl = envBaseUrl;
+    } else {
+      // Platform-specific defaults:
+      // - Android emulator: use 10.0.2.2 to access host machine's localhost
+      // - iOS simulator: use localhost (works fine)
+      // - Web: use localhost
+      // - Physical devices: use your local network IP (e.g., 192.168.0.34)
+      if (kIsWeb) {
+        _baseUrl = "http://localhost:5187/";
+      } else if (Platform.isAndroid) {
+        // For Android emulator, use 10.0.2.2 to access host machine
+        // For physical Android device, you may need to use your local network IP
+        _baseUrl = "http://10.0.2.2:5187/";
+      } else if (Platform.isIOS) {
+        // iOS simulator can use localhost
+        _baseUrl = "http://localhost:5187/";
+      } else {
+        // Default fallback
+        _baseUrl = "http://localhost:5187/";
+      }
+    }
   }
 
   String get baseUrl => _baseUrl!;
@@ -29,7 +57,9 @@ abstract class BaseProvider<T> with ChangeNotifier {
     }
 
     var uri = Uri.parse(url);
-    var headers = authorized ? createHeaders() : {"Content-Type": "application/json"};
+    var headers = authorized
+        ? createHeaders()
+        : {"Content-Type": "application/json"};
 
     var response = await http.get(uri, headers: headers);
 
@@ -51,7 +81,9 @@ abstract class BaseProvider<T> with ChangeNotifier {
   Future<T> getById(String id, {bool authorized = true}) async {
     var url = "$_baseUrl$_endpoint/$id";
     var uri = Uri.parse(url);
-    var headers = authorized ? createHeaders() : {"Content-Type": "application/json"};
+    var headers = authorized
+        ? createHeaders()
+        : {"Content-Type": "application/json"};
     var response = await http.get(uri, headers: headers);
     if (isValidResponse(response)) {
       var data = jsonDecode(response.body);
@@ -64,7 +96,9 @@ abstract class BaseProvider<T> with ChangeNotifier {
   Future<T> insert(dynamic request, {bool authorized = true}) async {
     var url = "$_baseUrl$_endpoint";
     var uri = Uri.parse(url);
-    var headers = authorized ? createHeaders() : {"Content-Type": "application/json"};
+    var headers = authorized
+        ? createHeaders()
+        : {"Content-Type": "application/json"};
 
     var jsonRequest = jsonEncode(request);
     var response = await http.post(uri, headers: headers, body: jsonRequest);
@@ -80,7 +114,9 @@ abstract class BaseProvider<T> with ChangeNotifier {
   Future<T> update(String id, [dynamic request, bool authorized = true]) async {
     var url = "$_baseUrl$_endpoint/$id";
     var uri = Uri.parse(url);
-    var headers = authorized ? createHeaders() : {"Content-Type": "application/json"};
+    var headers = authorized
+        ? createHeaders()
+        : {"Content-Type": "application/json"};
 
     var jsonRequest = jsonEncode(request);
     var response = await http.put(uri, headers: headers, body: jsonRequest);
@@ -111,7 +147,6 @@ abstract class BaseProvider<T> with ChangeNotifier {
     }
   }
 
-
   T fromJson(data) {
     throw Exception("Method not implemented");
   }
@@ -133,9 +168,6 @@ abstract class BaseProvider<T> with ChangeNotifier {
 
     String basicAuth = "Basic ${base64Encode(utf8.encode('$email:$password'))}";
 
-    return {
-      "Content-Type": "application/json",
-      "Authorization": basicAuth
-    };
+    return {"Content-Type": "application/json", "Authorization": basicAuth};
   }
 }

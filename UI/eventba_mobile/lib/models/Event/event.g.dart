@@ -27,12 +27,8 @@ Event _$EventFromJson(Map<String, dynamic> json) => Event(
   isFeatured: json['isFeatured'] as bool,
   isPaid: json['isPaid'] as bool,
   category: CategoryModel.fromJson(json['category'] as Map<String, dynamic>),
-  coverImage: json['coverImage'] == null
-      ? null
-      : ImageModel.fromJson(json['coverImage'] as Map<String, dynamic>),
-  galleryImages: (json['galleryImages'] as List<dynamic>?)
-      ?.map((e) => ImageModel.fromJson(e as Map<String, dynamic>))
-      .toList(),
+  coverImage: Event._coverImageFromJson(json['coverImage']),
+  galleryImages: Event._galleryImagesFromJson(json['galleryImages']),
   organizerId: json['organizerId'] as String,
 );
 

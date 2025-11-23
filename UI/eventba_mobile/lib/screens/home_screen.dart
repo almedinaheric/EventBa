@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:eventba_mobile/screens/category_events_screen.dart';
 import 'package:eventba_mobile/screens/event_details_screen.dart';
@@ -400,16 +399,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildEventCard(BasicEvent event) {
-    Uint8List? imageBytes;
-    if (event.coverImage?.data != null) {
-      try {
-        imageBytes = base64Decode(event.coverImage!.data);
-      } catch (e) {
-        imageBytes = null;
-      }
-    }
     return EventCard(
-      imageData: imageBytes,
+      imageData: event.coverImage?.data,
       eventName: event.title,
       location: event.location ?? 'Location TBA',
       date: event.startDate,

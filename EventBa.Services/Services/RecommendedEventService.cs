@@ -149,6 +149,8 @@ public class RecommendedEventService : IRecommendedEventService
             .Include(re => re.Event)
             .ThenInclude(e => e.Category)
             .Include(re => re.Event)
+            .ThenInclude(e => e.CoverImage)
+            .Include(re => re.Event)
             .ThenInclude(e => e.EventGalleryImages)
             .Include(re => re.Event)
             .ThenInclude(e => e.Tickets)
@@ -172,6 +174,7 @@ public class RecommendedEventService : IRecommendedEventService
             var categoryIds = user.Categories.Select(c => c.Id).ToList();
             var categoryBasedEvents = await _context.Events
                 .Include(e => e.Category)
+                .Include(e => e.CoverImage)
                 .Include(e => e.EventGalleryImages)
                 .Include(e => e.Tickets)
                 .Where(e => e.IsPublished &&
@@ -254,6 +257,7 @@ public class RecommendedEventService : IRecommendedEventService
             var categoryIds = user.Categories.Select(c => c.Id).ToList();
             var popularEvents = await _context.Events
                 .Include(e => e.Category)
+                .Include(e => e.CoverImage)
                 .Include(e => e.EventGalleryImages)
                 .Include(e => e.EventStatistics)
                 .Include(e => e.Tickets)

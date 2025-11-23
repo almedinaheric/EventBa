@@ -25,7 +25,7 @@ class Event {
   final String? coverImage;
   final String organizerId;
   final CategoryModel? category;
-  final List<String> galleryImages;
+  final List<String>? galleryImages;
   final double? averageRating;
   final int? reviewCount;
 
@@ -48,7 +48,7 @@ class Event {
     this.coverImage,
     required this.organizerId,
     this.category,
-    required this.galleryImages,
+    this.galleryImages,
     this.averageRating,
     this.reviewCount,
   });

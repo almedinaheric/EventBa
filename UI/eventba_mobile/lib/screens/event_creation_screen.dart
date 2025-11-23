@@ -1,5 +1,6 @@
 import 'dart:convert';
-import 'dart:io';
+import 'dart:io' show File, Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:eventba_mobile/providers/event_image_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:eventba_mobile/widgets/primary_button.dart';
@@ -524,27 +525,69 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
   }
 
   Future<void> _pickMainImage() async {
+    if (!mounted) return;
+
     try {
-      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-      if (image != null) {
+      // Use a small delay to ensure the UI is ready, especially on iOS
+      await Future.delayed(const Duration(milliseconds: 200));
+
+      if (!mounted) return;
+
+      // iOS-specific optimizations
+      final bool isIOS = !kIsWeb && Platform.isIOS;
+
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: isIOS
+            ? 60
+            : 70, // Lower quality for iOS to prevent crashes
+        maxWidth: isIOS ? 1000 : 1200, // Smaller size for iOS
+        maxHeight: isIOS ? 1000 : 1200,
+        requestFullMetadata:
+            false, // Disable metadata to improve performance on iOS
+      );
+
+      if (image != null && mounted) {
         setState(() {
           _mainImage = image;
         });
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          content: Text('Failed to pick image: ${e.toString()}'),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            behavior: SnackBarBehavior.floating,
+            content: Text('Failed to pick image: ${e.toString()}'),
+          ),
+        );
+      }
     }
   }
 
   Future<void> _pickAdditionalImage(int index) async {
+    if (!mounted) return;
+
     try {
-      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-      if (image != null) {
+      // Use a small delay to ensure the UI is ready, especially on iOS
+      await Future.delayed(const Duration(milliseconds: 200));
+
+      if (!mounted) return;
+
+      // iOS-specific optimizations
+      final bool isIOS = !kIsWeb && Platform.isIOS;
+
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: isIOS
+            ? 60
+            : 70, // Lower quality for iOS to prevent crashes
+        maxWidth: isIOS ? 1000 : 1200, // Smaller size for iOS
+        maxHeight: isIOS ? 1000 : 1200,
+        requestFullMetadata:
+            false, // Disable metadata to improve performance on iOS
+      );
+
+      if (image != null && mounted) {
         setState(() {
           if (index < _additionalImages.length) {
             _additionalImages[index] = image;
@@ -554,12 +597,14 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
         });
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          content: Text('Failed to pick image: ${e.toString()}'),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            behavior: SnackBarBehavior.floating,
+            content: Text('Failed to pick image: ${e.toString()}'),
+          ),
+        );
+      }
     }
   }
 
@@ -832,7 +877,9 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
           final bytes = await File(additionalImage.path).readAsBytes();
           final imageRequest = {'data': bytes, 'contentType': 'image/jpeg'};
           final imageResponse = await imageProvider.insert(imageRequest);
-          galleryImageIds.add(imageResponse.id);
+          if (imageResponse.id != null && imageResponse.id!.isNotEmpty) {
+            galleryImageIds.add(imageResponse.id!);
+          }
         }
 
         // Link gallery images to event

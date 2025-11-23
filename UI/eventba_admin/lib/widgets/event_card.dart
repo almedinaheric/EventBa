@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 
 class EventCard extends StatelessWidget {
@@ -31,9 +32,9 @@ class EventCard extends StatelessWidget {
     this.onTap,
     this.onFavoriteToggle,
   }) : assert(
-  isMyEvent == false || (myEventStatus != null),
-  "myEventStatus must be provided if isMyEvent is true",
-  );
+         isMyEvent == false || (myEventStatus != null),
+         "myEventStatus must be provided if isMyEvent is true",
+       );
 
   @override
   Widget build(BuildContext context) {
@@ -67,12 +68,7 @@ class EventCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           child: Stack(
             children: [
-              Image.asset(
-                imageUrl,
-                height: height,
-                width: width,
-                fit: BoxFit.cover,
-              ),
+              _buildImage(),
               Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -86,7 +82,10 @@ class EventCard extends StatelessWidget {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -99,7 +98,10 @@ class EventCard extends StatelessWidget {
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: badgeColor,
                         borderRadius: BorderRadius.circular(4),
@@ -165,5 +167,53 @@ class EventCard extends StatelessWidget {
       ),
     );
   }
-}
 
+  Widget _buildImage() {
+    // Check if imageUrl is a base64 data URI or an asset path
+    if (imageUrl.startsWith('data:image') ||
+        (!imageUrl.startsWith('assets/') && imageUrl.isNotEmpty)) {
+      try {
+        String base64String = imageUrl;
+        if (imageUrl.startsWith('data:image')) {
+          base64String = imageUrl.split(',').last;
+        }
+        return Image.memory(
+          base64Decode(base64String),
+          height: height,
+          width: width,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return Image.asset(
+              'assets/images/default_event_cover_image.png',
+              height: height,
+              width: width,
+              fit: BoxFit.cover,
+            );
+          },
+        );
+      } catch (e) {
+        return Image.asset(
+          'assets/images/default_event_cover_image.png',
+          height: height,
+          width: width,
+          fit: BoxFit.cover,
+        );
+      }
+    } else {
+      return Image.asset(
+        imageUrl,
+        height: height,
+        width: width,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Image.asset(
+            'assets/images/default_event_cover_image.png',
+            height: height,
+            width: width,
+            fit: BoxFit.cover,
+          );
+        },
+      );
+    }
+  }
+}

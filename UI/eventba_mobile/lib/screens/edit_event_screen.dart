@@ -1,9 +1,18 @@
+import 'dart:convert';
+import 'dart:io' show File, Platform;
 import 'package:flutter/material.dart';
-import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:eventba_mobile/widgets/master_screen.dart';
 import 'package:eventba_mobile/widgets/primary_button.dart';
 import 'package:eventba_mobile/widgets/custom_text_field.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
+import 'package:eventba_mobile/providers/event_provider.dart';
+import 'package:eventba_mobile/providers/event_image_provider.dart';
+import 'package:eventba_mobile/providers/category_provider.dart';
+import 'package:eventba_mobile/models/category/category_model.dart';
+import 'package:eventba_mobile/utils/image_helpers.dart';
+import 'package:http/http.dart' as http;
 
 class EditEventScreen extends StatefulWidget {
   final Map<String, dynamic> event;
@@ -33,26 +42,117 @@ class _EditEventScreenState extends State<EditEventScreen> {
 
   XFile? _mainImage;
   List<XFile> _additionalImages = [];
+  String? _existingCoverImageData; // Store existing cover image as base64
+  List<String> _existingGalleryImageData =
+      []; // Store existing gallery images as base64
+  String? _existingCoverImageId; // Store existing cover image ID
+  List<String> _existingGalleryImageIds =
+      []; // Store existing gallery image IDs
 
   bool _isPaid = false;
+  bool _isLoading = false;
+  List<CategoryModel> _categories = [];
+  bool _categoriesLoading = true;
 
   @override
   void initState() {
     super.initState();
     final event = widget.event;
     _nameController = TextEditingController(text: event['name']);
-    _selectedCategory = event['category'];
+    _selectedCategory =
+        event['categoryId']; // Use categoryId, not category name
     _venueController = TextEditingController(text: event['venue']);
     _dateController = TextEditingController(text: event['date']);
     _startTimeController = TextEditingController(text: event['startTime']);
     _endTimeController = TextEditingController(text: event['endTime']);
     _descriptionController = TextEditingController(text: event['description']);
-    _capacityController = TextEditingController(text: event['capacity'].toString());
-    _vipPriceController = TextEditingController(text: event['vipPrice']?.toString() ?? '');
-    _vipCountController = TextEditingController(text: event['vipCount']?.toString() ?? '');
-    _ecoPriceController = TextEditingController(text: event['ecoPrice']?.toString() ?? '');
-    _ecoCountController = TextEditingController(text: event['ecoCount']?.toString() ?? '');
+    _capacityController = TextEditingController(
+      text: event['capacity'].toString(),
+    );
+    _vipPriceController = TextEditingController(
+      text: event['vipPrice']?.toString() ?? '',
+    );
+    _vipCountController = TextEditingController(
+      text: event['vipCount']?.toString() ?? '',
+    );
+    _ecoPriceController = TextEditingController(
+      text: event['ecoPrice']?.toString() ?? '',
+    );
+    _ecoCountController = TextEditingController(
+      text: event['ecoCount']?.toString() ?? '',
+    );
     _isPaid = event['isPaid'] ?? false;
+
+    // Load existing images
+    _loadExistingImages();
+
+    // Load categories
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadCategories();
+    });
+  }
+
+  Future<void> _loadCategories() async {
+    setState(() {
+      _categoriesLoading = true;
+    });
+    try {
+      final categoryProvider = Provider.of<CategoryProvider>(
+        context,
+        listen: false,
+      );
+      final result = await categoryProvider.get();
+      _categories = result.result;
+    } catch (e) {
+      print("Error loading categories: $e");
+    } finally {
+      setState(() {
+        _categoriesLoading = false;
+      });
+    }
+  }
+
+  void _loadExistingImages() {
+    // Load cover image - handle both string and ImageModel formats
+    final coverImage = widget.event['coverImage'];
+    if (coverImage != null) {
+      if (coverImage is String && coverImage.isNotEmpty) {
+        _existingCoverImageData = coverImage;
+      } else if (coverImage is Map<String, dynamic> &&
+          coverImage['data'] != null) {
+        _existingCoverImageData = coverImage['data'] as String;
+      }
+    }
+
+    // Load cover image ID
+    _existingCoverImageId = widget.event['coverImageId'];
+
+    // Load gallery images - handle both list of strings and list of objects
+    final galleryImages = widget.event['galleryImages'];
+    if (galleryImages != null && galleryImages is List) {
+      _existingGalleryImageData = galleryImages
+          .map((e) {
+            if (e is String) {
+              return e;
+            } else if (e is Map<String, dynamic> && e['data'] != null) {
+              return e['data'] as String;
+            }
+            return null;
+          })
+          .whereType<String>()
+          .where((e) => e.isNotEmpty)
+          .toList();
+    }
+
+    // Load gallery image IDs
+    final galleryImageIds = widget.event['galleryImageIds'];
+    if (galleryImageIds != null && galleryImageIds is List) {
+      _existingGalleryImageIds = galleryImageIds
+          .map((e) => e?.toString())
+          .whereType<String>()
+          .where((e) => e.isNotEmpty)
+          .toList();
+    }
   }
 
   @override
@@ -60,14 +160,14 @@ class _EditEventScreenState extends State<EditEventScreen> {
     final screenWidth = MediaQuery.of(context).size.width;
 
     return MasterScreenWidget(
-        initialIndex: 4,
-        appBarType: AppBarType.iconsSideTitleCenter,
-        title: "Edit Event",
-        leftIcon: Icons.arrow_back,
-        onLeftButtonPressed: () {
-          Navigator.pop(context); // Back button functionality
-        },
-        child: SingleChildScrollView(
+      initialIndex: 4,
+      appBarType: AppBarType.iconsSideTitleCenter,
+      title: "Edit Event",
+      leftIcon: Icons.arrow_back,
+      onLeftButtonPressed: () {
+        Navigator.pop(context); // Back button functionality
+      },
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
@@ -92,27 +192,34 @@ class _EditEventScreenState extends State<EditEventScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                value: _selectedCategory,
-                decoration: InputDecoration(
-                  labelText: 'Event category',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                items: ['Music', 'Sports', 'Art', 'Technology', 'Food']
-                    .map((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-                onChanged: (newValue) {
-                  setState(() {
-                    _selectedCategory = newValue;
-                  });
-                },
-              ),
+              _categoriesLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : DropdownButtonFormField<String>(
+                      value: _selectedCategory,
+                      decoration: InputDecoration(
+                        labelText: 'Event category',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      items: _categories.map((CategoryModel category) {
+                        return DropdownMenuItem<String>(
+                          value: category.id,
+                          child: Text(category.name),
+                        );
+                      }).toList(),
+                      onChanged: (newValue) {
+                        setState(() {
+                          _selectedCategory = newValue;
+                        });
+                      },
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please select a category';
+                        }
+                        return null;
+                      },
+                    ),
               const SizedBox(height: 12),
               CustomTextField(
                 controller: _venueController,
@@ -164,7 +271,10 @@ class _EditEventScreenState extends State<EditEventScreen> {
                 maxLines: 3,
               ),
               const SizedBox(height: 16),
-              const Text("Pricing and Tickets", style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text(
+                "Pricing and Tickets",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 8),
               Row(
                 children: [
@@ -184,7 +294,10 @@ class _EditEventScreenState extends State<EditEventScreen> {
                 ),
               if (_isPaid) ...[
                 const SizedBox(height: 12),
-                const Text("VIP tickets", style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text(
+                  "VIP tickets",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -193,7 +306,9 @@ class _EditEventScreenState extends State<EditEventScreen> {
                         controller: _vipPriceController,
                         hint: 'VIP price',
                         width: double.infinity,
-                        keyboardType: TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -208,7 +323,10 @@ class _EditEventScreenState extends State<EditEventScreen> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                const Text("ECONOMY tickets", style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text(
+                  "ECONOMY tickets",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -217,7 +335,9 @@ class _EditEventScreenState extends State<EditEventScreen> {
                         controller: _ecoPriceController,
                         hint: 'Economy price',
                         width: double.infinity,
-                        keyboardType: TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -234,10 +354,12 @@ class _EditEventScreenState extends State<EditEventScreen> {
               ],
               const SizedBox(height: 24),
               Center(
-                child: PrimaryButton(
-                  text: "Update Event",
-                  onPressed: _submitForm,
-                ),
+                child: _isLoading
+                    ? const CircularProgressIndicator()
+                    : PrimaryButton(
+                        text: "Update Event",
+                        onPressed: _submitForm,
+                      ),
               ),
               const SizedBox(height: 60),
             ],
@@ -259,25 +381,29 @@ class _EditEventScreenState extends State<EditEventScreen> {
             decoration: BoxDecoration(
               border: Border.all(color: Colors.grey.shade300),
               borderRadius: BorderRadius.circular(12),
-              image: _mainImage != null
-                  ? DecorationImage(
-                image: FileImage(File(_mainImage!.path)),
-                fit: BoxFit.cover,
-              )
-                  : null,
             ),
-            child: _mainImage == null
-                ? const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.add, size: 40),
-                  SizedBox(height: 8),
-                  Text('Add main image'),
-                ],
-              ),
-            )
-                : null,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: _mainImage != null
+                  ? Image.file(
+                      File(_mainImage!.path),
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      height: 160,
+                    )
+                  : _existingCoverImageData != null
+                  ? _buildBase64Image(_existingCoverImageData!, 160)
+                  : const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.add, size: 40),
+                          SizedBox(height: 8),
+                          Text('Add main image'),
+                        ],
+                      ),
+                    ),
+            ),
           ),
         ),
         const SizedBox(height: 12),
@@ -292,43 +418,140 @@ class _EditEventScreenState extends State<EditEventScreen> {
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.grey.shade300),
                   borderRadius: BorderRadius.circular(12),
-                  image: index < _additionalImages.length
-                      ? DecorationImage(
-                    image: FileImage(File(_additionalImages[index].path)),
-                    fit: BoxFit.cover,
-                  )
-                      : null,
                 ),
-                child: index >= _additionalImages.length
-                    ? const Center(child: Icon(Icons.add))
-                    : null,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: index < _additionalImages.length
+                      ? Image.file(
+                          File(_additionalImages[index].path),
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: 80,
+                        )
+                      : index < _existingGalleryImageData.length
+                      ? _buildBase64Image(_existingGalleryImageData[index], 80)
+                      : const Center(child: Icon(Icons.add)),
+                ),
               ),
             );
           }),
-        )
+        ),
       ],
     );
   }
 
+  Widget _buildBase64Image(String imageData, double height) {
+    try {
+      String base64String = imageData;
+      if (imageData.startsWith('data:image')) {
+        base64String = imageData.split(',').last;
+      }
+      final bytes = base64Decode(base64String);
+      return Image.memory(
+        bytes,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: height,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            height: height,
+            color: Colors.grey[300],
+            child: const Center(child: Icon(Icons.broken_image)),
+          );
+        },
+      );
+    } catch (e) {
+      return Container(
+        height: height,
+        color: Colors.grey[300],
+        child: const Center(child: Icon(Icons.broken_image)),
+      );
+    }
+  }
+
   Future<void> _pickMainImage() async {
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-    if (image != null) {
-      setState(() {
-        _mainImage = image;
-      });
+    if (!mounted) return;
+
+    try {
+      // Use a small delay to ensure the UI is ready, especially on iOS
+      await Future.delayed(const Duration(milliseconds: 200));
+
+      if (!mounted) return;
+
+      // iOS-specific optimizations
+      final bool isIOS = !kIsWeb && Platform.isIOS;
+
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: isIOS
+            ? 60
+            : 70, // Lower quality for iOS to prevent crashes
+        maxWidth: isIOS ? 1000 : 1200, // Smaller size for iOS
+        maxHeight: isIOS ? 1000 : 1200,
+        requestFullMetadata:
+            false, // Disable metadata to improve performance on iOS
+      );
+
+      if (image != null && mounted) {
+        setState(() {
+          _mainImage = image;
+        });
+      }
+    } catch (e) {
+      print('Error picking main image: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error picking image: ${e.toString()}'),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
     }
   }
 
   Future<void> _pickAdditionalImage(int index) async {
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-    if (image != null) {
-      setState(() {
-        if (index < _additionalImages.length) {
-          _additionalImages[index] = image;
-        } else {
-          _additionalImages.add(image);
-        }
-      });
+    if (!mounted) return;
+
+    try {
+      // Use a small delay to ensure the UI is ready, especially on iOS
+      await Future.delayed(const Duration(milliseconds: 200));
+
+      if (!mounted) return;
+
+      // iOS-specific optimizations
+      final bool isIOS = !kIsWeb && Platform.isIOS;
+
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: isIOS
+            ? 60
+            : 70, // Lower quality for iOS to prevent crashes
+        maxWidth: isIOS ? 1000 : 1200, // Smaller size for iOS
+        maxHeight: isIOS ? 1000 : 1200,
+        requestFullMetadata:
+            false, // Disable metadata to improve performance on iOS
+      );
+
+      if (image != null && mounted) {
+        setState(() {
+          if (index < _additionalImages.length) {
+            _additionalImages[index] = image;
+          } else {
+            _additionalImages.add(image);
+          }
+        });
+      }
+    } catch (e) {
+      print('Error picking additional image: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error picking image: ${e.toString()}'),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
     }
   }
 
@@ -402,12 +625,174 @@ class _EditEventScreenState extends State<EditEventScreen> {
     }
   }
 
-  void _submitForm() {
-    if (_formKey.currentState!.validate()) {
-      // Handle the update event logic here
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Event updated successfully!')),
+  Future<void> _submitForm() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final eventProvider = Provider.of<EventProvider>(context, listen: false);
+      final event = widget.event;
+
+      // Parse date from controller
+      String dateStr = _dateController.text;
+      if (dateStr.contains('/')) {
+        final parts = dateStr.split('/');
+        if (parts.length == 3) {
+          dateStr =
+              '${parts[2]}-${parts[1].padLeft(2, '0')}-${parts[0].padLeft(2, '0')}';
+        }
+      }
+
+      // Calculate capacity based on event type (paid/free)
+      int calculatedCapacity;
+      if (_isPaid) {
+        final vipCount = int.tryParse(_vipCountController.text) ?? 0;
+        final ecoCount = int.tryParse(_ecoCountController.text) ?? 0;
+        calculatedCapacity = vipCount + ecoCount;
+      } else {
+        calculatedCapacity = int.tryParse(_capacityController.text) ?? 0;
+      }
+
+      // Handle cover image upload if a new one was selected
+      String? coverImageId;
+      if (_mainImage != null) {
+        // New cover image selected - upload it
+        final imageProvider = Provider.of<EventImageProvider>(
+          context,
+          listen: false,
+        );
+        final bytes = await File(_mainImage!.path).readAsBytes();
+        final base64Image = base64Encode(bytes);
+        final mainImageRequest = {
+          'Data': base64Image,
+          'ContentType': ImageHelpers.getContentType(_mainImage!.path),
+          'ImageType': 'EventCover',
+        };
+        final mainImageResponse = await imageProvider.insert(mainImageRequest);
+        coverImageId = mainImageResponse.id;
+      } else {
+        // No new cover image - preserve existing one by passing null (backend will preserve it)
+        coverImageId = null;
+      }
+
+      // Prepare update data
+      final updateData = {
+        'id': event['id'],
+        'title': _nameController.text,
+        'description': _descriptionController.text,
+        'location': _venueController.text,
+        'startDate': dateStr,
+        'endDate': dateStr,
+        'startTime': _startTimeController.text,
+        'endTime': _endTimeController.text,
+        'capacity': calculatedCapacity,
+        'currentAttendees': event['currentAttendees'] ?? 0,
+        'availableTicketsCount': calculatedCapacity,
+        'status': event['status'] ?? 'Upcoming',
+        'isFeatured': event['isFeatured'] ?? false,
+        'type': event['type'] ?? 'Public',
+        'isPublished': true,
+        'categoryId': event['categoryId'],
+        'coverImageId': coverImageId,
+      };
+
+      await eventProvider.update(event['id'], updateData);
+
+      // Handle gallery images - combine new and existing ones
+      final imageProvider = Provider.of<EventImageProvider>(
+        context,
+        listen: false,
       );
+      List<String> finalGalleryImageIds = [];
+
+      // Process each of the 3 gallery image slots
+      for (int i = 0; i < 3; i++) {
+        if (i < _additionalImages.length) {
+          // New image selected for this slot - upload it
+          final additionalImage = _additionalImages[i];
+          final bytes = await File(additionalImage.path).readAsBytes();
+          final base64Image = base64Encode(bytes);
+          final imageRequest = {
+            'Data': base64Image,
+            'ContentType': ImageHelpers.getContentType(additionalImage.path),
+            'ImageType': 'EventGallery',
+            'EventId': event['id'],
+          };
+          final imageResponse = await imageProvider.insert(imageRequest);
+          if (imageResponse.id != null && imageResponse.id!.isNotEmpty) {
+            finalGalleryImageIds.add(imageResponse.id!);
+          }
+        } else if (i < _existingGalleryImageIds.length) {
+          // No new image for this slot, but existing image exists - keep it
+          finalGalleryImageIds.add(_existingGalleryImageIds[i]);
+        }
+        // If neither new nor existing image for this slot, skip it (slot remains empty)
+      }
+
+      // Replace all gallery images with the final list (combines new and existing)
+      await _replaceGalleryImages(event['id'], finalGalleryImageIds);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Event updated successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      Navigator.pop(context, true);
+    } catch (e) {
+      print('Error updating event: $e');
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to update event: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _replaceGalleryImages(
+    String eventId,
+    List<String> imageIds,
+  ) async {
+    try {
+      final eventProvider = Provider.of<EventProvider>(context, listen: false);
+      final url = "${eventProvider.baseUrl}Event/$eventId/gallery-images";
+      final uri = Uri.parse(url);
+      final headers = eventProvider.createHeaders();
+
+      // Convert string IDs to GUIDs for the backend
+      final guidIds = imageIds.map((id) => id).toList();
+
+      final response = await http.put(
+        uri,
+        headers: headers,
+        body: jsonEncode(guidIds),
+      );
+
+      if (response.statusCode >= 300) {
+        throw Exception(
+          'Failed to replace gallery images: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      print('Error replacing gallery images: $e');
+      rethrow;
     }
   }
 

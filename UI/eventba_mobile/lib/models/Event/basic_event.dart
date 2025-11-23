@@ -12,6 +12,7 @@ class BasicEvent {
   final String endDate;
   final String location;
   final EventStatus status;
+  @JsonKey(fromJson: _coverImageFromJson, toJson: _coverImageToJson)
   final ImageModel? coverImage;
   final bool isPaid;
 
@@ -26,8 +27,55 @@ class BasicEvent {
     this.isPaid = false,
   });
 
-  factory BasicEvent.fromJson(Map<String, dynamic> json) =>
-      _$BasicEventFromJson(json);
+  factory BasicEvent.fromJson(Map<String, dynamic> json) {
+    return BasicEvent(
+      id: json['id'] as String,
+      title: json['title'] as String,
+      startDate: json['startDate'] as String,
+      endDate: json['endDate'] as String,
+      location: json['location'] as String,
+      status: EventStatus.values.firstWhere(
+        (e) => e.name == json['status'],
+        orElse: () => EventStatus.Upcoming,
+      ),
+      coverImage: _coverImageFromJson(json['coverImage']),
+      isPaid: json['isPaid'] as bool? ?? false,
+    );
+  }
 
-  Map<String, dynamic> toJson() => _$BasicEventToJson(this);
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'title': title,
+    'startDate': startDate,
+    'endDate': endDate,
+    'location': location,
+    'status': status.name,
+    'coverImage': _coverImageToJson(coverImage),
+    'isPaid': isPaid,
+  };
+
+  // Custom converter: handle both string (data URI) and object formats
+  static ImageModel? _coverImageFromJson(dynamic json) {
+    if (json == null) return null;
+    if (json is String) {
+      // Backend returns string as data URI, convert to ImageModel
+      return ImageModel(
+        id: '',
+        data: json,
+        contentType: 'image/jpeg',
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+    }
+    if (json is Map<String, dynamic>) {
+      // If it's already an object, parse it normally
+      return ImageModel.fromJson(json);
+    }
+    return null;
+  }
+
+  static dynamic _coverImageToJson(ImageModel? image) {
+    if (image == null) return null;
+    return image.data; // Return the data string
+  }
 }

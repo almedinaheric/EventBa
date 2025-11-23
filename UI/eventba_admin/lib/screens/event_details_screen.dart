@@ -45,11 +45,28 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   bool _ticketsLoading = false;
   bool _organizerLoading = false;
   bool _isDescriptionExpanded = false;
+  bool _wasUpdated = false; // Track if event was updated
 
   @override
   void initState() {
     super.initState();
     _currentEventData = widget.eventData;
+
+    // Initialize image URLs from event data
+    _imageUrls = [];
+    if (_currentEventData['coverImage'] != null &&
+        _currentEventData['coverImage'].toString().isNotEmpty) {
+      _imageUrls.add(_currentEventData['coverImage']);
+    }
+    if (_currentEventData['galleryImages'] != null) {
+      final galleryImages = _currentEventData['galleryImages'];
+      if (galleryImages is List) {
+        _imageUrls.addAll(galleryImages.map((e) => e.toString()).toList());
+      }
+    }
+    if (_imageUrls.isEmpty) {
+      _imageUrls.add('assets/images/default_event_cover_image.png');
+    }
 
     // Load organizer details
     _loadOrganizer();
@@ -63,6 +80,11 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       _loadReviews();
       _loadStatistics();
     }
+
+    // Reload event data to get fresh images from backend
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _reloadEventData();
+    });
   }
 
   Future<void> _loadOrganizer() async {
@@ -180,6 +202,89 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
         _currentEventData['id'],
       );
 
+      // Get raw JSON to extract image IDs (Event model doesn't include them)
+      final rawEventData = await eventProvider.getEventByIdRaw(
+        _currentEventData['id'],
+      );
+
+      // Debug: Print raw response to see what backend is sending
+      print("=== DEBUG: Raw Event Data ===");
+      print("Raw galleryImages from backend: ${rawEventData['galleryImages']}");
+      print(
+        "Raw galleryImages type: ${rawEventData['galleryImages']?.runtimeType}",
+      );
+      if (rawEventData['galleryImages'] != null &&
+          rawEventData['galleryImages'] is List) {
+        print(
+          "Raw galleryImages count: ${(rawEventData['galleryImages'] as List).length}",
+        );
+      }
+      print("Parsed Event galleryImages: ${updatedEvent.galleryImages}");
+      print(
+        "Parsed Event galleryImages count: ${updatedEvent.galleryImages?.length ?? 0}",
+      );
+      print(
+        "Parsed Event coverImage: ${updatedEvent.coverImage != null ? 'exists' : 'null'}",
+      );
+      print("=============================");
+
+      // Extract image IDs from raw JSON response (backend now includes them)
+      String? coverImageId;
+      List<String>? galleryImageIds;
+
+      try {
+        // Extract cover image ID from raw response
+        if (rawEventData['coverImageId'] != null) {
+          coverImageId = rawEventData['coverImageId'].toString();
+          print("Extracted coverImageId from backend: $coverImageId");
+        } else {
+          // Fallback to existing data if not in raw response
+          coverImageId = _currentEventData['coverImageId']?.toString();
+          print("Using existing coverImageId: $coverImageId");
+        }
+
+        // Extract gallery image IDs from raw response
+        if (rawEventData['galleryImageIds'] != null &&
+            rawEventData['galleryImageIds'] is List) {
+          galleryImageIds = (rawEventData['galleryImageIds'] as List)
+              .map((e) => e?.toString())
+              .whereType<String>()
+              .where((e) => e.isNotEmpty)
+              .toList();
+          print(
+            "Extracted ${galleryImageIds.length} gallery image IDs from backend: $galleryImageIds",
+          );
+        } else {
+          // Fallback to existing data if not in raw response
+          if (_currentEventData['galleryImageIds'] != null &&
+              _currentEventData['galleryImageIds'] is List) {
+            galleryImageIds = (_currentEventData['galleryImageIds'] as List)
+                .map((e) => e?.toString())
+                .whereType<String>()
+                .where((e) => e.isNotEmpty)
+                .toList();
+            print(
+              "Using existing gallery image IDs: ${galleryImageIds.length}",
+            );
+          } else {
+            galleryImageIds = [];
+            print("No gallery image IDs found in backend or existing data");
+          }
+        }
+      } catch (e) {
+        print("Error extracting image IDs: $e");
+        coverImageId = _currentEventData['coverImageId']?.toString();
+        galleryImageIds =
+            _currentEventData['galleryImageIds'] != null &&
+                _currentEventData['galleryImageIds'] is List
+            ? (_currentEventData['galleryImageIds'] as List)
+                  .map((e) => e?.toString())
+                  .whereType<String>()
+                  .where((e) => e.isNotEmpty)
+                  .toList()
+            : [];
+      }
+
       setState(() {
         _currentEventData = {
           'id': updatedEvent.id,
@@ -197,23 +302,50 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           'status': updatedEvent.status.name,
           'type': updatedEvent.type.name,
           'coverImage': updatedEvent.coverImage,
+          'coverImageId': coverImageId,
           'organizerId': updatedEvent.organizerId,
           'capacity': updatedEvent.capacity,
           'currentAttendees': updatedEvent.currentAttendees,
           'availableTicketsCount': updatedEvent.availableTicketsCount,
+          'galleryImages': updatedEvent.galleryImages ?? [],
+          'galleryImageIds': galleryImageIds ?? [],
         };
 
         // Load real images
         _imageUrls = [];
-        if (updatedEvent.coverImage != null) {
+        if (updatedEvent.coverImage != null &&
+            updatedEvent.coverImage!.isNotEmpty) {
           _imageUrls.add(updatedEvent.coverImage!);
+          print("Added cover image to _imageUrls");
         }
         // Add gallery images (they are already base64 strings)
-        _imageUrls.addAll(updatedEvent.galleryImages);
+        if (updatedEvent.galleryImages != null) {
+          print(
+            "Processing gallery images: ${updatedEvent.galleryImages!.length} items",
+          );
+          if (updatedEvent.galleryImages!.isNotEmpty) {
+            final validGalleryImages = updatedEvent.galleryImages!
+                .where((img) => img.isNotEmpty)
+                .toList();
+            print("Valid gallery images: ${validGalleryImages.length}");
+            _imageUrls.addAll(validGalleryImages);
+          } else {
+            print(
+              "No gallery images found in updatedEvent.galleryImages (empty list)",
+            );
+          }
+        } else {
+          print("No gallery images found in updatedEvent.galleryImages (null)");
+        }
         // Fallback to default image if no images
         if (_imageUrls.isEmpty) {
           _imageUrls.add('assets/images/default_event_cover_image.png');
+          print("No images found, using default");
         }
+
+        print(
+          "Final _imageUrls count: ${_imageUrls.length} (Cover: ${updatedEvent.coverImage != null ? 'Yes' : 'No'}, Gallery: ${updatedEvent.galleryImages?.length ?? 0})",
+        );
 
         _isLoading = false;
       });
@@ -245,23 +377,102 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return Dialog(
-          insetPadding: const EdgeInsets.all(10),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AspectRatio(
-                aspectRatio: 16 / 9,
-                child: PageView.builder(
-                  controller: PageController(initialPage: initialIndex),
-                  itemCount: _imageUrls.length,
-                  itemBuilder: (context, index) {
-                    return _buildImageWidget(_imageUrls[index], BoxFit.contain);
-                  },
-                ),
+        final PageController pageController = PageController(
+          initialPage: initialIndex,
+        );
+        int currentIndex = initialIndex;
+
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Dialog(
+              insetPadding: const EdgeInsets.all(10),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  // Calculate available height for the image viewer
+                  // Account for: counter (if shown), close button, and padding
+                  final counterHeight = _imageUrls.length > 1 ? 50.0 : 0.0;
+                  final closeButtonHeight = 50.0;
+                  final padding = 20.0; // Top and bottom padding
+                  final availableHeight =
+                      constraints.maxHeight -
+                      counterHeight -
+                      closeButtonHeight -
+                      padding;
+
+                  // Use 16:9 aspect ratio but respect available space
+                  final calculatedWidth = availableHeight * (16 / 9);
+                  final imageHeight = constraints.maxWidth < calculatedWidth
+                      ? constraints.maxWidth * (9 / 16)
+                      : availableHeight;
+
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Image counter
+                      if (_imageUrls.length > 1)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 8.0,
+                            horizontal: 8.0,
+                          ),
+                          child: Text(
+                            '${currentIndex + 1} / ${_imageUrls.length}',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      // Image viewer with PageView
+                      Flexible(
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxHeight: imageHeight,
+                            maxWidth: constraints.maxWidth,
+                          ),
+                          child: AspectRatio(
+                            aspectRatio: 16 / 9,
+                            child: PageView.builder(
+                              controller: pageController,
+                              itemCount: _imageUrls.length,
+                              onPageChanged: (index) {
+                                setState(() {
+                                  currentIndex = index;
+                                });
+                              },
+                              itemBuilder: (context, index) {
+                                return InteractiveViewer(
+                                  panEnabled:
+                                      false, // Disable pan to allow PageView to handle swipes
+                                  minScale: 0.5,
+                                  maxScale: 4.0,
+                                  child: _buildImageWidget(
+                                    _imageUrls[index],
+                                    BoxFit.contain,
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+                      // Close button
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 8.0,
+                          horizontal: 8.0,
+                        ),
+                        child: TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: const Text('Close'),
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
@@ -347,6 +558,20 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    return WillPopScope(
+      onWillPop: () async {
+        // Return true if event was updated, so parent screen can reload
+        if (_wasUpdated) {
+          Navigator.pop(context, true);
+          return false; // Prevent default pop
+        }
+        return true; // Allow default pop
+      },
+      child: _buildContent(),
+    );
+  }
+
+  Widget _buildContent() {
     if (_isLoading) {
       return MasterScreen(
         title: widget.eventTitle,
@@ -663,20 +888,29 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   CircleAvatar(
                     radius: 20,
                     backgroundColor: Colors.grey[300],
-                    backgroundImage: _organizer?.profileImage?.data != null
-                        ? MemoryImage(
-                            Uri.parse(
-                              _organizer!.profileImage!.data!,
-                            ).data!.contentAsBytes(),
+                    child: _organizer?.profileImage?.data != null
+                        ? ClipOval(
+                            child: Image.memory(
+                              base64Decode(
+                                _organizer!.profileImage!.data!.split(',').last,
+                              ),
+                              width: 40,
+                              height: 40,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return const Icon(
+                                  Icons.person,
+                                  color: Colors.white,
+                                  size: 20,
+                                );
+                              },
+                            ),
                           )
-                        : null,
-                    child: _organizer?.profileImage?.data == null
-                        ? const Icon(
+                        : const Icon(
                             Icons.person,
                             color: Colors.white,
                             size: 20,
-                          )
-                        : null,
+                          ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -1089,6 +1323,10 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 // Reload data if edit was successful
                 if (result == true) {
                   await _reloadEventData();
+                  // Mark that event was updated so we can return true when user goes back
+                  setState(() {
+                    _wasUpdated = true;
+                  });
                 }
               },
               style: ElevatedButton.styleFrom(

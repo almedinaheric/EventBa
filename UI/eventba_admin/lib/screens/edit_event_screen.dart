@@ -1,15 +1,18 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:eventba_admin/widgets/custom_text_field.dart';
 import 'package:eventba_admin/widgets/master_screen.dart';
 import 'package:eventba_admin/widgets/primary_button.dart';
 import 'package:eventba_admin/providers/event_provider.dart';
 import 'package:eventba_admin/providers/category_provider.dart';
 import 'package:eventba_admin/providers/ticket_provider.dart';
+import 'package:eventba_admin/providers/image_provider.dart';
 import 'package:eventba_admin/models/category/category_model.dart';
 import 'package:eventba_admin/models/ticket/ticket.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'dart:io';
 import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
 
 class EditEventScreen extends StatefulWidget {
   final Map<String, dynamic> event;
@@ -39,6 +42,12 @@ class _EditEventScreenState extends State<EditEventScreen> {
 
   XFile? _mainImage;
   List<XFile> _additionalImages = [];
+  String? _existingCoverImageData; // Store existing cover image as base64
+  List<String> _existingGalleryImageData =
+      []; // Store existing gallery images as base64
+  String? _existingCoverImageId; // Store existing cover image ID
+  List<String> _existingGalleryImageIds =
+      []; // Store existing gallery image IDs
 
   bool _isPaid = false;
   bool _isLoading = false;
@@ -53,7 +62,14 @@ class _EditEventScreenState extends State<EditEventScreen> {
     _nameController = TextEditingController(text: event['name']);
     _selectedCategoryId = event['categoryId'];
     _venueController = TextEditingController(text: event['venue']);
-    _dateController = TextEditingController(text: event['date']);
+    // Initialize date controller with date range format (startDate - endDate)
+    final startDate = event['startDate'] ?? event['date'] ?? '';
+    final endDate = event['endDate'] ?? event['date'] ?? '';
+    _dateController = TextEditingController(
+      text: startDate.isNotEmpty && endDate.isNotEmpty
+          ? "$startDate - $endDate"
+          : (event['date'] ?? ''),
+    );
     _startTimeController = TextEditingController(text: event['startTime']);
     _endTimeController = TextEditingController(text: event['endTime']);
     _descriptionController = TextEditingController(text: event['description']);
@@ -69,11 +85,69 @@ class _EditEventScreenState extends State<EditEventScreen> {
 
     _isPaid = event['isPaid'] ?? false;
 
+    // Load existing images
+    _loadExistingImages();
+
     // Load categories and tickets after the widget is built
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadCategories();
       _loadExistingTickets();
     });
+  }
+
+  void _loadExistingImages() {
+    // Load cover image - handle both string and ImageModel formats
+    final coverImage = widget.event['coverImage'];
+    if (coverImage != null) {
+      if (coverImage is String && coverImage.isNotEmpty) {
+        _existingCoverImageData = coverImage;
+      } else if (coverImage is Map<String, dynamic> &&
+          coverImage['data'] != null) {
+        _existingCoverImageData = coverImage['data'] as String;
+      }
+    }
+
+    // Load cover image ID
+    final coverImageIdValue = widget.event['coverImageId'];
+    _existingCoverImageId = coverImageIdValue?.toString();
+    print("Loaded existing cover image ID: $_existingCoverImageId");
+
+    // Load gallery images - handle both list of strings and list of objects
+    final galleryImages = widget.event['galleryImages'];
+    print("Loading gallery images from event data: $galleryImages");
+    if (galleryImages != null && galleryImages is List) {
+      _existingGalleryImageData = galleryImages
+          .map((e) {
+            if (e is String) {
+              return e;
+            } else if (e is Map<String, dynamic> && e['data'] != null) {
+              return e['data'] as String;
+            }
+            return null;
+          })
+          .whereType<String>()
+          .where((e) => e.isNotEmpty)
+          .toList();
+      print("Loaded ${_existingGalleryImageData.length} gallery images");
+    } else {
+      print("No gallery images found or invalid format");
+    }
+
+    // Load gallery image IDs
+    final galleryImageIds = widget.event['galleryImageIds'];
+    print("Loading gallery image IDs from event data: $galleryImageIds");
+    if (galleryImageIds != null && galleryImageIds is List) {
+      _existingGalleryImageIds = galleryImageIds
+          .map((e) => e?.toString())
+          .whereType<String>()
+          .where((e) => e.isNotEmpty)
+          .toList();
+      print(
+        "Loaded ${_existingGalleryImageIds.length} gallery image IDs: $_existingGalleryImageIds",
+      );
+    } else {
+      print("No gallery image IDs found in event data");
+    }
   }
 
   Future<void> _loadExistingTickets() async {
@@ -397,25 +471,29 @@ class _EditEventScreenState extends State<EditEventScreen> {
             decoration: BoxDecoration(
               border: Border.all(color: Colors.grey.shade300),
               borderRadius: BorderRadius.circular(12),
-              image: _mainImage != null
-                  ? DecorationImage(
-                      image: FileImage(File(_mainImage!.path)),
-                      fit: BoxFit.cover,
-                    )
-                  : null,
             ),
-            child: _mainImage == null
-                ? const Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.add, size: 40),
-                        SizedBox(height: 8),
-                        Text('Add main image'),
-                      ],
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: _mainImage != null
+                  ? Image.file(
+                      File(_mainImage!.path),
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      height: 160,
+                    )
+                  : _existingCoverImageData != null
+                  ? _buildBase64Image(_existingCoverImageData!, 160)
+                  : const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.add, size: 40),
+                          SizedBox(height: 8),
+                          Text('Add main image'),
+                        ],
+                      ),
                     ),
-                  )
-                : null,
+            ),
           ),
         ),
         const SizedBox(height: 12),
@@ -430,22 +508,55 @@ class _EditEventScreenState extends State<EditEventScreen> {
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.grey.shade300),
                   borderRadius: BorderRadius.circular(12),
-                  image: index < _additionalImages.length
-                      ? DecorationImage(
-                          image: FileImage(File(_additionalImages[index].path)),
-                          fit: BoxFit.cover,
-                        )
-                      : null,
                 ),
-                child: index >= _additionalImages.length
-                    ? const Center(child: Icon(Icons.add))
-                    : null,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: index < _additionalImages.length
+                      ? Image.file(
+                          File(_additionalImages[index].path),
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: 80,
+                        )
+                      : index < _existingGalleryImageData.length
+                      ? _buildBase64Image(_existingGalleryImageData[index], 80)
+                      : const Center(child: Icon(Icons.add)),
+                ),
               ),
             );
           }),
         ),
       ],
     );
+  }
+
+  Widget _buildBase64Image(String imageData, double height) {
+    try {
+      String base64String = imageData;
+      if (imageData.startsWith('data:image')) {
+        base64String = imageData.split(',').last;
+      }
+      final bytes = base64Decode(base64String);
+      return Image.memory(
+        bytes,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: height,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            height: height,
+            color: Colors.grey[300],
+            child: const Center(child: Icon(Icons.broken_image)),
+          );
+        },
+      );
+    } catch (e) {
+      return Container(
+        height: height,
+        color: Colors.grey[300],
+        child: const Center(child: Icon(Icons.broken_image)),
+      );
+    }
   }
 
   Future<void> _pickMainImage() async {
@@ -503,15 +614,47 @@ class _EditEventScreenState extends State<EditEventScreen> {
   }
 
   Future<void> _pickDate() async {
-    DateTime? pickedDate = await showDatePicker(
+    // Parse existing date range if available
+    DateTimeRange? initialDateRange;
+    final currentDateText = _dateController.text;
+    if (currentDateText.contains(' - ')) {
+      final parts = currentDateText.split(' - ');
+      if (parts.length == 2) {
+        try {
+          final startDate = DateTime.parse(parts[0].trim());
+          final endDate = DateTime.parse(parts[1].trim());
+          initialDateRange = DateTimeRange(start: startDate, end: endDate);
+        } catch (e) {
+          print("Error parsing existing date range: $e");
+        }
+      }
+    } else if (currentDateText.isNotEmpty) {
+      try {
+        final singleDate = DateTime.parse(currentDateText.trim());
+        initialDateRange = DateTimeRange(
+          start: singleDate,
+          end: singleDate.add(const Duration(days: 1)),
+        );
+      } catch (e) {
+        print("Error parsing existing date: $e");
+      }
+    }
+
+    DateTimeRange? picked = await showDateRangePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDateRange:
+          initialDateRange ??
+          DateTimeRange(
+            start: DateTime.now(),
+            end: DateTime.now().add(const Duration(days: 1)),
+          ),
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
     );
-    if (pickedDate != null) {
+    if (picked != null) {
       setState(() {
-        _dateController.text = pickedDate.toLocal().toString().split(' ')[0];
+        _dateController.text =
+            "${picked.start.toLocal().toString().split(' ')[0]} - ${picked.end.toLocal().toString().split(' ')[0]}";
       });
     }
   }
@@ -641,6 +784,39 @@ class _EditEventScreenState extends State<EditEventScreen> {
     }
   }
 
+  Future<void> _replaceGalleryImages(
+    String eventId,
+    List<String> imageIds,
+  ) async {
+    try {
+      final url =
+          "${Provider.of<EventProvider>(context, listen: false).baseUrl}Event/$eventId/gallery-images";
+      final uri = Uri.parse(url);
+      final headers = Provider.of<EventProvider>(
+        context,
+        listen: false,
+      ).createHeaders();
+
+      // Convert string IDs to GUIDs for the backend
+      final guidIds = imageIds.map((id) => id).toList();
+
+      final response = await http.put(
+        uri,
+        headers: headers,
+        body: jsonEncode(guidIds),
+      );
+
+      if (response.statusCode >= 300) {
+        throw Exception(
+          'Failed to replace gallery images: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      print('Error replacing gallery images: $e');
+      rethrow;
+    }
+  }
+
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -654,15 +830,31 @@ class _EditEventScreenState extends State<EditEventScreen> {
       final eventProvider = Provider.of<EventProvider>(context, listen: false);
       final event = widget.event;
 
-      // Parse date from controller (format: "YYYY-MM-DD")
-      String dateStr = _dateController.text;
-      if (dateStr.contains('/')) {
-        // Convert from display format to ISO format if needed
-        final parts = dateStr.split('/');
-        if (parts.length == 3) {
-          dateStr =
-              '${parts[2]}-${parts[1].padLeft(2, '0')}-${parts[0].padLeft(2, '0')}';
+      // Parse date range from controller (format: "YYYY-MM-DD - YYYY-MM-DD")
+      final dateRangeParts = _dateController.text.split(' - ');
+      String startDateStr;
+      String endDateStr;
+
+      if (dateRangeParts.length == 2) {
+        // Date range format
+        startDateStr = dateRangeParts[0].trim();
+        endDateStr = dateRangeParts[1].trim();
+      } else {
+        // Single date format (fallback for old data)
+        final dateStr = _dateController.text.trim();
+        if (dateStr.contains('/')) {
+          // Convert from display format to ISO format if needed
+          final parts = dateStr.split('/');
+          if (parts.length == 3) {
+            startDateStr =
+                '${parts[2]}-${parts[1].padLeft(2, '0')}-${parts[0].padLeft(2, '0')}';
+          } else {
+            startDateStr = dateStr;
+          }
+        } else {
+          startDateStr = dateStr;
         }
+        endDateStr = startDateStr; // Use same date for end if only one provided
       }
 
       // Calculate capacity based on event type (paid/free)
@@ -677,14 +869,38 @@ class _EditEventScreenState extends State<EditEventScreen> {
         calculatedCapacity = int.tryParse(_capacityController.text) ?? 0;
       }
 
+      // Handle cover image - use existing ID if no new one is selected
+      String? coverImageId;
+      if (_mainImage != null) {
+        // New cover image selected - upload it
+        final imageProvider = Provider.of<EventImageProvider>(
+          context,
+          listen: false,
+        );
+        final bytes = await File(_mainImage!.path).readAsBytes();
+        final base64Image = base64Encode(bytes);
+        final mainImageRequest = {
+          'Data': base64Image,
+          'ContentType': 'image/jpeg',
+          'ImageType': 'EventCover',
+        };
+        final mainImageResponse = await imageProvider.insert(mainImageRequest);
+        coverImageId = mainImageResponse.id;
+        print("New cover image uploaded with ID: $coverImageId");
+      } else {
+        // No new cover image - use existing one
+        coverImageId = _existingCoverImageId;
+        print("Using existing cover image ID: $coverImageId");
+      }
+
       // Prepare update data matching EventUpdateRequestDto
       final updateData = {
         'id': event['id'],
         'title': _nameController.text,
         'description': _descriptionController.text,
         'location': _venueController.text,
-        'startDate': dateStr, // Format: "YYYY-MM-DD"
-        'endDate': dateStr, // Format: "YYYY-MM-DD"
+        'startDate': startDateStr, // Format: "YYYY-MM-DD"
+        'endDate': endDateStr, // Format: "YYYY-MM-DD"
         'startTime': _startTimeController.text, // Format: "HH:MM"
         'endTime': _endTimeController.text, // Format: "HH:MM"
         'capacity': calculatedCapacity,
@@ -695,15 +911,62 @@ class _EditEventScreenState extends State<EditEventScreen> {
         'type': event['type'] ?? 'Public',
         'isPublished': true,
         'categoryId': _selectedCategoryId ?? event['categoryId'],
-        'coverImageId': event['coverImageId'],
+        'coverImageId': coverImageId,
       };
 
       await eventProvider.updateEvent(event['id'], updateData);
 
-      if (!mounted) return;
+      // Handle gallery images - combine new and existing ones
+      final imageProvider = Provider.of<EventImageProvider>(
+        context,
+        listen: false,
+      );
+      List<String> finalGalleryImageIds = [];
+
+      print(
+        "Processing gallery images - New: ${_additionalImages.length}, Existing IDs: ${_existingGalleryImageIds.length}",
+      );
+
+      // Process each of the 3 gallery image slots
+      // For each slot: if new image is selected, upload it; otherwise, preserve existing image for that slot
+      for (int i = 0; i < 3; i++) {
+        if (i < _additionalImages.length) {
+          // New image selected for this slot - upload it
+          final additionalImage = _additionalImages[i];
+          final bytes = await File(additionalImage.path).readAsBytes();
+          final base64Image = base64Encode(bytes);
+          final imageRequest = {
+            'Data': base64Image,
+            'ContentType': 'image/jpeg',
+            'ImageType': 'EventGallery',
+            'EventId': event['id'],
+          };
+          final imageResponse = await imageProvider.insert(imageRequest);
+          if (imageResponse.id != null && imageResponse.id!.isNotEmpty) {
+            finalGalleryImageIds.add(imageResponse.id!);
+            print("Added new image at slot $i with ID: ${imageResponse.id}");
+          }
+        } else if (i < _existingGalleryImageIds.length) {
+          // No new image for this slot, but existing image exists - preserve it
+          finalGalleryImageIds.add(_existingGalleryImageIds[i]);
+          print(
+            "Preserved existing image at slot $i with ID: ${_existingGalleryImageIds[i]}",
+          );
+        }
+        // If neither new nor existing image for this slot, skip it (slot remains empty)
+      }
+
+      print(
+        "Final gallery image IDs count: ${finalGalleryImageIds.length} (New: ${_additionalImages.length}, Preserved: ${finalGalleryImageIds.length - _additionalImages.length})",
+      );
+      print("Final gallery image IDs: $finalGalleryImageIds");
+
+      // Replace gallery images with the final list (includes new uploads + preserved existing ones)
+      // Backend will only remove images that are NOT in this list
+      await _replaceGalleryImages(event['id'], finalGalleryImageIds);
 
       // Now handle tickets based on event type (paid/free)
-      await _manageTickets(event['id'], dateStr);
+      await _manageTickets(event['id'], startDateStr);
 
       if (!mounted) return;
 

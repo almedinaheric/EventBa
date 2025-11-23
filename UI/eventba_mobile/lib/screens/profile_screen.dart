@@ -1,12 +1,15 @@
-import 'dart:io';
+import 'dart:io' show File, Platform;
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:eventba_mobile/providers/user_provider.dart';
+import 'package:eventba_mobile/providers/event_image_provider.dart';
 import 'package:eventba_mobile/models/user/user.dart';
 import 'package:eventba_mobile/utils/authorization.dart';
+import 'package:eventba_mobile/utils/image_helpers.dart';
 import 'package:eventba_mobile/screens/profile_details_screen.dart';
 import 'package:eventba_mobile/screens/my_events_screen.dart';
 import 'package:eventba_mobile/screens/followers_screen.dart';
@@ -79,13 +82,130 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _pickImage() async {
-    final pickedFile = await ImagePicker().pickImage(
-      source: ImageSource.gallery,
-    );
+    if (!mounted) return;
 
-    if (pickedFile != null) {
+    try {
+      // Use a small delay to ensure the UI is ready, especially on iOS
+      await Future.delayed(const Duration(milliseconds: 200));
+
+      if (!mounted) return;
+
+      // iOS-specific optimizations
+      final bool isIOS = !kIsWeb && Platform.isIOS;
+
+      final pickedFile = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        imageQuality: isIOS
+            ? 60
+            : 70, // Lower quality for iOS to prevent crashes
+        maxWidth: isIOS ? 1000 : 1200, // Smaller size for iOS
+        maxHeight: isIOS ? 1000 : 1200,
+        requestFullMetadata:
+            false, // Disable metadata to improve performance on iOS
+      );
+
+      if (pickedFile != null && mounted) {
+        setState(() {
+          _image = File(pickedFile.path);
+        });
+
+        // Upload the image
+        await _uploadProfileImage(_image!);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            behavior: SnackBarBehavior.floating,
+            content: Text('Failed to pick image: $e'),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _uploadProfileImage(File imageFile) async {
+    try {
+      final imageProvider = Provider.of<EventImageProvider>(
+        context,
+        listen: false,
+      );
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+
+      // Convert image to base64
+      final base64Image = await ImageHelpers.fileToBase64(imageFile);
+      final contentType = ImageHelpers.getContentType(imageFile.path);
+
+      // Upload image
+      final imageRequest = {
+        'Data': base64Image,
+        'ContentType': contentType,
+        'ImageType': 'ProfileImage',
+      };
+
+      final imageResponse = await imageProvider.insert(imageRequest);
+
+      // Check if imageResponse and id are valid
+      if (imageResponse.id == null || imageResponse.id!.isEmpty) {
+        print("Image response: ${imageResponse.toString()}");
+        print("Image response ID: ${imageResponse.id}");
+        throw Exception(
+          'Image upload failed: No image ID returned from server',
+        );
+      }
+
+      final imageId = imageResponse.id!;
+      print("Image uploaded successfully with ID: $imageId");
+
+      // Update user profile with new image ID
+      final updateUrl = "${userProvider.baseUrl}User/${_user!.id}";
+      final updateUri = Uri.parse(updateUrl);
+      final headers = userProvider.createHeaders();
+
+      final updateRequest = {
+        'id': _user!.id,
+        'firstName': _user!.firstName,
+        'lastName': _user!.lastName,
+        'email': _user!.email,
+        'phoneNumber': _user!.phoneNumber ?? '',
+        'bio': _user!.bio ?? '',
+        'profileImageId': imageId,
+      };
+
+      final updateResponse = await http.put(
+        updateUri,
+        headers: headers,
+        body: jsonEncode(updateRequest),
+      );
+
+      if (updateResponse.statusCode >= 200 && updateResponse.statusCode < 300) {
+        // Reload user profile to get updated image
+        await _loadUserProfile();
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              behavior: SnackBarBehavior.floating,
+              content: Text('Profile image updated successfully!'),
+            ),
+          );
+        }
+      } else {
+        throw Exception('Failed to update profile image');
+      }
+    } catch (e) {
+      print("Error uploading profile image: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            behavior: SnackBarBehavior.floating,
+            content: Text('Failed to upload profile image: $e'),
+          ),
+        );
+      }
+      // Reset image on error
       setState(() {
-        _image = File(pickedFile.path);
+        _image = null;
       });
     }
   }
@@ -176,16 +296,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
             // Avatar and name
             GestureDetector(
               onTap: _pickImage,
-              child: CircleAvatar(
-                radius: 60,
-                backgroundImage: _image != null
-                    ? FileImage(_image!)
-                    : (_user?.profileImage != null
-                          ? MemoryImage(base64Decode(_user!.profileImage!.data))
-                          : const AssetImage(
-                                  'assets/images/profile_placeholder.png',
-                                )
-                                as ImageProvider),
+              child: Stack(
+                children: [
+                  CircleAvatar(
+                    radius: 60,
+                    backgroundColor: Colors.grey[300],
+                    child: _image != null
+                        ? ClipOval(
+                            child: Image.file(
+                              _image!,
+                              width: 120,
+                              height: 120,
+                              fit: BoxFit.cover,
+                            ),
+                          )
+                        : ClipOval(
+                            child: ImageHelpers.getProfileImage(
+                              _user?.profileImage?.data,
+                              height: 120,
+                              width: 120,
+                            ),
+                          ),
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF4776E6),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.camera_alt,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 16),

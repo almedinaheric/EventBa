@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -107,14 +106,8 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
                 }
 
                 final event = _events[index];
-                Uint8List? imageBytes;
-                if (event.coverImage?.data != null) {
-                  try {
-                    imageBytes = base64Decode(event.coverImage!.data);
-                  } catch (_) {}
-                }
                 return EventCard(
-                  imageData: imageBytes,
+                  imageData: event.coverImage?.data,
                   eventName: event.title,
                   location: event.location ?? 'Location TBA',
                   date: event.startDate,

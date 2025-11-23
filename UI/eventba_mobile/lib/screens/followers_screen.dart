@@ -47,7 +47,9 @@ class _FollowersScreenState extends State<FollowersScreen> {
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          behavior: SnackBarBehavior.floating, content: Text("Failed to update follow status")),
+          behavior: SnackBarBehavior.floating,
+          content: Text("Failed to update follow status"),
+        ),
       );
     }
   }
@@ -62,33 +64,28 @@ class _FollowersScreenState extends State<FollowersScreen> {
       onLeftButtonPressed: () => Navigator.pop(context),
       child: followers.isEmpty
           ? Center(
-        child: Text(
-          "👀 No followers yet.",
-          style: TextStyle(
-            fontSize: 18,
-            color: Colors.grey[600],
-          ),
-        ),
-      )
+              child: Text(
+                "👀 No followers yet.",
+                style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+              ),
+            )
           : ListView.builder(
-        padding: const EdgeInsets.all(16),
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: followers.length,
-        itemBuilder: (context, index) {
-          final follower = followers[index];
-          final isFollowing = _isFollowingMap[follower.id] ?? false;
-          return FollowerCard(
-            name: follower.fullName,
-            avatar: follower.profileImage != null
-                ? follower.profileImage!.data
-                : 'assets/images/profile_placeholder.png',
-            organizerId: follower.id.toString(),
-            isFollowing: isFollowing,
-            onFollowToggle: () => _toggleFollow(follower!.id),
-          );
-        },
-      ),
+              padding: const EdgeInsets.all(16),
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: followers.length,
+              itemBuilder: (context, index) {
+                final follower = followers[index];
+                final isFollowing = _isFollowingMap[follower.id] ?? false;
+                return FollowerCard(
+                  name: follower.fullName,
+                  avatar: follower.profileImage?.data ?? '',
+                  organizerId: follower.id.toString(),
+                  isFollowing: isFollowing,
+                  onFollowToggle: () => _toggleFollow(follower.id),
+                );
+              },
+            ),
     );
   }
 }

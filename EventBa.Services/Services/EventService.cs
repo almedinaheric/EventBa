@@ -33,6 +33,61 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
         entity.Organizer = await _userService.GetUserEntityAsync();
     }
 
+    public override async Task<EventResponseDto> Update(Guid id, EventUpdateRequestDto update)
+    {
+        var set = _context.Set<Event>();
+        var entity = await set.FindAsync(id);
+        
+        if (entity == null)
+            throw new UserException("Event not found");
+        
+        // Store old cover image ID before mapping (since mapper will overwrite it)
+        var oldCoverImageId = entity.CoverImageId;
+        
+        Console.WriteLine($"Updating event {id}: Old cover image ID = {oldCoverImageId}, New cover image ID = {update.CoverImageId}");
+        
+        // Map the update to the entity
+        _mapper.Map(update, entity);
+        
+        // Handle cover image replacement - only delete old cover image if it's being replaced with a different one
+        if (update.CoverImageId.HasValue && oldCoverImageId.HasValue && 
+            update.CoverImageId.Value != oldCoverImageId.Value)
+        {
+            // Old cover image is being replaced with a new one, delete the old one
+            Console.WriteLine($"Replacing cover image: deleting old image {oldCoverImageId.Value}");
+            var oldCoverImage = await _context.Images.FindAsync(oldCoverImageId.Value);
+            if (oldCoverImage != null)
+            {
+                _context.Images.Remove(oldCoverImage);
+            }
+        }
+        else if (update.CoverImageId.HasValue && update.CoverImageId.Value == oldCoverImageId)
+        {
+            // Same cover image ID - no change needed, just keep it
+            Console.WriteLine($"Cover image unchanged: keeping image {update.CoverImageId.Value}");
+        }
+        else if (!update.CoverImageId.HasValue && oldCoverImageId.HasValue)
+        {
+            // No cover image ID in update but one exists - preserve the existing one
+            Console.WriteLine($"Preserving existing cover image: {oldCoverImageId.Value}");
+            entity.CoverImageId = oldCoverImageId;
+        }
+        // If update.CoverImageId is null or same as old, we keep the existing cover image (don't delete it)
+        
+        await _context.SaveChangesAsync();
+        
+        // Reload the entity with all includes to ensure related entities are populated
+        var entityWithIncludes = await AddInclude(_context.Set<Event>().Where(e => e.Id == id))
+            .FirstOrDefaultAsync();
+        
+        if (entityWithIncludes != null)
+        {
+            return _mapper.Map<EventResponseDto>(entityWithIncludes);
+        }
+        
+        return _mapper.Map<EventResponseDto>(entity);
+    }
+
     public override async Task<EventResponseDto> Insert(EventInsertRequestDto insert)
     {
         // Create the event first
@@ -141,7 +196,9 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
         var currentUser = await _userService.GetUserEntityAsync();
         var events = await _context.Events
             .Include(x => x.Category)
+            .Include(x => x.CoverImage)
             .Include(x => x.EventGalleryImages)
+            .ThenInclude(egi => egi.Image)
             .Where(x => x.OrganizerId == currentUser.Id)
             .ToListAsync();
 
@@ -150,9 +207,9 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
     
     public async Task<List<EventResponseDto>> GetEventsByOrganizer(Guid organizerId)
     {
-        // For list view, don't load images - they're too heavy
         var events = await _context.Events
             .Include(x => x.Category)
+            .Include(x => x.CoverImage)
             .Include(x => x.Tickets)
             .Where(x => x.OrganizerId == organizerId)
             .ToListAsync();
@@ -167,6 +224,7 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
             .Include(x => x.Category)
             .Include(x => x.CoverImage)
             .Include(x => x.EventGalleryImages)
+                .ThenInclude(egi => egi.Image)
             .Include(x => x.EventReviews)
             .Include(x => x.Tickets)
             .FirstOrDefaultAsync(x => x.Id == id);
@@ -184,10 +242,10 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
     
     public async Task<List<EventResponseDto>> GetPublicEvents()
     {
-        // For list view, don't load images - they're too heavy
         var publicEvents = await _context.Events
             .Where(e => e.Type == EventType.Public && e.IsPublished)
             .Include(e => e.Category)
+            .Include(e => e.CoverImage)
             .Include(e => e.Tickets)
             .ToListAsync();
 
@@ -196,10 +254,10 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
 
     public async Task<List<EventResponseDto>> GetPrivateEvents()
     {
-        // For list view, don't load images - they're too heavy
         var privateEvents = await _context.Events
             .Where(e => e.Type == EventType.Private && e.IsPublished)
             .Include(e => e.Category)
+            .Include(e => e.CoverImage)
             .Include(e => e.Tickets)
             .ToListAsync();
 
@@ -351,5 +409,81 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
 
         await _context.SaveChangesAsync();
         Console.WriteLine($"Gallery images saved successfully for event {eventId}");
+    }
+
+    public async Task ReplaceGalleryImages(Guid eventId, List<Guid> imageIds)
+    {
+        Console.WriteLine($"ReplaceGalleryImages called for event {eventId} with {imageIds.Count} images");
+        
+        var eventEntity = await _context.Events
+            .Include(e => e.EventGalleryImages)
+            .FirstOrDefaultAsync(e => e.Id == eventId);
+            
+        if (eventEntity == null)
+        {
+            throw new UserException("Event not found");
+        }
+
+        // Get existing gallery images
+        var existingGalleryImages = eventEntity.EventGalleryImages.ToList();
+        
+        // Find images that are being removed (not in the new list)
+        var imagesToKeep = imageIds.ToHashSet();
+        var imagesToRemove = existingGalleryImages
+            .Where(egi => !imagesToKeep.Contains(egi.ImageId))
+            .ToList();
+        
+        // Delete only the gallery images and Image records that are being removed
+        foreach (var galleryImage in imagesToRemove)
+        {
+            var image = await _context.Images.FindAsync(galleryImage.ImageId);
+            if (image != null)
+            {
+                _context.Images.Remove(image);
+            }
+            _context.EventGalleryImages.Remove(galleryImage);
+        }
+
+        // Remove existing links for images that are being kept (we'll re-add them with correct order)
+        var imagesToReAdd = existingGalleryImages
+            .Where(egi => imagesToKeep.Contains(egi.ImageId))
+            .ToList();
+        foreach (var galleryImage in imagesToReAdd)
+        {
+            _context.EventGalleryImages.Remove(galleryImage);
+        }
+
+        // Add all gallery images (both new and existing) with correct order
+        int order = 0;
+        foreach (var imageId in imageIds)
+        {
+            var image = await _context.Images.FindAsync(imageId);
+            if (image != null)
+            {
+                image.ImageType = ImageType.EventGallery;
+                image.EventId = eventId;
+                
+                var now = DateTime.Now;
+                var galleryImage = new EventGalleryImage
+                {
+                    EventId = eventId,
+                    ImageId = imageId,
+                    Order = order++,
+                    CreatedAt = now,
+                    UpdatedAt = now
+                };
+                _context.EventGalleryImages.Add(galleryImage);
+                Console.WriteLine($"Added gallery image {imageId} at order {order - 1}");
+            }
+            else
+            {
+                Console.WriteLine($"Warning: Image with ID {imageId} not found in database, skipping");
+            }
+        }
+        
+        Console.WriteLine($"Total gallery images after update: {order}");
+
+        await _context.SaveChangesAsync();
+        Console.WriteLine($"Gallery images replaced successfully for event {eventId}");
     }
 }

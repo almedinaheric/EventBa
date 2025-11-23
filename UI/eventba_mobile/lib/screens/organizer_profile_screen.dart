@@ -1,5 +1,6 @@
 import 'package:eventba_mobile/screens/past_event_details_screen.dart';
 import 'package:eventba_mobile/widgets/master_screen.dart';
+import 'package:eventba_mobile/utils/image_helpers.dart';
 import 'package:flutter/material.dart';
 import 'package:eventba_mobile/widgets/event_card.dart';
 
@@ -83,15 +84,24 @@ class _OrganizerProfileScreenState extends State<OrganizerProfileScreen> {
           // Avatar
           CircleAvatar(
             radius: 50,
-            backgroundImage: AssetImage(widget.avatarUrl),
+            backgroundColor: Colors.grey[300],
+            child: widget.avatarUrl.startsWith('assets/')
+                ? CircleAvatar(
+                    radius: 50,
+                    backgroundImage: AssetImage(widget.avatarUrl),
+                  )
+                : ClipOval(
+                    child: ImageHelpers.getProfileImage(
+                      widget.avatarUrl,
+                      height: 100,
+                      width: 100,
+                    ),
+                  ),
           ),
           // Name
           Text(
             widget.name,
-            style: const TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
 

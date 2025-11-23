@@ -124,4 +124,12 @@ public class EventController : BaseCRUDController<EventResponseDto, EventSearchO
         await _eventService.AddGalleryImages(eventId, imageIds);
         return Ok(new { message = "Gallery images added successfully" });
     }
+
+    [HttpPut("{eventId}/gallery-images")]
+    [Authorize]
+    public async Task<IActionResult> ReplaceGalleryImages(Guid eventId, [FromBody] List<Guid> imageIds)
+    {
+        await _eventService.ReplaceGalleryImages(eventId, imageIds);
+        return Ok(new { message = "Gallery images replaced successfully" });
+    }
 }
