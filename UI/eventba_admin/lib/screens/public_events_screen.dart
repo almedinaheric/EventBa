@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:eventba_admin/widgets/master_screen.dart';
 import 'package:eventba_admin/providers/event_provider.dart';
@@ -19,6 +20,10 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
   List<Event> _allEvents = [];
   bool _isLoading = true;
   String? _errorMessage;
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+  String _searchTerm = '';
+  Timer? _searchTimer;
 
   @override
   void initState() {
@@ -26,7 +31,17 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
     _loadEvents();
   }
 
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _searchFocusNode.dispose();
+    _searchTimer?.cancel();
+    super.dispose();
+  }
+
   Future<void> _loadEvents() async {
+    if (!mounted) return;
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -34,9 +49,13 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
 
     try {
       final eventProvider = Provider.of<EventProvider>(context, listen: false);
-      final events = await eventProvider.getPublicEvents();
+      final events = await eventProvider.getPublicEvents(
+        searchTerm: _searchTerm.isNotEmpty ? _searchTerm : null,
+      );
 
-      // Filter only published events
+      if (!mounted) return;
+
+      // Filter only published events (backend should already filter, but keep for safety)
       final publishedEvents = events
           .where((event) => event.isPublished)
           .toList();
@@ -46,12 +65,26 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _errorMessage = "Failed to load events: $e";
         _isLoading = false;
       });
       print("Error loading events: $e");
     }
+  }
+
+  void _onSearchChanged(String query) {
+    _searchTimer?.cancel();
+
+    setState(() {
+      _searchTerm = query;
+    });
+
+    // Debounce search to avoid losing focus
+    _searchTimer = Timer(const Duration(milliseconds: 500), () {
+      _loadEvents();
+    });
   }
 
   @override
@@ -81,6 +114,35 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
             )
           : Column(
               children: [
+                // Search Bar
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 16,
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    focusNode: _searchFocusNode,
+                    onChanged: _onSearchChanged,
+                    decoration: InputDecoration(
+                      hintText: 'Search events by name or description...',
+                      prefixIcon: const Icon(Icons.search),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      suffixIcon: _searchTerm.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                _searchController.clear();
+                                _onSearchChanged('');
+                              },
+                            )
+                          : null,
+                    ),
+                  ),
+                ),
                 // Custom toggle buttons (Upcoming / Past)
                 Container(
                   margin: const EdgeInsets.symmetric(

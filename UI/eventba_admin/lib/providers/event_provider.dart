@@ -49,42 +49,26 @@ class EventProvider extends BaseProvider<Event> {
     }
   }
 
-  Future<List<Event>> getPublicEvents() async {
-    var url = "${baseUrl}Event/public";
+  Future<List<Event>> getPublicEvents({String? searchTerm}) async {
+    // Use base Get method with filters for search support
+    final filter = {
+      'type': 'Public',
+      if (searchTerm != null && searchTerm.isNotEmpty) 'searchTerm': searchTerm,
+    };
 
-    var uri = Uri.parse(url);
-    var headers = createHeaders();
-    var response = await http.get(uri, headers: headers);
-
-    if (isValidResponse(response)) {
-      var data = jsonDecode(response.body);
-      List<Event> events = [];
-      for (var item in data) {
-        events.add(fromJson(item));
-      }
-      return events;
-    } else {
-      throw Exception("Unknown error in a GET request");
-    }
+    final result = await get(filter: filter);
+    return result.result;
   }
 
-  Future<List<Event>> getPrivateEvents() async {
-    var url = "${baseUrl}Event/private";
+  Future<List<Event>> getPrivateEvents({String? searchTerm}) async {
+    // Use base Get method with filters for search support
+    final filter = {
+      'type': 'Private',
+      if (searchTerm != null && searchTerm.isNotEmpty) 'searchTerm': searchTerm,
+    };
 
-    var uri = Uri.parse(url);
-    var headers = createHeaders();
-    var response = await http.get(uri, headers: headers);
-
-    if (isValidResponse(response)) {
-      var data = jsonDecode(response.body);
-      List<Event> events = [];
-      for (var item in data) {
-        events.add(fromJson(item));
-      }
-      return events;
-    } else {
-      throw Exception("Unknown error in a GET request");
-    }
+    final result = await get(filter: filter);
+    return result.result;
   }
 
   Future<Event> getEventById(String eventId) async {

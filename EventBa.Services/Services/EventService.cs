@@ -134,6 +134,13 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
 
     public override IQueryable<Event> AddFilter(IQueryable<Event> query, EventSearchObject? search = null)
     {
+        // Filter by type if specified
+        if (search?.Type.HasValue == true)
+        {
+            query = query.Where(x => x.Type == search.Type.Value);
+        }
+        
+        // Filter by search term if specified
         if (!string.IsNullOrWhiteSpace(search?.SearchTerm))
         {
             var searchTerm = search.SearchTerm.ToLower();
@@ -142,6 +149,9 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
                 (x.Description != null && x.Description.ToLower().Contains(searchTerm))
             );
         }
+        
+        // Only return published events (matching behavior of GetPublicEvents and GetPrivateEvents)
+        query = query.Where(x => x.IsPublished);
 
         return query;
     }
