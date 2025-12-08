@@ -5,7 +5,7 @@ import 'package:eventba_mobile/widgets/master_screen.dart';
 import 'package:eventba_mobile/widgets/notification_card.dart';
 import 'package:eventba_mobile/providers/notification_provider.dart';
 import 'package:eventba_mobile/models/notification/notification.dart'
-as notification_model;
+    as notification_model;
 import 'package:eventba_mobile/screens/notification_details_screen.dart';
 
 class NotificationsScreen extends StatefulWidget {
@@ -60,7 +60,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             id: notification.id,
             createdAt: notification.createdAt,
             updatedAt: DateTime.now(),
-            userId: notification.userId,
             eventId: notification.eventId,
             isSystemNotification: notification.isSystemNotification,
             title: notification.title,
@@ -76,12 +75,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
-  Future<void> _deleteNotification(notification_model.Notification notification) async {
+  Future<void> _deleteNotification(
+    notification_model.Notification notification,
+  ) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Notification'),
-        content: const Text('Are you sure you want to delete this notification?'),
+        content: const Text(
+          'Are you sure you want to delete this notification?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -112,12 +115,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
-  Future<void> _navigateToNotificationDetails(notification_model.Notification notification) async {
+  Future<void> _navigateToNotificationDetails(
+    notification_model.Notification notification,
+  ) async {
     _markAsRead(notification);
     final bool? didChange = await Navigator.push<bool>(
       context,
       PageRouteBuilder(
-        pageBuilder: (_, __, ___) => NotificationDetailsScreen(notification: notification),
+        pageBuilder: (_, __, ___) =>
+            NotificationDetailsScreen(notification: notification),
         transitionDuration: Duration.zero,
         reverseTransitionDuration: Duration.zero,
       ),
@@ -155,55 +161,51 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ? const Center(child: CircularProgressIndicator())
           : _notifications.isNotEmpty
           ? RefreshIndicator(
-        onRefresh: _loadNotifications,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            if (unreadCount > 0)
-              Container(
-                padding: const EdgeInsets.all(12),
-                margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.blue.withOpacity(0.3)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.info_outline, color: Colors.blue),
-                    const SizedBox(width: 8),
-                    Text(
-                      'You have $unreadCount unread notification${unreadCount > 1 ? 's' : ''}',
-                      style: const TextStyle(
-                        color: Colors.blue,
-                        fontWeight: FontWeight.w500,
+              onRefresh: _loadNotifications,
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  if (unreadCount > 0)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.info_outline, color: Colors.blue),
+                          const SizedBox(width: 8),
+                          Text(
+                            'You have $unreadCount unread notification${unreadCount > 1 ? 's' : ''}',
+                            style: const TextStyle(
+                              color: Colors.blue,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
+                  ..._buildNotificationsCardsList(_notifications),
+                  const SizedBox(height: 60),
+                ],
               ),
-            ..._buildNotificationsCardsList(_notifications),
-            const SizedBox(height: 60),
-          ],
-        ),
-      )
+            )
           : const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.notifications_none,
-              size: 64,
-              color: Colors.grey,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.notifications_none, size: 64, color: Colors.grey),
+                  SizedBox(height: 16),
+                  Text(
+                    'No notifications yet',
+                    style: TextStyle(fontSize: 18, color: Colors.grey),
+                  ),
+                ],
+              ),
             ),
-            SizedBox(height: 16),
-            Text(
-              'No notifications yet',
-              style: TextStyle(fontSize: 18, color: Colors.grey),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -220,7 +222,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             id: notification.id,
             createdAt: notification.createdAt,
             updatedAt: DateTime.now(),
-            userId: notification.userId,
             eventId: notification.eventId,
             isSystemNotification: notification.isSystemNotification,
             title: notification.title,
@@ -237,9 +238,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   List<Widget> _buildNotificationsCardsList(
-      List<notification_model.Notification> notifications,
-      ) {
-    final sortedNotifications = List<notification_model.Notification>.from(notifications);
+    List<notification_model.Notification> notifications,
+  ) {
+    final sortedNotifications = List<notification_model.Notification>.from(
+      notifications,
+    );
     sortedNotifications.sort((a, b) {
       if (a.isRead != b.isRead) {
         return a.isRead ? 1 : -1;
@@ -253,15 +256,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return sortedNotifications
         .map(
           (notification) => Padding(
-        padding: const EdgeInsets.only(bottom: 12),
-        child: NotificationCard(
-          notification: notification,
-          time: _formatTime(notification.createdAt),
-          onTap: () => _navigateToNotificationDetails(notification),
-          onDelete: () => _deleteNotification(notification),
-        ),
-      ),
-    )
+            padding: const EdgeInsets.only(bottom: 12),
+            child: NotificationCard(
+              notification: notification,
+              time: _formatTime(notification.createdAt),
+              onTap: () => _navigateToNotificationDetails(notification),
+              onDelete: () => _deleteNotification(notification),
+            ),
+          ),
+        )
         .toList();
   }
 

@@ -1,5 +1,6 @@
 using AutoMapper;
 using EventBa.Model.Enums;
+using EventBa.Model.Helpers;
 using EventBa.Model.Requests;
 using EventBa.Model.Responses;
 using EventBa.Model.SearchObjects;
@@ -24,54 +25,116 @@ public class NotificationService : BaseCRUDService<NotificationResponseDto, Noti
         _userService = userService;
     }
 
-    public override async Task BeforeInsert(Notification entity, NotificationInsertRequestDto insert)
+    public override async Task<NotificationResponseDto> Insert(NotificationInsertRequestDto insert)
     {
-        // For system notifications, UserId should be null
-        // For regular notifications, set the current user
-        if (!insert.IsSystemNotification)
+        // Create the notification first
+        var result = await base.Insert(insert);
+        
+        // Get the created notification entity
+        var notification = await _context.Notifications.FindAsync(Guid.Parse(result.Id.ToString()));
+        if (notification == null)
         {
-            entity.User = await _userService.GetUserEntityAsync();
+            throw new UserException("Failed to create notification");
+        }
+
+        // Create UserNotification entries for all users if system notification, or specific user(s)
+        if (insert.IsSystemNotification)
+        {
+            // For system notifications, create entries for all users
+            var allUsers = await _context.Users.Select(u => u.Id).ToListAsync();
+            foreach (var userId in allUsers)
+            {
+                var userNotification = new UserNotification
+                {
+                    NotificationId = notification.Id,
+                    UserId = userId,
+                    Status = NotificationStatus.Sent
+                };
+                _context.UserNotifications.Add(userNotification);
+            }
         }
         else
         {
-            entity.UserId = null;
+            // For regular notifications, create entry for specific user(s)
+            var targetUserIds = new List<Guid>();
+            
+            // If UserId is specified in the request, use it
+            if (insert.UserId.HasValue)
+            {
+                targetUserIds.Add(insert.UserId.Value);
+            }
+            else
+            {
+                // Otherwise, use current user
+                var currentUser = await _userService.GetUserEntityAsync();
+                targetUserIds.Add(currentUser.Id);
+            }
+
+            foreach (var userId in targetUserIds)
+            {
+                var userNotification = new UserNotification
+                {
+                    NotificationId = notification.Id,
+                    UserId = userId,
+                    Status = NotificationStatus.Sent
+                };
+                _context.UserNotifications.Add(userNotification);
+            }
         }
-        
-        // Set status to Sent by default
-        entity.Status = NotificationStatus.Sent;
+
+        await _context.SaveChangesAsync();
+        return result;
     }
 
     public override IQueryable<Notification> AddInclude(IQueryable<Notification> query, NotificationSearchObject? search = null)
     {
-        query = query.Include(x => x.User);
+        query = query.Include(x => x.UserNotifications).ThenInclude(x => x.User);
         return query;
     }
 
     public async Task<List<NotificationResponseDto>> GetMyNotifications()
     {
         var currentUser = await _userService.GetUserEntityAsync();
-        var notifications = await _context.Notifications
-            .Where(x => x.UserId == currentUser.Id)
-            .OrderByDescending(x => x.CreatedAt)
+        var userNotifications = await _context.UserNotifications
+            .Include(un => un.Notification)
+                .ThenInclude(n => n.Event)
+            .Where(un => un.UserId == currentUser.Id)
+            .OrderByDescending(un => un.Notification.CreatedAt)
             .ToListAsync();
 
-        return _mapper.Map<List<NotificationResponseDto>>(notifications);
+        var responseDtos = userNotifications.Select(un => new NotificationResponseDto
+        {
+            Id = un.Notification.Id,
+            CreatedAt = un.Notification.CreatedAt,
+            UpdatedAt = un.Notification.UpdatedAt,
+            EventId = un.Notification.EventId,
+            IsSystemNotification = un.Notification.IsSystemNotification,
+            Title = un.Notification.Title,
+            Content = un.Notification.Content,
+            IsImportant = un.Notification.IsImportant,
+            Status = un.Status
+        }).ToList();
+
+        return responseDtos;
     }
     
     public async Task<int> GetUnreadNotificationCount()
     {
         var currentUser = await _userService.GetUserEntityAsync();
-        return await _context.Notifications
-            .Where(n => n.UserId == currentUser.Id && n.Status != NotificationStatus.Read)
+        return await _context.UserNotifications
+            .Where(un => un.UserId == currentUser.Id && un.Status != NotificationStatus.Read)
             .CountAsync();
     }
 
     public async Task MarkAsRead(Guid notificationId)
     {
-        var notification = await _context.Notifications.FindAsync(notificationId);
-        if (notification != null)
+        var currentUser = await _userService.GetUserEntityAsync();
+        var userNotification = await _context.UserNotifications
+            .FirstOrDefaultAsync(un => un.NotificationId == notificationId && un.UserId == currentUser.Id);
+        
+        if (userNotification != null)
         {
-            notification.Status = NotificationStatus.Read;
+            userNotification.Status = NotificationStatus.Read;
             await _context.SaveChangesAsync();
         }
     }
@@ -79,13 +142,13 @@ public class NotificationService : BaseCRUDService<NotificationResponseDto, Noti
     public async Task MarkAllAsRead()
     {
         var currentUser = await _userService.GetUserEntityAsync();
-        var notifications = await _context.Notifications
-            .Where(x => x.UserId == currentUser.Id && x.Status != NotificationStatus.Read)
+        var userNotifications = await _context.UserNotifications
+            .Where(un => un.UserId == currentUser.Id && un.Status != NotificationStatus.Read)
             .ToListAsync();
 
-        foreach (var notification in notifications)
+        foreach (var userNotification in userNotifications)
         {
-            notification.Status = NotificationStatus.Read;
+            userNotification.Status = NotificationStatus.Read;
         }
 
         await _context.SaveChangesAsync();
@@ -94,10 +157,55 @@ public class NotificationService : BaseCRUDService<NotificationResponseDto, Noti
     public async Task<List<NotificationResponseDto>> GetSystemNotifications()
     {
         var notifications = await _context.Notifications
-            .Where(x => x.IsSystemNotification == true && x.UserId == null)
+            .Where(x => x.IsSystemNotification == true)
             .OrderByDescending(x => x.CreatedAt)
             .ToListAsync();
 
-        return _mapper.Map<List<NotificationResponseDto>>(notifications);
+        // Map notifications with a default status (for admin view, status is not relevant)
+        return notifications.Select(n => new NotificationResponseDto
+        {
+            Id = n.Id,
+            CreatedAt = n.CreatedAt,
+            UpdatedAt = n.UpdatedAt,
+            EventId = n.EventId,
+            IsSystemNotification = n.IsSystemNotification,
+            Title = n.Title,
+            Content = n.Content,
+            IsImportant = n.IsImportant,
+            Status = NotificationStatus.Sent // Default status for admin view
+        }).ToList();
+    }
+
+    public override async Task<NotificationResponseDto> Delete(Guid id)
+    {
+        var currentUser = await _userService.GetUserEntityAsync();
+        
+        // For user notifications, only delete the UserNotification entry (not the notification itself)
+        var userNotification = await _context.UserNotifications
+            .Include(un => un.Notification)
+            .FirstOrDefaultAsync(un => un.NotificationId == id && un.UserId == currentUser.Id);
+        
+        if (userNotification != null)
+        {
+            var notification = userNotification.Notification;
+            _context.UserNotifications.Remove(userNotification);
+            await _context.SaveChangesAsync();
+            
+            // Return the notification with the user's status (which was just deleted)
+            return new NotificationResponseDto
+            {
+                Id = notification.Id,
+                CreatedAt = notification.CreatedAt,
+                UpdatedAt = notification.UpdatedAt,
+                EventId = notification.EventId,
+                IsSystemNotification = notification.IsSystemNotification,
+                Title = notification.Title,
+                Content = notification.Content,
+                IsImportant = notification.IsImportant,
+                Status = userNotification.Status
+            };
+        }
+        
+        throw new UserException("Notification not found");
     }
 }

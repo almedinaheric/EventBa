@@ -34,15 +34,24 @@ public class UserQuestionService : BaseCRUDService<UserQuestionResponseDto, User
         // Create notification for the receiver (event organizer)
         var notification = new Notification
         {
-            UserId = entity.ReceiverId,
             Title = "New Question Received",
             Content = $"{entity.User.FullName} asked: {entity.Question}",
-            Status = NotificationStatus.Sent,
             IsImportant = false,
             IsSystemNotification = false
         };
 
         _context.Notifications.Add(notification);
+        await _context.SaveChangesAsync();
+
+        // Create UserNotification entry for the receiver
+        var userNotification = new UserNotification
+        {
+            NotificationId = notification.Id,
+            UserId = entity.ReceiverId,
+            Status = NotificationStatus.Sent
+        };
+
+        _context.UserNotifications.Add(userNotification);
         await _context.SaveChangesAsync();
     }
 

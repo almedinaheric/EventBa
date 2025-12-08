@@ -858,6 +858,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
         'isFeatured': true,
         'type': _isPaid ? 'Public' : 'Private',
         'isPublished': true,
+        'isPaid': _isPaid, // Set based on free/paid selection
         'categoryId': _selectedCategoryId,
         'coverImageId': coverImageId,
       };

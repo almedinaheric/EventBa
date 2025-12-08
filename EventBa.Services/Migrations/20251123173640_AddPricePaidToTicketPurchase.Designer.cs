@@ -3,6 +3,7 @@ using System;
 using EventBa.Services.Database.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EventBa.Services.Migrations
 {
     [DbContext(typeof(EventBaDbContext))]
-    partial class EventBaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251123173640_AddPricePaidToTicketPurchase")]
+    partial class AddPricePaidToTicketPurchase
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -121,12 +124,6 @@ namespace EventBa.Services.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false)
                         .HasColumnName("is_featured");
-
-                    b.Property<bool>("IsPaid")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("is_paid");
 
                     b.Property<bool>("IsPublished")
                         .ValueGeneratedOnAdd()
@@ -430,6 +427,13 @@ namespace EventBa.Services.Migrations
                         .HasDefaultValue(false)
                         .HasColumnName("is_system_notification");
 
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasColumnName("status")
+                        .HasDefaultValueSql("'Sent'::character varying");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -442,10 +446,16 @@ namespace EventBa.Services.Migrations
                         .HasColumnName("updated_at")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
                     b.HasKey("Id")
                         .HasName("notifications_pkey");
 
                     b.HasIndex("EventId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("notifications", (string)null);
                 });
@@ -819,31 +829,6 @@ namespace EventBa.Services.Migrations
                     b.ToTable("users", (string)null);
                 });
 
-            modelBuilder.Entity("EventBa.Services.Database.UserNotification", b =>
-                {
-                    b.Property<Guid>("NotificationId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("notification_id");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("user_id");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasColumnName("status")
-                        .HasDefaultValueSql("'Sent'::character varying");
-
-                    b.HasKey("NotificationId", "UserId")
-                        .HasName("user_notifications_pkey");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("user_notifications", (string)null);
-                });
-
             modelBuilder.Entity("EventBa.Services.Database.UserQuestion", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1074,7 +1059,15 @@ namespace EventBa.Services.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .HasConstraintName("notifications_event_id_fkey");
 
+                    b.HasOne("EventBa.Services.Database.User", "User")
+                        .WithMany("Notifications")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("notifications_user_id_fkey");
+
                     b.Navigation("Event");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("EventBa.Services.Database.Payment", b =>
@@ -1176,27 +1169,6 @@ namespace EventBa.Services.Migrations
                     b.Navigation("ProfileImage");
 
                     b.Navigation("Role");
-                });
-
-            modelBuilder.Entity("EventBa.Services.Database.UserNotification", b =>
-                {
-                    b.HasOne("EventBa.Services.Database.Notification", "Notification")
-                        .WithMany("UserNotifications")
-                        .HasForeignKey("NotificationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("user_notifications_notification_id_fkey");
-
-                    b.HasOne("EventBa.Services.Database.User", "User")
-                        .WithMany("UserNotifications")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("user_notifications_user_id_fkey");
-
-                    b.Navigation("Notification");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("EventBa.Services.Database.UserQuestion", b =>
@@ -1304,11 +1276,6 @@ namespace EventBa.Services.Migrations
                     b.Navigation("Users");
                 });
 
-            modelBuilder.Entity("EventBa.Services.Database.Notification", b =>
-                {
-                    b.Navigation("UserNotifications");
-                });
-
             modelBuilder.Entity("EventBa.Services.Database.Role", b =>
                 {
                     b.Navigation("Users");
@@ -1327,13 +1294,13 @@ namespace EventBa.Services.Migrations
 
                     b.Navigation("Images");
 
+                    b.Navigation("Notifications");
+
                     b.Navigation("Payments");
 
                     b.Navigation("RecommendedEvents");
 
                     b.Navigation("TicketPurchases");
-
-                    b.Navigation("UserNotifications");
 
                     b.Navigation("UserQuestionReceivers");
 

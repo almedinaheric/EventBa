@@ -18,7 +18,7 @@ public partial class User
     public virtual ICollection<EventReview> EventReviews { get; set; } = new List<EventReview>();
     public virtual ICollection<Event> Events { get; set; } = new List<Event>();
     public virtual ICollection<Image> Images { get; set; } = new List<Image>();
-    public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
+    public virtual ICollection<UserNotification> UserNotifications { get; set; } = new List<UserNotification>();
     public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
     public virtual Image? ProfileImage { get; set; }
     public virtual ICollection<RecommendedEvent> RecommendedEvents { get; set; } = new List<RecommendedEvent>();

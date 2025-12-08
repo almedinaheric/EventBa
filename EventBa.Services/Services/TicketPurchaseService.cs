@@ -61,6 +61,9 @@ public class TicketPurchaseService : BaseCRUDService<TicketPurchaseResponseDto, 
             entity.QrCodeImage = qrCode.GetGraphic(20);
         }
 
+        // Store the price paid at purchase time (for reporting even if ticket price changes later)
+        entity.PricePaid = ticket.Price;
+
         // Update ticket quantities
         ticket.QuantityAvailable--;
         ticket.QuantitySold++;

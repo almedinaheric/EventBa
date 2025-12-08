@@ -7,7 +7,6 @@ public class NotificationResponseDto
     public Guid Id { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
-    public Guid? UserId { get; set; }
     public Guid? EventId { get; set; }
     public bool IsSystemNotification { get; set; }
     public string Title { get; set; } = null!;

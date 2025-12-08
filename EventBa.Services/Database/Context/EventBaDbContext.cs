@@ -28,6 +28,8 @@ public partial class EventBaDbContext : DbContext
 
     public virtual DbSet<Notification> Notifications { get; set; }
 
+    public virtual DbSet<UserNotification> UserNotifications { get; set; }
+
     public virtual DbSet<Payment> Payments { get; set; }
 
     public virtual DbSet<RecommendedEvent> RecommendedEvents { get; set; }
@@ -106,6 +108,9 @@ public partial class EventBaDbContext : DbContext
             entity.Property(e => e.IsPublished)
                 .HasDefaultValue(false)
                 .HasColumnName("is_published");
+            entity.Property(e => e.IsPaid)
+                .HasDefaultValue(false)
+                .HasColumnName("is_paid");
             entity.Property(e => e.Location)
                 .HasMaxLength(255)
                 .HasColumnName("location");
@@ -315,13 +320,6 @@ public partial class EventBaDbContext : DbContext
             entity.Property(e => e.IsSystemNotification)
                 .HasDefaultValue(false)
                 .HasColumnName("is_system_notification");
-            entity.Property(e => e.Status)
-                .HasDefaultValueSql("'Sent'::character varying")
-                .HasConversion(
-                    v => v.ToString(),
-                    v => (NotificationStatus)Enum.Parse(typeof(NotificationStatus), v))
-                .HasColumnName("status")
-                .HasColumnType("text");
             entity.Property(e => e.Title)
                 .HasMaxLength(100)
                 .HasColumnName("title");
@@ -329,17 +327,38 @@ public partial class EventBaDbContext : DbContext
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("updated_at");
-            entity.Property(e => e.UserId).HasColumnName("user_id");
 
             entity.HasOne(d => d.Event).WithMany(p => p.Notifications)
                 .HasForeignKey(d => d.EventId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("notifications_event_id_fkey");
+        });
 
-            entity.HasOne(d => d.User).WithMany(p => p.Notifications)
+        modelBuilder.Entity<UserNotification>(entity =>
+        {
+            entity.HasKey(e => new { e.NotificationId, e.UserId }).HasName("user_notifications_pkey");
+
+            entity.ToTable("user_notifications");
+
+            entity.Property(e => e.NotificationId).HasColumnName("notification_id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.Status)
+                .HasDefaultValueSql("'Sent'::character varying")
+                .HasConversion(
+                    v => v.ToString(),
+                    v => (NotificationStatus)Enum.Parse(typeof(NotificationStatus), v))
+                .HasColumnName("status")
+                .HasColumnType("text");
+
+            entity.HasOne(d => d.Notification).WithMany(p => p.UserNotifications)
+                .HasForeignKey(d => d.NotificationId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("user_notifications_notification_id_fkey");
+
+            entity.HasOne(d => d.User).WithMany(p => p.UserNotifications)
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.Cascade)
-                .HasConstraintName("notifications_user_id_fkey");
+                .HasConstraintName("user_notifications_user_id_fkey");
         });
 
         modelBuilder.Entity<Payment>(entity =>
@@ -527,6 +546,9 @@ public partial class EventBaDbContext : DbContext
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("used_at");
             entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.PricePaid)
+                .HasPrecision(10, 2)
+                .HasColumnName("price_paid");
 
             entity.HasOne(d => d.Event).WithMany(p => p.TicketPurchases)
                 .HasForeignKey(d => d.EventId)

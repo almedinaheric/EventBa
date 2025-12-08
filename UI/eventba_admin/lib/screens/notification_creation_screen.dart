@@ -38,7 +38,6 @@ class _NotificationCreationScreenState
         'content': _contentController.text.trim(),
         'isImportant': _isImportant,
         'isSystemNotification': true, // Always true for admin notifications
-        'userId': null, // System notifications don't have a specific user
       };
 
       await provider.insert(request);

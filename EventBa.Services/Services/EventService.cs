@@ -347,7 +347,8 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
 
         var totalTickets = eventEntity.Tickets.Sum(x => x.Quantity);
         var soldTickets = eventEntity.Tickets.Sum(x => x.TicketPurchases.Count);
-        var revenue = eventEntity.Tickets.Sum(x => x.TicketPurchases.Sum(p => p.Ticket.Price));
+        // Use PricePaid from purchase to get accurate revenue even if ticket prices changed
+        var revenue = eventEntity.Tickets.Sum(x => x.TicketPurchases.Sum(p => p.PricePaid));
         
         // Calculate average rating
         var averageRating = eventEntity.EventReviews.Any() 

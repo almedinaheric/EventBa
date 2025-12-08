@@ -19,6 +19,7 @@ public class EventUpdateRequestDto
     public bool IsFeatured { get; set; }
     public EventType Type { get; set; }
     public bool IsPublished { get; set; }
+    public bool IsPaid { get; set; } // Whether the event is paid (has tickets) or free
     
     public Guid CategoryId { get; set; }
     public Guid? CoverImageId { get; set; }

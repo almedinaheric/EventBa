@@ -41,14 +41,9 @@ public class MappingProfile : Profile
                     .Select(eg => eg.Image)
                     .ToList()))
             .ForMember(dest => dest.Category, opt => opt.MapFrom(src => src.Category))
-            .ForMember(dest => dest.IsPaid, opt => opt.MapFrom(src => 
-                src.Tickets != null && src.Tickets.Any() && 
-                src.Tickets.Any(t => t.TicketType != TicketType.Free && t.Price > 0)))
+            // IsPaid is now a direct property on Event, no need to calculate
             .ReverseMap();
-        CreateMap<Event, BasicEventResponseDto>()
-            .ForMember(dest => dest.IsPaid, opt => opt.MapFrom(src => 
-                src.Tickets != null && src.Tickets.Any() && 
-                src.Tickets.Any(t => t.TicketType != TicketType.Free && t.Price > 0)));
+        CreateMap<Event, BasicEventResponseDto>();
         CreateMap<EventInsertRequestDto, Event>();
         CreateMap<EventUpdateRequestDto, Event>();
 

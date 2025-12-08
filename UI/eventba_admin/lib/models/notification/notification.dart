@@ -8,7 +8,6 @@ class Notification {
   final String id;
   final String createdAt;
   final String updatedAt;
-  final String? userId;
   final String? eventId;
   final bool isSystemNotification;
   final String title;
@@ -23,7 +22,6 @@ class Notification {
     required this.id,
     required this.createdAt,
     required this.updatedAt,
-    this.userId,
     this.eventId,
     required this.isSystemNotification,
     required this.title,

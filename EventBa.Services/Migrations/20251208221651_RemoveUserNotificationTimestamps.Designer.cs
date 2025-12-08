@@ -3,6 +3,7 @@ using System;
 using EventBa.Services.Database.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EventBa.Services.Migrations
 {
     [DbContext(typeof(EventBaDbContext))]
-    partial class EventBaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251208221651_RemoveUserNotificationTimestamps")]
+    partial class RemoveUserNotificationTimestamps
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

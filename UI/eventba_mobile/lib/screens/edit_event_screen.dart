@@ -697,6 +697,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
         'isFeatured': event['isFeatured'] ?? false,
         'type': event['type'] ?? 'Public',
         'isPublished': true,
+        'isPaid': _isPaid, // Set based on free/paid selection
         'categoryId': event['categoryId'],
         'coverImageId': coverImageId,
       };

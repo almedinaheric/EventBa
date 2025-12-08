@@ -854,6 +854,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
         'isFeatured': false,
         'type': 'Public', // Always public for admin-created events
         'isPublished': true,
+        'isPaid': _isPaid, // Set based on free/paid selection
         'categoryId': _selectedCategoryId,
         if (coverImageId != null) 'coverImageId': coverImageId,
       };
