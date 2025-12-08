@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:eventba_mobile/screens/category_events_screen.dart';
 import 'package:eventba_mobile/screens/event_details_screen.dart';
@@ -98,8 +97,15 @@ class _HomeScreenState extends State<HomeScreen> {
     CategoryProvider provider,
   ) async {
     try {
-      final result = await provider.get();
-      return result.result; // Based on your existing code structure
+      // Request all categories by setting a very large page size
+      // This ensures all categories are loaded from the database
+      final result = await provider.get(
+        filter: {
+          'page': 1,
+          'pageSize': 1000, // Large enough to get all categories
+        },
+      );
+      return result.result;
     } catch (e) {
       print('Error fetching categories: $e');
       return [];
