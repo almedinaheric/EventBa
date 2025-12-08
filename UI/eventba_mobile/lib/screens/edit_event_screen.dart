@@ -10,7 +10,9 @@ import 'package:provider/provider.dart';
 import 'package:eventba_mobile/providers/event_provider.dart';
 import 'package:eventba_mobile/providers/event_image_provider.dart';
 import 'package:eventba_mobile/providers/category_provider.dart';
+import 'package:eventba_mobile/providers/ticket_provider.dart';
 import 'package:eventba_mobile/models/category/category_model.dart';
+import 'package:eventba_mobile/models/ticket/ticket.dart';
 import 'package:eventba_mobile/utils/image_helpers.dart';
 import 'package:http/http.dart' as http;
 
@@ -50,9 +52,11 @@ class _EditEventScreenState extends State<EditEventScreen> {
       []; // Store existing gallery image IDs
 
   bool _isPaid = false;
+  bool _originalIsPaid = false; // Track original paid status
   bool _isLoading = false;
   List<CategoryModel> _categories = [];
   bool _categoriesLoading = true;
+  List<Ticket> _existingTickets = [];
 
   @override
   void initState() {
@@ -82,13 +86,15 @@ class _EditEventScreenState extends State<EditEventScreen> {
       text: event['ecoCount']?.toString() ?? '',
     );
     _isPaid = event['isPaid'] ?? false;
+    _originalIsPaid = _isPaid; // Store original paid status
 
     // Load existing images
     _loadExistingImages();
 
-    // Load categories
+    // Load categories and tickets
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadCategories();
+      _loadExistingTickets();
     });
   }
 
@@ -738,6 +744,9 @@ class _EditEventScreenState extends State<EditEventScreen> {
       // Replace all gallery images with the final list (combines new and existing)
       await _replaceGalleryImages(event['id'], finalGalleryImageIds);
 
+      // Handle tickets based on event type change (paid/free)
+      await _handleTicketTypeChange(event['id'], dateStr);
+
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -764,6 +773,302 @@ class _EditEventScreenState extends State<EditEventScreen> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  Future<void> _loadExistingTickets() async {
+    try {
+      final ticketProvider = Provider.of<TicketProvider>(
+        context,
+        listen: false,
+      );
+      final tickets = await ticketProvider.getTicketsForEvent(
+        widget.event['id'],
+      );
+
+      setState(() {
+        _existingTickets = tickets;
+
+        // Populate ticket fields if tickets exist
+        for (var ticket in tickets) {
+          if (ticket.ticketType == 'Vip') {
+            _vipPriceController.text = ticket.price.toString();
+            _vipCountController.text = ticket.quantity.toString();
+          } else if (ticket.ticketType == 'Economy') {
+            _ecoPriceController.text = ticket.price.toString();
+            _ecoCountController.text = ticket.quantity.toString();
+          }
+        }
+      });
+    } catch (e) {
+      print("Error loading existing tickets: $e");
+    }
+  }
+
+  Future<void> _handleTicketTypeChange(String eventId, String eventDate) async {
+    try {
+      final ticketProvider = Provider.of<TicketProvider>(
+        context,
+        listen: false,
+      );
+
+      // Check if event type changed from free to paid or paid to free
+      final wasPaid = _originalIsPaid;
+      final isNowPaid = _isPaid;
+
+      if (!wasPaid && isNowPaid) {
+        // Event changed from FREE to PAID - create tickets
+        await _createTicketsForPaidEvent(eventId, eventDate, ticketProvider);
+      } else if (wasPaid && !isNowPaid) {
+        // Event changed from PAID to FREE - validate and delete tickets
+        await _validateAndDeleteTicketsForFreeEvent(eventId, ticketProvider);
+      } else if (wasPaid && isNowPaid) {
+        // Event was and still is PAID - update existing tickets
+        await _updateTicketsForPaidEvent(eventId, eventDate, ticketProvider);
+      }
+      // If was free and still free, no ticket changes needed
+    } catch (e) {
+      print("Error handling ticket type change: $e");
+      rethrow; // Re-throw to show error to user
+    }
+  }
+
+  Future<void> _validateAndDeleteTicketsForFreeEvent(
+    String eventId,
+    TicketProvider ticketProvider,
+  ) async {
+    // Check if any tickets have been sold
+    for (var ticket in _existingTickets) {
+      if (ticket.quantitySold > 0) {
+        throw Exception(
+          'Cannot change event to free. ${ticket.quantitySold} ${ticket.ticketType} ticket(s) have already been sold.',
+        );
+      }
+    }
+
+    // If no tickets sold, delete all tickets
+    if (_existingTickets.isNotEmpty) {
+      await ticketProvider.deleteAllTicketsForEvent(eventId);
+    }
+  }
+
+  Future<void> _createTicketsForPaidEvent(
+    String eventId,
+    String eventDate,
+    TicketProvider ticketProvider,
+  ) async {
+    final vipPrice = double.tryParse(_vipPriceController.text) ?? 0.0;
+    final vipCount = int.tryParse(_vipCountController.text) ?? 0;
+    final ecoPrice = double.tryParse(_ecoPriceController.text) ?? 0.0;
+    final ecoCount = int.tryParse(_ecoCountController.text) ?? 0;
+
+    // Validate that at least one ticket type is provided
+    final hasVip = vipCount > 0 && vipPrice > 0;
+    final hasEco = ecoCount > 0 && ecoPrice > 0;
+
+    if (!hasVip && !hasEco) {
+      throw Exception(
+        'Paid events must have at least one ticket type (VIP or Economy) with both price and quantity greater than 0',
+      );
+    }
+
+    // Validate VIP tickets if provided
+    if (vipCount > 0 && vipPrice <= 0) {
+      throw Exception('VIP tickets require a price greater than 0');
+    }
+    if (vipPrice > 0 && vipCount <= 0) {
+      throw Exception('VIP tickets require a quantity greater than 0');
+    }
+
+    // Validate Economy tickets if provided
+    if (ecoCount > 0 && ecoPrice <= 0) {
+      throw Exception('Economy tickets require a price greater than 0');
+    }
+    if (ecoPrice > 0 && ecoCount <= 0) {
+      throw Exception('Economy tickets require a quantity greater than 0');
+    }
+
+    // Parse the date for ticket sale dates
+    DateTime saleStartDate = DateTime.now();
+    DateTime eventDateParsed = DateTime.parse(eventDate);
+
+    // Parse date string to DateTime at end of day for comparison
+    // If eventDate is just a date string (YYYY-MM-DD), set to end of day
+    DateTime eventDateEndOfDay = DateTime(
+      eventDateParsed.year,
+      eventDateParsed.month,
+      eventDateParsed.day,
+      23,
+      59,
+      59,
+    );
+
+    // Ensure saleEndDate is always after saleStartDate
+    // If event date is in the past or same as now, set it to saleStartDate + 1 day
+    // Otherwise use the event date (end of day)
+    DateTime saleEndDate =
+        eventDateEndOfDay.isBefore(saleStartDate) ||
+            eventDateEndOfDay.isAtSameMomentAs(saleStartDate)
+        ? saleStartDate.add(const Duration(days: 1))
+        : eventDateEndOfDay;
+
+    // Create VIP ticket if provided
+    if (hasVip) {
+      final vipTicketData = {
+        'eventId': eventId,
+        'ticketType': 'Vip',
+        'price': vipPrice,
+        'quantity': vipCount,
+        'saleStartDate': saleStartDate.toIso8601String(),
+        'saleEndDate': saleEndDate.toIso8601String(),
+      };
+      await ticketProvider.createTicket(vipTicketData);
+    }
+
+    // Create Economy ticket if provided
+    if (hasEco) {
+      final ecoTicketData = {
+        'eventId': eventId,
+        'ticketType': 'Economy',
+        'price': ecoPrice,
+        'quantity': ecoCount,
+        'saleStartDate': saleStartDate.toIso8601String(),
+        'saleEndDate': saleEndDate.toIso8601String(),
+      };
+      await ticketProvider.createTicket(ecoTicketData);
+    }
+  }
+
+  Future<void> _updateTicketsForPaidEvent(
+    String eventId,
+    String eventDate,
+    TicketProvider ticketProvider,
+  ) async {
+    final vipPrice = double.tryParse(_vipPriceController.text) ?? 0.0;
+    final vipCount = int.tryParse(_vipCountController.text) ?? 0;
+    final ecoPrice = double.tryParse(_ecoPriceController.text) ?? 0.0;
+    final ecoCount = int.tryParse(_ecoCountController.text) ?? 0;
+
+    // Validate that at least one ticket type is provided
+    final hasVip = vipCount > 0 && vipPrice > 0;
+    final hasEco = ecoCount > 0 && ecoPrice > 0;
+
+    if (!hasVip && !hasEco) {
+      throw Exception(
+        'Paid events must have at least one ticket type (VIP or Economy) with both price and quantity greater than 0',
+      );
+    }
+
+    // Validate VIP tickets if provided
+    if (vipCount > 0 && vipPrice <= 0) {
+      throw Exception('VIP tickets require a price greater than 0');
+    }
+    if (vipPrice > 0 && vipCount <= 0) {
+      throw Exception('VIP tickets require a quantity greater than 0');
+    }
+
+    // Validate Economy tickets if provided
+    if (ecoCount > 0 && ecoPrice <= 0) {
+      throw Exception('Economy tickets require a price greater than 0');
+    }
+    if (ecoPrice > 0 && ecoCount <= 0) {
+      throw Exception('Economy tickets require a quantity greater than 0');
+    }
+
+    // Parse the date for ticket sale dates
+    DateTime saleStartDate = DateTime.now();
+    DateTime eventDateParsed = DateTime.parse(eventDate);
+
+    // Parse date string to DateTime at end of day for comparison
+    // If eventDate is just a date string (YYYY-MM-DD), set to end of day
+    DateTime eventDateEndOfDay = DateTime(
+      eventDateParsed.year,
+      eventDateParsed.month,
+      eventDateParsed.day,
+      23,
+      59,
+      59,
+    );
+
+    // Ensure saleEndDate is always after saleStartDate
+    // If event date is in the past or same as now, set it to saleStartDate + 1 day
+    // Otherwise use the event date (end of day)
+    DateTime saleEndDate =
+        eventDateEndOfDay.isBefore(saleStartDate) ||
+            eventDateEndOfDay.isAtSameMomentAs(saleStartDate)
+        ? saleStartDate.add(const Duration(days: 1))
+        : eventDateEndOfDay;
+
+    // Find existing tickets
+    Ticket? existingVipTicket;
+    Ticket? existingEcoTicket;
+
+    for (var ticket in _existingTickets) {
+      if (ticket.ticketType == 'Vip') {
+        existingVipTicket = ticket;
+      } else if (ticket.ticketType == 'Economy') {
+        existingEcoTicket = ticket;
+      }
+    }
+
+    // Handle VIP tickets
+    if (vipCount > 0 && vipPrice > 0) {
+      final vipTicketData = {
+        'eventId': eventId,
+        'ticketType': 'Vip',
+        'price': vipPrice,
+        'quantity': vipCount,
+        'saleStartDate': saleStartDate.toIso8601String(),
+        'saleEndDate': saleEndDate.toIso8601String(),
+      };
+
+      if (existingVipTicket != null) {
+        // Update existing VIP ticket
+        // Don't send quantityAvailable and quantitySold - backend will calculate them
+        vipTicketData['id'] = existingVipTicket.id;
+        await ticketProvider.updateTicket(existingVipTicket.id, vipTicketData);
+      } else {
+        // Create new VIP ticket
+        await ticketProvider.createTicket(vipTicketData);
+      }
+    } else if (existingVipTicket != null) {
+      // Delete VIP ticket if it exists but no longer needed
+      if (existingVipTicket.quantitySold > 0) {
+        throw Exception(
+          'Cannot delete VIP ticket. ${existingVipTicket.quantitySold} ticket(s) have already been sold.',
+        );
+      }
+      await ticketProvider.deleteTicket(existingVipTicket.id);
+    }
+
+    // Handle Economy tickets
+    if (ecoCount > 0 && ecoPrice > 0) {
+      final ecoTicketData = {
+        'eventId': eventId,
+        'ticketType': 'Economy',
+        'price': ecoPrice,
+        'quantity': ecoCount,
+        'saleStartDate': saleStartDate.toIso8601String(),
+        'saleEndDate': saleEndDate.toIso8601String(),
+      };
+
+      if (existingEcoTicket != null) {
+        // Update existing Economy ticket
+        // Don't send quantityAvailable and quantitySold - backend will calculate them
+        ecoTicketData['id'] = existingEcoTicket.id;
+        await ticketProvider.updateTicket(existingEcoTicket.id, ecoTicketData);
+      } else {
+        // Create new Economy ticket
+        await ticketProvider.createTicket(ecoTicketData);
+      }
+    } else if (existingEcoTicket != null) {
+      // Delete Economy ticket if it exists but no longer needed
+      if (existingEcoTicket.quantitySold > 0) {
+        throw Exception(
+          'Cannot delete Economy ticket. ${existingEcoTicket.quantitySold} ticket(s) have already been sold.',
+        );
+      }
+      await ticketProvider.deleteTicket(existingEcoTicket.id);
     }
   }
 

@@ -1,5 +1,6 @@
 using AutoMapper;
 using EventBa.Model.Enums;
+using EventBa.Model.Helpers;
 using EventBa.Model.Requests;
 using EventBa.Model.Responses;
 using EventBa.Model.SearchObjects;
@@ -20,6 +21,43 @@ public class TicketService : BaseCRUDService<TicketResponseDto, Ticket, TicketSe
     {
         _context = context;
         _mapper = mapper;
+    }
+
+    public override async Task BeforeInsert(Ticket entity, TicketInsertRequestDto insert)
+    {
+        entity.QuantityAvailable = entity.Quantity;
+        entity.QuantitySold = 0; // Initialize sold count to 0
+    }
+
+    public override async Task<TicketResponseDto> Update(Guid id, TicketUpdateRequestDto update)
+    {
+        var set = _context.Set<Ticket>();
+        var entity = await set.FindAsync(id);
+        
+        if (entity == null)
+            throw new UserException("Ticket not found");
+        
+        var originalQuantity = entity.Quantity;
+        var originalQuantityAvailable = entity.QuantityAvailable;
+        var originalQuantitySold = entity.QuantitySold;
+        
+        _mapper.Map(update, entity);
+        
+        var quantityDifference = update.Quantity - originalQuantity;
+        if (quantityDifference != 0)
+        {
+            var newQuantityAvailable = Math.Max(0, originalQuantityAvailable + quantityDifference);
+            entity.QuantityAvailable = Math.Min(newQuantityAvailable, update.Quantity);
+        }
+        else
+        {
+            entity.QuantityAvailable = originalQuantityAvailable;
+        }
+        
+        entity.QuantitySold = originalQuantitySold;
+        
+        await _context.SaveChangesAsync();
+        return _mapper.Map<TicketResponseDto>(entity);
     }
 
     public override IQueryable<Ticket> AddInclude(IQueryable<Ticket> query, TicketSearchObject? search = null)
