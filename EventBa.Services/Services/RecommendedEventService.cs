@@ -199,6 +199,7 @@ public class RecommendedEventService : IRecommendedEventService
             {
                 var allEvents = await _context.Events
                     .Include(e => e.Category)
+                    .Include(e => e.CoverImage)
                     .Include(e => e.EventGalleryImages)
                     .Include(e => e.Tickets)
                     .Where(e => e.IsPublished &&
@@ -274,6 +275,7 @@ public class RecommendedEventService : IRecommendedEventService
         {
             var featuredEvents = await _context.Events
                 .Include(e => e.Category)
+                .Include(e => e.CoverImage)
                 .Include(e => e.EventGalleryImages)
                 .Include(e => e.Tickets)
                 .Where(e => e.IsPublished && e.IsFeatured && e.OrganizerId != userId)

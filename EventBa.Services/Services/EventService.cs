@@ -276,10 +276,10 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
 
     public async Task<List<EventResponseDto>> GetEventsByCategoryId(Guid categoryId)
     {
-        // For list view, don't load images - they're too heavy
         var events = await _context.Events
             .Where(e => e.Category.Id == categoryId && e.IsPublished)
             .Include(e => e.Category)
+            .Include(e => e.CoverImage)
             .Include(e => e.Tickets)
             .ToListAsync();
 
@@ -292,6 +292,11 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
 
         var user = await _context.Users
             .Include(u => u.FavoriteEvents)
+                .ThenInclude(e => e.Category)
+            .Include(u => u.FavoriteEvents)
+                .ThenInclude(e => e.CoverImage)
+            .Include(u => u.FavoriteEvents)
+                .ThenInclude(e => e.Tickets)
             .FirstOrDefaultAsync(u => u.Id == currentUser.Id);
 
         if (user == null)

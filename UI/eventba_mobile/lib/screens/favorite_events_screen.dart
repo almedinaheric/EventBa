@@ -69,7 +69,7 @@ class _FavoriteEventsScreenState extends State<FavoriteEventsScreen> {
       return Column(
         children: [
           EventCard(
-            imageData: null,
+            imageData: event.coverImage?.data,
             eventName: event.title,
             location: event.location,
             date: event.startDate,

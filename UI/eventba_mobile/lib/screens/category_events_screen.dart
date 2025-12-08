@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:eventba_mobile/widgets/master_screen.dart';
 import 'package:eventba_mobile/widgets/event_card.dart';
-import 'package:eventba_mobile/widgets/primary_button.dart';
 import 'package:provider/provider.dart';
 import 'package:eventba_mobile/providers/event_provider.dart';
 import 'package:eventba_mobile/models/event/basic_event.dart';
@@ -83,7 +82,7 @@ class _CategoryEventsScreenState extends State<CategoryEventsScreen> {
       return Column(
         children: [
           EventCard(
-            imageData: null,
+            imageData: event.coverImage?.data,
             eventName: event.title,
             location: event.location,
             date: event.startDate,
