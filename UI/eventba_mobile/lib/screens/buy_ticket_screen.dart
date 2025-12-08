@@ -97,7 +97,28 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
     }
   }
 
-  Future<void> _processFreeTickets() async {
+  Future<void> _createPaymentRecord() async {
+    final paymentProvider = Provider.of<PaymentProvider>(
+      context,
+      listen: false,
+    );
+
+    try {
+      await paymentProvider.insert({
+        'eventId': widget.eventId,
+        'amount': _totalPrice,
+        'currency': 'usd',
+      });
+      print(
+        'Payment record created: amount=$_totalPrice, eventId=${widget.eventId}',
+      );
+    } catch (e) {
+      print('Error creating payment record: $e');
+      // Don't throw - payment was successful, this is just for record keeping
+    }
+  }
+
+  Future<void> _processTicketPurchases() async {
     final ticketPurchaseProvider = Provider.of<TicketPurchaseProvider>(
       context,
       listen: false,
@@ -106,15 +127,42 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
     // Create ticket purchases for each selected ticket
     for (var entry in _ticketCounts.entries) {
       if (entry.value > 0) {
+        final ticket = _ticketMap[entry.key];
+        print(
+          'Processing ${entry.value} ticket(s) of type: ${ticket?.ticketType ?? entry.key}',
+        );
+
         for (int i = 0; i < entry.value; i++) {
-          await ticketPurchaseProvider.insert({
-            'ticketId': entry.key,
-            'eventId': widget.eventId,
-          });
+          try {
+            print(
+              'Creating ticket purchase ${i + 1}/${entry.value} for ticketId: ${entry.key}',
+            );
+            await ticketPurchaseProvider.insert({
+              'ticketId': entry.key,
+              'eventId': widget.eventId,
+            });
+            print(
+              '✓ Ticket purchase created: ticketId=${entry.key}, count=${i + 1}/${entry.value}',
+            );
+          } catch (e) {
+            print(
+              '✗ Error creating ticket purchase ${i + 1}/${entry.value} for ticketId=${entry.key}: $e',
+            );
+            throw Exception(
+              'Failed to create ticket purchase for ${ticket?.ticketType ?? entry.key}: $e',
+            );
+          }
         }
       }
     }
+    print('All ticket purchases created successfully');
+  }
 
+  Future<void> _processFreeTickets() async {
+    await _processTicketPurchases();
+    setState(() {
+      _isProcessing = false;
+    });
     _showSuccessDialog();
   }
 
@@ -138,6 +186,10 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
     }
 
     try {
+      print(
+        'Creating payment intent: amount=${_totalPrice}, ticketId=$ticketId, eventId=${widget.eventId}, quantity=$totalQuantity',
+      );
+
       // Create payment intent
       final paymentIntentData = await paymentProvider.createPaymentIntent(
         amount: _totalPrice,
@@ -147,7 +199,32 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
         quantity: totalQuantity,
       );
 
+      print('Payment intent created: ${paymentIntentData.toString()}');
+
+      // Validate response
+      if (paymentIntentData['clientSecret'] == null) {
+        throw Exception(
+          'Invalid payment intent response: missing clientSecret',
+        );
+      }
+
+      // Update Stripe publishable key if provided by backend (optional, but ensures consistency)
+      if (paymentIntentData['publishableKey'] != null) {
+        final backendPublishableKey =
+            paymentIntentData['publishableKey'] as String;
+        if (backendPublishableKey.isNotEmpty &&
+            stripe.Stripe.publishableKey != backendPublishableKey) {
+          print('Updating Stripe publishable key from backend');
+          stripe.Stripe.publishableKey = backendPublishableKey;
+        }
+      }
+
       // Initialize payment sheet
+      print('Initializing payment sheet...');
+      print(
+        'Using Stripe publishable key: ${stripe.Stripe.publishableKey.substring(0, 20)}...',
+      );
+
       await stripe.Stripe.instance.initPaymentSheet(
         paymentSheetParameters: stripe.SetupPaymentSheetParameters(
           paymentIntentClientSecret: paymentIntentData['clientSecret'],
@@ -156,24 +233,53 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
         ),
       );
 
+      print('Presenting payment sheet...');
       // Present payment sheet
       await stripe.Stripe.instance.presentPaymentSheet();
 
+      print('Payment successful! Creating payment record...');
+      // Create payment record
+      await _createPaymentRecord();
+
+      print('Creating ticket purchases...');
       // Payment successful - create ticket purchases
-      await _processFreeTickets();
+      await _processTicketPurchases();
+
+      setState(() {
+        _isProcessing = false;
+      });
+
+      _showSuccessDialog();
     } on stripe.StripeException catch (e) {
       setState(() {
         _isProcessing = false;
       });
 
+      print('Stripe error: ${e.error.code} - ${e.error.localizedMessage}');
+
       if (e.error.code != stripe.FailureCode.Canceled) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             behavior: SnackBarBehavior.floating,
-            content: Text("Payment failed: ${e.error.localizedMessage}"),
+            content: Text(
+              "Payment failed: ${e.error.localizedMessage ?? e.error.message ?? 'Unknown error'}",
+            ),
           ),
         );
       }
+      rethrow;
+    } catch (e) {
+      setState(() {
+        _isProcessing = false;
+      });
+
+      print('Payment error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text("Payment error: ${e.toString()}"),
+        ),
+      );
       rethrow;
     }
   }
@@ -253,7 +359,7 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${ticket.ticketType} Ticket',
+                  '${ticket.ticketType}',
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -377,8 +483,7 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
-            _buildPaymentOption(0, 'Credit Card'),
-            _buildPaymentOption(1, 'PayPal'),
+            _buildPaymentOption(0, 'Stripe'),
             const SizedBox(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,

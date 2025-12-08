@@ -10,8 +10,10 @@ class EventReview {
   final int rating;
   final String comment;
   final DateTime createdAt;
-  final String userName;
-  final String eventTitle;
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  final String? userName;
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  final String? eventTitle;
 
   EventReview({
     required this.id,
@@ -20,8 +22,8 @@ class EventReview {
     required this.rating,
     required this.comment,
     required this.createdAt,
-    required this.userName,
-    required this.eventTitle,
+    this.userName,
+    this.eventTitle,
   });
 
   factory EventReview.fromJson(Map<String, dynamic> json) =>

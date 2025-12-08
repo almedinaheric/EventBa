@@ -63,7 +63,9 @@ public class MappingProfile : Profile
         // Payment
         // ---------------------
         CreateMap<Payment, PaymentResponseDto>().ReverseMap();
-        CreateMap<PaymentInsertRequestDto, Payment>();
+        CreateMap<PaymentInsertRequestDto, Payment>()
+            .ForMember(dest => dest.UserId, opt => opt.Ignore())
+            .ForMember(dest => dest.User, opt => opt.Ignore());
         CreateMap<PaymentUpdateRequestDto, Payment>();
 
         // ---------------------
@@ -110,7 +112,14 @@ public class MappingProfile : Profile
         // TicketPurchase
         // ---------------------
         CreateMap<TicketPurchase, TicketPurchaseResponseDto>().ReverseMap();
-        CreateMap<TicketPurchaseInsertRequestDto, TicketPurchase>();
+        CreateMap<TicketPurchaseInsertRequestDto, TicketPurchase>()
+            .ForMember(dest => dest.TicketCode, opt => opt.Ignore())
+            .ForMember(dest => dest.QrData, opt => opt.Ignore())
+            .ForMember(dest => dest.QrVerificationHash, opt => opt.Ignore())
+            .ForMember(dest => dest.QrCodeImage, opt => opt.Ignore())
+            .ForMember(dest => dest.PricePaid, opt => opt.Ignore())
+            .ForMember(dest => dest.UserId, opt => opt.Ignore())
+            .ForMember(dest => dest.User, opt => opt.Ignore());
         CreateMap<TicketPurchaseUpdateRequestDto, TicketPurchase>();
 
         // ---------------------

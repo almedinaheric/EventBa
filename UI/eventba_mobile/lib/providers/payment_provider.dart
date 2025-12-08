@@ -50,12 +50,27 @@ class PaymentProvider extends BaseProvider<Payment> {
       'quantity': quantity,
     });
 
+    print('Payment intent request: $body');
     var response = await http.post(uri, headers: headers, body: body);
+    print('Payment intent response status: ${response.statusCode}');
+    print('Payment intent response body: ${response.body}');
 
     if (isValidResponse(response)) {
       return jsonDecode(response.body);
     } else {
-      throw Exception("Failed to create payment intent");
+      // Try to extract error message from response
+      try {
+        final errorData = jsonDecode(response.body);
+        final errorMessage =
+            errorData['error'] ??
+            errorData['message'] ??
+            'Failed to create payment intent';
+        throw Exception(errorMessage);
+      } catch (e) {
+        throw Exception(
+          "Failed to create payment intent: ${response.statusCode} - ${response.body}",
+        );
+      }
     }
   }
 }

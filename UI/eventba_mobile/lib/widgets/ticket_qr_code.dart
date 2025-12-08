@@ -1,16 +1,17 @@
-import 'package:eventba_mobile/screens/tickets_screen.dart';
+import 'dart:convert';
 import 'package:eventba_mobile/widgets/primary_button.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 class TicketQRCode extends StatelessWidget {
   final VoidCallback onClose;
   final String ticketCode;
+  final String? qrCodeImage;
 
   const TicketQRCode({
     super.key,
     required this.onClose,
     required this.ticketCode,
+    this.qrCodeImage,
   });
 
   @override
@@ -32,10 +33,19 @@ class TicketQRCode extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Image.asset(
-            'assets/images/qr_code.png',
-            width: screenWidth * 0.8,
-          ),
+          if (qrCodeImage != null)
+            Image.memory(
+              base64Decode(qrCodeImage!),
+              width: screenWidth * 0.8,
+              errorBuilder: (context, error, stackTrace) {
+                return Image.asset(
+                  'assets/images/qr_code.png',
+                  width: screenWidth * 0.8,
+                );
+              },
+            )
+          else
+            Image.asset('assets/images/qr_code.png', width: screenWidth * 0.8),
           const SizedBox(height: 16),
           Text(
             'Code: $ticketCode',
@@ -46,11 +56,7 @@ class TicketQRCode extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          PrimaryButton(
-            text: "Ok",
-            onPressed: onClose,
-            width: 240,
-          ),
+          PrimaryButton(text: "Ok", onPressed: onClose, width: 240),
         ],
       ),
     );

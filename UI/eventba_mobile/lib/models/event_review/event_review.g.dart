@@ -13,8 +13,6 @@ EventReview _$EventReviewFromJson(Map<String, dynamic> json) => EventReview(
   rating: (json['rating'] as num).toInt(),
   comment: json['comment'] as String,
   createdAt: DateTime.parse(json['createdAt'] as String),
-  userName: json['userName'] as String,
-  eventTitle: json['eventTitle'] as String,
 );
 
 Map<String, dynamic> _$EventReviewToJson(EventReview instance) =>
@@ -25,6 +23,4 @@ Map<String, dynamic> _$EventReviewToJson(EventReview instance) =>
       'rating': instance.rating,
       'comment': instance.comment,
       'createdAt': instance.createdAt.toIso8601String(),
-      'userName': instance.userName,
-      'eventTitle': instance.eventTitle,
     };

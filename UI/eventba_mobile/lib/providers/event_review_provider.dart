@@ -44,4 +44,50 @@ class EventReviewProvider extends BaseProvider<EventReview> {
       throw Exception("Unknown error in a GET request");
     }
   }
+
+  Future<EventReview> createReview({
+    required String eventId,
+    required int rating,
+    required String comment,
+  }) async {
+    var url = "${baseUrl}EventReview";
+    var uri = Uri.parse(url);
+    var headers = createHeaders();
+
+    var requestBody = jsonEncode({
+      'eventId': eventId,
+      'rating': rating,
+      'comment': comment,
+    });
+
+    var response = await http.post(uri, headers: headers, body: requestBody);
+
+    if (isValidResponse(response)) {
+      var data = jsonDecode(response.body);
+      return fromJson(data);
+    } else {
+      throw Exception("Failed to create review");
+    }
+  }
+
+  Future<EventReview?> getUserReviewForEvent({
+    required String eventId,
+    required String userId,
+  }) async {
+    try {
+      final allReviews = await getReviewsForEvent(eventId);
+      try {
+        final userReview = allReviews.firstWhere(
+          (review) => review.userId == userId,
+        );
+        return userReview;
+      } catch (e) {
+        // No review found for this user
+        return null;
+      }
+    } catch (e) {
+      print("Error fetching user review: $e");
+      return null;
+    }
+  }
 }

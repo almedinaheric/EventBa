@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 class TicketOption extends StatelessWidget {
   final String type;
   final String price;
+  final int? available;
 
   const TicketOption({
     super.key,
     required this.type,
     required this.price,
+    this.available,
   });
 
   @override
@@ -22,13 +24,25 @@ class TicketOption extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            type,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF5B7CF6),
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                type,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF5B7CF6),
+                ),
+              ),
+              if (available != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  'Available: $available',
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                ),
+              ],
+            ],
           ),
           Text(
             price,

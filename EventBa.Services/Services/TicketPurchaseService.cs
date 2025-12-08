@@ -34,8 +34,20 @@ public class TicketPurchaseService : BaseCRUDService<TicketPurchaseResponseDto, 
         entity.User = currentUser;
         entity.UserId = currentUser.Id;
 
-        // Check ticket availability
+        // Detach any existing tracked ticket entity to ensure we get fresh data
+        var existingTicketEntity = await _context.Tickets.FindAsync(insert.TicketId);
+        if (existingTicketEntity != null)
+        {
+            var entry = _context.Entry(existingTicketEntity);
+            if (entry.State != EntityState.Detached)
+            {
+                entry.State = EntityState.Detached;
+            }
+        }
+
+        // Check ticket availability - reload from database to get current values
         var ticket = await _context.Tickets
+            .AsNoTracking()
             .Include(t => t.Event)
             .FirstOrDefaultAsync(t => t.Id == insert.TicketId);
 
@@ -63,13 +75,22 @@ public class TicketPurchaseService : BaseCRUDService<TicketPurchaseResponseDto, 
 
         // Store the price paid at purchase time (for reporting even if ticket price changes later)
         entity.PricePaid = ticket.Price;
+        entity.IsValid = true;
+
+        // Reload ticket entity for tracking and update quantities
+        var ticketToUpdate = await _context.Tickets
+            .Include(t => t.Event)
+            .FirstOrDefaultAsync(t => t.Id == insert.TicketId);
+
+        if (ticketToUpdate == null)
+            throw new UserException("Ticket not found");
 
         // Update ticket quantities
-        ticket.QuantityAvailable--;
-        ticket.QuantitySold++;
+        ticketToUpdate.QuantityAvailable--;
+        ticketToUpdate.QuantitySold++;
 
         // Update event attendees
-        var eventEntity = ticket.Event;
+        var eventEntity = ticketToUpdate.Event;
         eventEntity.CurrentAttendees++;
         eventEntity.AvailableTicketsCount = await _context.Tickets
             .Where(t => t.EventId == eventEntity.Id)

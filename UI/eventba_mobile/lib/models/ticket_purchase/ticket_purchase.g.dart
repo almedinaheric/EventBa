@@ -14,9 +14,7 @@ TicketPurchase _$TicketPurchaseFromJson(Map<String, dynamic> json) =>
       userId: json['userId'] as String,
       qrVerificationHash: json['qrVerificationHash'] as String,
       qrData: json['qrData'] as String,
-      qrCodeImage: (json['qrCodeImage'] as List<dynamic>?)
-          ?.map((e) => (e as num).toInt())
-          .toList(),
+      qrCodeImage: TicketPurchase._qrCodeImageFromJson(json['qrCodeImage']),
       ticketCode: json['ticketCode'] as String,
       isUsed: json['isUsed'] as bool,
       usedAt: json['usedAt'] == null
@@ -38,7 +36,7 @@ Map<String, dynamic> _$TicketPurchaseToJson(TicketPurchase instance) =>
       'userId': instance.userId,
       'qrVerificationHash': instance.qrVerificationHash,
       'qrData': instance.qrData,
-      'qrCodeImage': instance.qrCodeImage,
+      'qrCodeImage': TicketPurchase._qrCodeImageToJson(instance.qrCodeImage),
       'ticketCode': instance.ticketCode,
       'isUsed': instance.isUsed,
       'usedAt': instance.usedAt?.toIso8601String(),

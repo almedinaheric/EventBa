@@ -1,4 +1,5 @@
 using AutoMapper;
+using EventBa.Model.Enums;
 using EventBa.Model.Requests;
 using EventBa.Model.Responses;
 using EventBa.Model.SearchObjects;
@@ -25,7 +26,19 @@ public class PaymentService : BaseCRUDService<PaymentResponseDto, Payment, Payme
 
     public override async Task BeforeInsert(Payment entity, PaymentInsertRequestDto insert)
     {
-        entity.User = await _userService.GetUserEntityAsync();
+        var currentUser = await _userService.GetUserEntityAsync();
+        entity.User = currentUser;
+        entity.UserId = currentUser.Id;
+        
+        // Set status to Completed if not provided (for successful payments)
+        if (!insert.Status.HasValue)
+        {
+            entity.Status = PaymentStatus.Paid;
+        }
+        else
+        {
+            entity.Status = insert.Status.Value;
+        }
     }
 
     public async Task<List<PaymentResponseDto>> GetMyPayments()

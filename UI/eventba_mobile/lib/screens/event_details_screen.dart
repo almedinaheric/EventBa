@@ -115,14 +115,21 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
         // Handle user profile loading error silently
       }
 
-      // Load tickets
+      // Load tickets for all events (free events may have free tickets)
       final tickets = await ticketProvider.getTicketsForEvent(widget.eventId);
       setState(() {
         _tickets = tickets;
-        _totalTicketsLeft = tickets.fold(
-          0,
-          (sum, ticket) => sum + ticket.quantityAvailable,
-        );
+
+        if (event.isPaid) {
+          // For paid events, show sum of available tickets
+          _totalTicketsLeft = tickets.fold(
+            0,
+            (sum, ticket) => sum + ticket.quantityAvailable,
+          );
+        } else {
+          // For free events, show available capacity
+          _totalTicketsLeft = event.capacity - event.currentAttendees;
+        }
       });
     } catch (e) {
       // Handle general error silently
@@ -356,9 +363,11 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
             "Reserve Your Place",
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
-          content: const Text(
-            "Are you sure you want to reserve your place for this free event?",
-            style: TextStyle(fontSize: 16),
+          content: Text(
+            _event!.isPaid
+                ? "Are you sure you want to reserve your place for this free ticket?"
+                : "Are you sure you want to reserve your place for this free event?",
+            style: const TextStyle(fontSize: 16),
           ),
           actions: [
             Center(
@@ -381,25 +390,41 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     small: true,
                     onPressed: () async {
                       try {
-                        // Get the first free ticket
-                        final freeTicket = _tickets.firstWhere(
-                          (t) => t.price == 0,
-                        );
+                        if (_event!.isPaid && _tickets.isNotEmpty) {
+                          // For paid events with free tickets
+                          final freeTicket = _tickets.firstWhere(
+                            (t) => t.price == 0,
+                          );
 
-                        // Create ticket purchase
-                        final ticketPurchaseProvider =
-                            Provider.of<TicketPurchaseProvider>(
-                              context,
-                              listen: false,
-                            );
+                          // Create ticket purchase
+                          final ticketPurchaseProvider =
+                              Provider.of<TicketPurchaseProvider>(
+                                context,
+                                listen: false,
+                              );
 
-                        await ticketPurchaseProvider.insert({
-                          'ticketId': freeTicket.id,
-                          'eventId': widget.eventId,
-                        });
+                          await ticketPurchaseProvider.insert({
+                            'ticketId': freeTicket.id,
+                            'eventId': widget.eventId,
+                          });
+                        } else {
+                          // For free events, we might need a different endpoint
+                          // For now, show a message that this feature needs backend support
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              behavior: SnackBarBehavior.floating,
+                              content: Text(
+                                "Free event reservation feature coming soon!",
+                              ),
+                            ),
+                          );
+                          return;
+                        }
 
                         Navigator.pop(context);
-                        Navigator.pop(context); // Go back to home
+                        // Reload event data to update ticket counts
+                        _loadEventData();
 
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
@@ -726,9 +751,11 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    const Text(
-                                      "Tickets left",
-                                      style: TextStyle(
+                                    Text(
+                                      _event!.isPaid
+                                          ? "Tickets left"
+                                          : "Places left",
+                                      style: const TextStyle(
                                         fontSize: 12,
                                         color: Colors.grey,
                                       ),
@@ -736,9 +763,12 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                                     const SizedBox(height: 4),
                                     Text(
                                       _totalTicketsLeft.toString(),
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 24,
                                         fontWeight: FontWeight.bold,
+                                        color: _totalTicketsLeft > 0
+                                            ? Colors.black
+                                            : Colors.red,
                                       ),
                                     ),
                                   ],
@@ -829,35 +859,39 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
                     const SizedBox(height: 24),
 
-                    const Text(
-                      "Tickets",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    if (_tickets.isNotEmpty)
-                      ..._tickets
-                          .map(
-                            (ticket) => Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: TicketOption(
-                                type: ticket.ticketType,
-                                price: "${ticket.price.toStringAsFixed(2)}KM",
-                              ),
-                            ),
-                          )
-                          .toList()
-                    else
-                      const Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: Text(
-                          "No tickets available",
-                          style: TextStyle(color: Colors.grey),
+                    // Show tickets section only for paid events
+                    if (_event!.isPaid) ...[
+                      const Text(
+                        "Tickets",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black,
                         ),
                       ),
+                      const SizedBox(height: 12),
+                      if (_tickets.isNotEmpty)
+                        ..._tickets
+                            .map(
+                              (ticket) => Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: TicketOption(
+                                  type: ticket.ticketType,
+                                  price: "${ticket.price.toStringAsFixed(2)}KM",
+                                  available: ticket.quantityAvailable,
+                                ),
+                              ),
+                            )
+                            .toList()
+                      else
+                        const Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text(
+                            "No tickets available",
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        ),
+                    ],
 
                     const SizedBox(height: 16),
 
@@ -886,7 +920,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     const SizedBox(height: 8),
 
                     // Buy Ticket Button or Reserve Place Button
-                    if (_tickets.isNotEmpty)
+                    if (_event!.isPaid && _tickets.isNotEmpty)
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
@@ -929,6 +963,28 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                                 ? "Reserve Your Place"
                                 : "Buy Ticket",
                             style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      )
+                    else if (!_event!.isPaid && _totalTicketsLeft > 0)
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _showReserveDialog,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF5B7CF6),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text(
+                            "Reserve Your Place",
+                            style: TextStyle(
                               color: Colors.white,
                               fontSize: 16,
                               fontWeight: FontWeight.w600,

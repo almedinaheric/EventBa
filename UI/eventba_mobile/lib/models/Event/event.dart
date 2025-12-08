@@ -66,11 +66,11 @@ class Event {
   });
 
   DateTime get fullStartDateTime {
-    return DateTime.parse('$startDate$startTime');
+    return DateTime.parse('$startDate $startTime');
   }
 
   DateTime get fullEndDateTime {
-    return DateTime.parse('$endDate$endTime');
+    return DateTime.parse('$endDate $endTime');
   }
 
   factory Event.fromJson(Map<String, dynamic> json) {

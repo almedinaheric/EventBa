@@ -3,8 +3,10 @@ import 'package:eventba_mobile/widgets/empty_tickets_state.dart';
 import 'package:eventba_mobile/widgets/ticket_card.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:eventba_mobile/providers/ticket_provider.dart';
+import 'package:eventba_mobile/providers/ticket_purchase_provider.dart';
+import 'package:eventba_mobile/providers/event_provider.dart';
 import 'package:eventba_mobile/models/ticket_purchase/ticket_purchase.dart';
+import 'package:eventba_mobile/models/event/event.dart';
 
 class TicketsScreen extends StatefulWidget {
   const TicketsScreen({super.key});
@@ -15,8 +17,9 @@ class TicketsScreen extends StatefulWidget {
 
 class _TicketsScreenState extends State<TicketsScreen> {
   int selectedIndex = 0; // 0 = Upcoming, 1 = Past
-  List<TicketPurchase> _upcomingTickets = [];
-  List<TicketPurchase> _pastTickets = [];
+  Map<String, List<TicketPurchase>> _upcomingTicketsByEvent = {};
+  Map<String, List<TicketPurchase>> _pastTicketsByEvent = {};
+  Map<String, Event> _events = {};
   bool _isLoading = true;
 
   @override
@@ -27,17 +30,59 @@ class _TicketsScreenState extends State<TicketsScreen> {
 
   Future<void> _loadTickets() async {
     try {
-      final ticketProvider = Provider.of<TicketProvider>(
+      final ticketPurchaseProvider = Provider.of<TicketPurchaseProvider>(
         context,
         listen: false,
       );
+      final eventProvider = Provider.of<EventProvider>(context, listen: false);
 
-      final upcomingTickets = await ticketProvider.getUpcomingTickets();
-      final pastTickets = await ticketProvider.getPastTickets();
+      // Get all ticket purchases
+      final allPurchases = await ticketPurchaseProvider.getMyPurchases();
+
+      // Get unique event IDs
+      final eventIds = allPurchases.map((p) => p.eventId).toSet();
+
+      // Load all events
+      final events = <String, Event>{};
+      for (final eventId in eventIds) {
+        try {
+          final event = await eventProvider.getById(eventId);
+          events[eventId] = event;
+        } catch (e) {
+          print("Failed to load event $eventId: $e");
+        }
+      }
+
+      // Group purchases by event and filter by upcoming/past
+      final now = DateTime.now();
+      final upcomingTicketsByEvent = <String, List<TicketPurchase>>{};
+      final pastTicketsByEvent = <String, List<TicketPurchase>>{};
+
+      for (final purchase in allPurchases) {
+        final event = events[purchase.eventId];
+        if (event == null) continue;
+
+        // Check if event is upcoming or past based on start date/time
+        final eventStartDateTime = DateTime.parse(
+          '${event.startDate} ${event.startTime}',
+        );
+        final isUpcoming = eventStartDateTime.isAfter(now);
+
+        if (isUpcoming) {
+          upcomingTicketsByEvent
+              .putIfAbsent(purchase.eventId, () => [])
+              .add(purchase);
+        } else {
+          pastTicketsByEvent
+              .putIfAbsent(purchase.eventId, () => [])
+              .add(purchase);
+        }
+      }
 
       setState(() {
-        _upcomingTickets = upcomingTickets;
-        _pastTickets = pastTickets;
+        _upcomingTicketsByEvent = upcomingTicketsByEvent;
+        _pastTicketsByEvent = pastTicketsByEvent;
+        _events = events;
         _isLoading = false;
       });
     } catch (e) {
@@ -135,21 +180,25 @@ class _TicketsScreenState extends State<TicketsScreen> {
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : selectedIndex == 0
-                ? (_upcomingTickets.isNotEmpty
+                ? (_upcomingTicketsByEvent.isNotEmpty
                       ? RefreshIndicator(
                           onRefresh: _loadTickets,
                           child: ListView(
                             padding: const EdgeInsets.all(16),
-                            children: [..._buildTicketCards(_upcomingTickets)],
+                            children: [
+                              ..._buildTicketCards(_upcomingTicketsByEvent),
+                            ],
                           ),
                         )
                       : const EmptyTicketsState())
-                : (_pastTickets.isNotEmpty
+                : (_pastTicketsByEvent.isNotEmpty
                       ? RefreshIndicator(
                           onRefresh: _loadTickets,
                           child: ListView(
                             padding: const EdgeInsets.all(16),
-                            children: [..._buildTicketCards(_pastTickets)],
+                            children: [
+                              ..._buildTicketCards(_pastTicketsByEvent),
+                            ],
                           ),
                         )
                       : const EmptyTicketsState()),
@@ -159,21 +208,41 @@ class _TicketsScreenState extends State<TicketsScreen> {
     );
   }
 
-  List<Widget> _buildTicketCards(List<TicketPurchase> tickets) {
-    return tickets.map((ticket) {
+  List<Widget> _buildTicketCards(
+    Map<String, List<TicketPurchase>> ticketsByEvent,
+  ) {
+    return ticketsByEvent.entries.map((entry) {
+      final eventId = entry.key;
+      final purchases = entry.value;
+      final event = _events[eventId];
+
+      if (event == null) {
+        return const SizedBox.shrink();
+      }
+
+      // Format event date and time
+      final eventStartDateTime = DateTime.parse(
+        '${event.startDate} ${event.startTime}',
+      );
+      final date = _formatDate(eventStartDateTime);
+      final time = _formatTime(eventStartDateTime);
+
       return Column(
         children: [
           TicketCard(
-            eventName: "Event ${ticket.eventId}", // TODO: Get actual event name
-            date: _formatDate(ticket.createdAt),
-            time: _formatTime(ticket.createdAt),
-            ticketCount: 1,
+            eventName: event.title,
+            date: date,
+            time: time,
+            ticketCount: purchases.length,
             distance: "0KM", // TODO: Calculate distance
             onTap: () {
               Navigator.push(
                 context,
                 PageRouteBuilder(
-                  pageBuilder: (_, __, ___) => const TicketDetailsScreen(),
+                  pageBuilder: (_, __, ___) => TicketDetailsScreen(
+                    eventId: eventId,
+                    purchases: purchases,
+                  ),
                   transitionDuration: Duration.zero,
                   reverseTransitionDuration: Duration.zero,
                 ),
