@@ -356,27 +356,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   context,
                   followersCount.toString(),
                   "Followers",
-                  () {
-                    Navigator.push(
+                  () async {
+                    await Navigator.push(
                       context,
                       PageRouteBuilder(
                         pageBuilder: (_, __, ___) =>
-                            FollowersScreen(followers: _user?.following ?? []),
+                            FollowersScreen(followers: _user?.followers ?? []),
                         transitionDuration: Duration.zero,
                         reverseTransitionDuration: Duration.zero,
                       ),
                     );
-                    setState(() {
-                      _loadUserProfile();
-                    });
+                    // Reload profile when returning from followers screen
+                    if (mounted) {
+                      await _loadUserProfile();
+                    }
                   },
                 ),
                 _buildStatColumn(
                   context,
                   followingCount.toString(),
                   "Following",
-                  () {
-                    Navigator.push(
+                  () async {
+                    await Navigator.push(
                       context,
                       PageRouteBuilder(
                         pageBuilder: (_, __, ___) =>
@@ -385,9 +386,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         reverseTransitionDuration: Duration.zero,
                       ),
                     );
-                    setState(() {
-                      _loadUserProfile();
-                    });
+                    // Reload profile when returning from following screen
+                    if (mounted) {
+                      await _loadUserProfile();
+                    }
                   },
                 ),
                 _buildStatColumn(context, eventsCount.toString(), "Events", () {

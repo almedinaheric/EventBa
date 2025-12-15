@@ -36,9 +36,9 @@ class _FollowersScreenState extends State<FollowersScreen> {
       bool isCurrentlyFollowing = _isFollowingMap[userId] ?? false;
 
       if (isCurrentlyFollowing) {
-        await _userProvider.unfollowUser(userId.toString());
+        await _userProvider.unfollowUser(userId);
       } else {
-        await _userProvider.followUser(userId.toString());
+        await _userProvider.followUser(userId);
       }
 
       setState(() {
@@ -80,7 +80,7 @@ class _FollowersScreenState extends State<FollowersScreen> {
                 return FollowerCard(
                   name: follower.fullName,
                   avatar: follower.profileImage?.data ?? '',
-                  organizerId: follower.id.toString(),
+                  organizerId: follower.id,
                   isFollowing: isFollowing,
                   onFollowToggle: () => _toggleFollow(follower.id),
                 );
