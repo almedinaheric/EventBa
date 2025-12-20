@@ -1,8 +1,13 @@
 import 'package:eventba_mobile/screens/past_event_details_screen.dart';
+import 'package:eventba_mobile/screens/event_details_screen.dart';
 import 'package:eventba_mobile/widgets/master_screen.dart';
 import 'package:eventba_mobile/utils/image_helpers.dart';
-import 'package:flutter/material.dart';
 import 'package:eventba_mobile/widgets/event_card.dart';
+import 'package:eventba_mobile/providers/event_provider.dart';
+import 'package:eventba_mobile/models/event/basic_event.dart';
+import 'package:eventba_mobile/models/enums/event_status.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class OrganizerProfileScreen extends StatefulWidget {
   final String userId;
@@ -24,51 +29,41 @@ class OrganizerProfileScreen extends StatefulWidget {
 
 class _OrganizerProfileScreenState extends State<OrganizerProfileScreen> {
   int selectedIndex = 0; // 0 = Upcoming, 1 = Past
+  List<BasicEvent> _upcomingEvents = [];
+  List<BasicEvent> _pastEvents = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadEvents();
+  }
+
+  Future<void> _loadEvents() async {
+    try {
+      final eventProvider = Provider.of<EventProvider>(context, listen: false);
+      final events = await eventProvider.getEventsByOrganizer(widget.userId);
+
+      final upcoming = events
+          .where((e) => e.status == EventStatus.Upcoming)
+          .toList();
+      final past = events.where((e) => e.status == EventStatus.Past).toList();
+
+      setState(() {
+        _upcomingEvents = upcoming;
+        _pastEvents = past;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print("Error loading events: $e");
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final upcomingEvents = [
-      const EventCard(
-        imageData: null,
-        eventName: 'Tech Meetup 2025',
-        location: 'Downtown Hall',
-        date: '2025-07-15',
-        isPaid: false,
-        height: 160,
-      ),
-    ];
-
-    final pastEvents = [
-      GestureDetector(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => PastEventDetailsScreen(
-                eventTitle: 'Spring Fest 2024',
-                eventData: {
-                  'id': 1,
-                  'imageUrl': 'assets/images/default_event_cover_image.png',
-                  'location': 'Central Park',
-                  'date': '2024-04-20',
-                  'isPaid': true,
-                  // Add other fields
-                },
-              ),
-            ),
-          );
-        },
-        child: const EventCard(
-          imageData: null,
-          eventName: 'Spring Fest 2024',
-          location: 'Central Park',
-          date: '2024-04-20',
-          isPaid: true,
-          height: 160,
-        ),
-      ),
-    ];
-
     return MasterScreenWidget(
       title: widget.name,
       initialIndex: -1,
@@ -200,19 +195,85 @@ class _OrganizerProfileScreenState extends State<OrganizerProfileScreen> {
 
           // Event list
           Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                if (selectedIndex == 0 && upcomingEvents.isEmpty)
-                  const Text("No upcoming events."),
-                if (selectedIndex == 1 && pastEvents.isEmpty)
-                  const Text("No past events."),
-                if (selectedIndex == 0) ...upcomingEvents,
-                if (selectedIndex == 1) ...pastEvents,
-              ],
-            ),
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      if (selectedIndex == 0 && _upcomingEvents.isEmpty)
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(32.0),
+                            child: Text("No upcoming events."),
+                          ),
+                        ),
+                      if (selectedIndex == 1 && _pastEvents.isEmpty)
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(32.0),
+                            child: Text("No past events."),
+                          ),
+                        ),
+                      if (selectedIndex == 0)
+                        ..._upcomingEvents.map(
+                          (event) => Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: EventCard(
+                              imageData: event.coverImage?.data,
+                              eventName: event.title,
+                              location: event.location,
+                              date: event.startDate,
+                              isPaid: event.isPaid,
+                              height: 160,
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  PageRouteBuilder(
+                                    pageBuilder: (_, __, ___) =>
+                                        EventDetailsScreen(eventId: event.id),
+                                    transitionDuration: Duration.zero,
+                                    reverseTransitionDuration: Duration.zero,
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      if (selectedIndex == 1)
+                        ..._pastEvents.map(
+                          (event) => Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: _buildPastEventCard(event),
+                          ),
+                        ),
+                    ],
+                  ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPastEventCard(BasicEvent event) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (_, __, ___) =>
+                PastEventDetailsScreen(eventId: event.id),
+            transitionDuration: Duration.zero,
+            reverseTransitionDuration: Duration.zero,
+          ),
+        );
+      },
+      child: EventCard(
+        imageData: event.coverImage?.data,
+        eventName: event.title,
+        location: event.location ?? 'Location TBA',
+        date: event.startDate,
+        isPaid: event.isPaid,
+        height: 160,
       ),
     );
   }

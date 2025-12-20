@@ -302,21 +302,24 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Event image
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(24),
-                        child: _event!.coverImage?.data != null
-                            ? ImageHelpers.getImage(
-                                _event!.coverImage!.data,
-                                height: 160,
-                                width: double.infinity,
-                                fit: BoxFit.cover,
-                              )
-                            : Image.asset(
-                                'assets/images/default_event_cover_image.png',
-                                height: 160,
-                                width: double.infinity,
-                                fit: BoxFit.cover,
-                              ),
+                      GestureDetector(
+                        onTap: () => _showImageDialog(0),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(24),
+                          child: _event!.coverImage?.data != null
+                              ? ImageHelpers.getImage(
+                                  _event!.coverImage!.data,
+                                  height: 160,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                )
+                              : Image.asset(
+                                  'assets/images/default_event_cover_image.png',
+                                  height: 160,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                ),
+                        ),
                       ),
                       const SizedBox(height: 24),
 
@@ -457,6 +460,132 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
             ),
         ],
       ),
+    );
+  }
+
+  void _showImageDialog(int initialIndex) {
+    if (_event == null) return;
+
+    // Build list of images: cover image first, then gallery images
+    List<String> allImages = [];
+
+    if (_event!.coverImage?.data != null) {
+      allImages.add(_event!.coverImage!.data!);
+    }
+    if (_event!.galleryImages != null) {
+      for (var galleryImage in _event!.galleryImages!) {
+        if (galleryImage.data != null) {
+          allImages.add(galleryImage.data!);
+        }
+      }
+    }
+
+    if (allImages.isEmpty) return;
+
+    showDialog(
+      context: context,
+      barrierColor: Colors.black87,
+      builder: (BuildContext dialogContext) {
+        final pageController = PageController(initialPage: initialIndex);
+        int currentIndex = initialIndex;
+
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return Dialog(
+              backgroundColor: Colors.transparent,
+              insetPadding: const EdgeInsets.all(0),
+              child: Stack(
+                children: [
+                  PageView.builder(
+                    controller: pageController,
+                    itemCount: allImages.length,
+                    physics: const PageScrollPhysics(),
+                    onPageChanged: (index) {
+                      setDialogState(() {
+                        currentIndex = index;
+                      });
+                    },
+                    itemBuilder: (context, index) {
+                      final imageData = allImages[index];
+                      try {
+                        String base64String = imageData;
+                        if (imageData.startsWith('data:image')) {
+                          base64String = imageData.split(',').last;
+                        }
+                        return InteractiveViewer(
+                          minScale: 0.5,
+                          maxScale: 4.0,
+                          panEnabled: false,
+                          scaleEnabled: true,
+                          child: Center(
+                            child: Image.memory(
+                              base64Decode(base64String),
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Image.asset(
+                                  'assets/images/default_event_cover_image.png',
+                                  fit: BoxFit.contain,
+                                );
+                              },
+                            ),
+                          ),
+                        );
+                      } catch (e) {
+                        return Center(
+                          child: Image.asset(
+                            'assets/images/default_event_cover_image.png',
+                            fit: BoxFit.contain,
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                  Positioned(
+                    top: 40,
+                    right: 20,
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.close,
+                        color: Colors.white,
+                        size: 30,
+                      ),
+                      onPressed: () {
+                        pageController.dispose();
+                        Navigator.of(dialogContext).pop();
+                      },
+                    ),
+                  ),
+                  if (allImages.length > 1)
+                    Positioned(
+                      bottom: 20,
+                      left: 0,
+                      right: 0,
+                      child: Center(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            '${currentIndex + 1} / ${allImages.length}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }
