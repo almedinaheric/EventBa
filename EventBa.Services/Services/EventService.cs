@@ -7,7 +7,9 @@ using EventBa.Model.SearchObjects;
 using EventBa.Services.Database;
 using EventBa.Services.Database.Context;
 using EventBa.Services.Interfaces;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace EventBa.Services.Services;
 
@@ -19,13 +21,15 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
     
     private readonly IUserService _userService;
     private readonly IRecommendedEventService _recommendedEventService;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public EventService(EventBaDbContext context, IMapper mapper, IUserService userService, IRecommendedEventService recommendedEventService) : base(context, mapper)
+    public EventService(EventBaDbContext context, IMapper mapper, IUserService userService, IRecommendedEventService recommendedEventService, IHttpContextAccessor httpContextAccessor) : base(context, mapper)
     {
         _context = context;
         _mapper = mapper;
         _userService = userService;
         _recommendedEventService = recommendedEventService;
+        _httpContextAccessor = httpContextAccessor;
     }
     
     public override async Task BeforeInsert(Event entity, EventInsertRequestDto insert)
@@ -153,6 +157,24 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
         // Only return published events (matching behavior of GetPublicEvents and GetPrivateEvents)
         query = query.Where(x => x.IsPublished);
 
+        // Exclude current user's own events from search results
+        try
+        {
+            var userEmail = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.Email)?.Value;
+            if (!string.IsNullOrEmpty(userEmail))
+            {
+                var currentUser = _context.Users.FirstOrDefault(u => u.Email.Equals(userEmail));
+                if (currentUser != null)
+                {
+                    query = query.Where(x => x.OrganizerId != currentUser.Id);
+                }
+            }
+        }
+        catch
+        {
+            // If user is not authenticated or can't be retrieved, continue without filtering
+        }
+
         return query;
     }
 
@@ -252,8 +274,27 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
     
     public async Task<List<EventResponseDto>> GetPublicEvents()
     {
-        var publicEvents = await _context.Events
-            .Where(e => e.Type == EventType.Public && e.IsPublished)
+        // Get current user to exclude their own events
+        User? currentUser = null;
+        try
+        {
+            currentUser = await _userService.GetUserEntityAsync();
+        }
+        catch
+        {
+            // If user is not authenticated, continue without filtering
+        }
+
+        var query = _context.Events
+            .Where(e => e.Type == EventType.Public && e.IsPublished);
+        
+        // Exclude current user's own events
+        if (currentUser != null)
+        {
+            query = query.Where(e => e.OrganizerId != currentUser.Id);
+        }
+
+        var publicEvents = await query
             .Include(e => e.Category)
             .Include(e => e.CoverImage)
             .Include(e => e.Tickets)
@@ -264,8 +305,27 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
 
     public async Task<List<EventResponseDto>> GetPrivateEvents()
     {
-        var privateEvents = await _context.Events
-            .Where(e => e.Type == EventType.Private && e.IsPublished)
+        // Get current user to exclude their own events
+        User? currentUser = null;
+        try
+        {
+            currentUser = await _userService.GetUserEntityAsync();
+        }
+        catch
+        {
+            // If user is not authenticated, continue without filtering
+        }
+
+        var query = _context.Events
+            .Where(e => e.Type == EventType.Private && e.IsPublished);
+        
+        // Exclude current user's own events
+        if (currentUser != null)
+        {
+            query = query.Where(e => e.OrganizerId != currentUser.Id);
+        }
+
+        var privateEvents = await query
             .Include(e => e.Category)
             .Include(e => e.CoverImage)
             .Include(e => e.Tickets)
@@ -276,8 +336,27 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
 
     public async Task<List<EventResponseDto>> GetEventsByCategoryId(Guid categoryId)
     {
-        var events = await _context.Events
-            .Where(e => e.Category.Id == categoryId && e.IsPublished)
+        // Get current user to exclude their own events
+        User? currentUser = null;
+        try
+        {
+            currentUser = await _userService.GetUserEntityAsync();
+        }
+        catch
+        {
+            // If user is not authenticated, continue without filtering
+        }
+
+        var query = _context.Events
+            .Where(e => e.Category.Id == categoryId && e.IsPublished);
+        
+        // Exclude current user's own events
+        if (currentUser != null)
+        {
+            query = query.Where(e => e.OrganizerId != currentUser.Id);
+        }
+
+        var events = await query
             .Include(e => e.Category)
             .Include(e => e.CoverImage)
             .Include(e => e.Tickets)

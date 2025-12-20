@@ -1,5 +1,3 @@
-import 'package:eventba_mobile/screens/welcome_screen.dart';
-import 'package:eventba_mobile/utils/authorization.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:eventba_mobile/providers/user_provider.dart';
@@ -356,12 +354,16 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
           listen: false,
         ).update(_user!.id, request);
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            behavior: SnackBarBehavior.floating,
-            content: Text('Profile saved successfully!'),
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              behavior: SnackBarBehavior.floating,
+              content: Text('Profile saved successfully!'),
+            ),
+          );
+          // Navigate back to profile screen
+          Navigator.pop(context);
+        }
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -411,20 +413,16 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
           currentPasswordController.text,
           newPasswordController.text,
         );
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            behavior: SnackBarBehavior.floating,
-            content: Text('Password changed successfully!'),
-          ),
-        );
-        Authorization.email = null;
-        Authorization.password = null;
-        Navigator.pop(context);
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => const WelcomeScreen()),
-          (route) => false,
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              behavior: SnackBarBehavior.floating,
+              content: Text('Password changed successfully!'),
+            ),
+          );
+          // Navigate back to profile screen
+          Navigator.pop(context);
+        }
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

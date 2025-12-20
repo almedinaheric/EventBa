@@ -57,6 +57,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final user = await userProvider.getProfile();
 
+      // Debug: Check profile image
+      print("=== PROFILE IMAGE DEBUG ===");
+      print("Profile image: ${user.profileImage != null ? 'exists' : 'null'}");
+      if (user.profileImage != null) {
+        print("Profile image ID: ${user.profileImage!.id}");
+        print(
+          "Profile image data: ${user.profileImage!.data != null ? 'exists (${user.profileImage!.data!.length} chars)' : 'null'}",
+        );
+        print("Profile image contentType: ${user.profileImage!.contentType}");
+      }
+      print("=== END DEBUG ===");
+
       // Fetch events count
       int eventsCount = 0;
       try {
@@ -181,6 +193,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (updateResponse.statusCode >= 200 && updateResponse.statusCode < 300) {
         // Reload user profile to get updated image
         await _loadUserProfile();
+
+        // Clear local image so database image is displayed
+        if (mounted) {
+          setState(() {
+            _image = null;
+          });
+        }
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -408,16 +427,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             // Profile actions
             _buildSectionCard(context, "Account", [
-              _buildListTile(context, "Edit Profile Details", Icons.person, () {
-                Navigator.push(
-                  context,
-                  PageRouteBuilder(
-                    pageBuilder: (_, __, ___) => const ProfileDetailsScreen(),
-                    transitionDuration: Duration.zero,
-                    reverseTransitionDuration: Duration.zero,
-                  ),
-                );
-              }),
+              _buildListTile(
+                context,
+                "Edit Profile Details",
+                Icons.person,
+                () async {
+                  await Navigator.push(
+                    context,
+                    PageRouteBuilder(
+                      pageBuilder: (_, __, ___) => const ProfileDetailsScreen(),
+                      transitionDuration: Duration.zero,
+                      reverseTransitionDuration: Duration.zero,
+                    ),
+                  );
+                  // Reload profile when returning from edit profile screen
+                  if (mounted) {
+                    await _loadUserProfile();
+                  }
+                },
+              ),
               _buildListTile(context, "My Events", Icons.event, () {
                 Navigator.push(
                   context,
