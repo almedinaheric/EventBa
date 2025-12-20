@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:eventba_mobile/models/user/user.dart';
 import 'package:eventba_mobile/providers/user_provider.dart';
 import 'package:eventba_mobile/screens/buy_ticket_screen.dart';
+import 'package:eventba_mobile/screens/organizer_profile_screen.dart';
 import 'package:eventba_mobile/utils/image_helpers.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -795,28 +796,51 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 24,
-                              backgroundColor: Colors.grey[300],
-                              child: ClipOval(
-                                child: ImageHelpers.getProfileImage(
-                                  _organizer!.profileImage?.data,
-                                  height: 48,
-                                  width: 48,
+                        GestureDetector(
+                          onTap: () {
+                            if (_organizer != null) {
+                              Navigator.push(
+                                context,
+                                PageRouteBuilder(
+                                  pageBuilder: (_, __, ___) =>
+                                      OrganizerProfileScreen(
+                                        userId: _organizer!.id,
+                                        name: _organizer!.fullName,
+                                        avatarUrl:
+                                            _organizer!.profileImage?.data ??
+                                            '',
+                                        bio: _organizer!.bio ?? '',
+                                      ),
+                                  transitionDuration: Duration.zero,
+                                  reverseTransitionDuration: Duration.zero,
+                                ),
+                              );
+                            }
+                          },
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 24,
+                                backgroundColor: Colors.grey[300],
+                                child: ClipOval(
+                                  child: ImageHelpers.getProfileImage(
+                                    _organizer!.profileImage?.data,
+                                    height: 48,
+                                    width: 48,
+                                  ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            Text(
-                              _organizer!.fullName,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
+                              const SizedBox(width: 12),
+                              Text(
+                                _organizer!.fullName,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF4776E6),
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                         OutlinedButton(
                           onPressed: _toggleFollow,

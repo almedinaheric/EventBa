@@ -1,5 +1,6 @@
 using AutoMapper;
 using EventBa.Model.Enums;
+using EventBa.Model.Helpers;
 using EventBa.Model.Requests;
 using EventBa.Model.Responses;
 using EventBa.Model.SearchObjects;
@@ -27,6 +28,19 @@ public class UserQuestionService : BaseCRUDService<UserQuestionResponseDto, User
     public override async Task BeforeInsert(UserQuestion entity, UserQuestionInsertRequestDto insert)
     {
         entity.User = await _userService.GetUserEntityAsync();
+        
+        // If this is a question for admin, find an admin user to set as receiver
+        if (insert.IsQuestionForAdmin)
+        {
+            var adminUser = await _context.Users
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.Role.Name == RoleName.Admin);
+            
+            if (adminUser == null)
+                throw new UserException("No admin user found in the system.");
+            
+            entity.ReceiverId = adminUser.Id;
+        }
     }
 
     public async Task AfterInsert(UserQuestion entity, UserQuestionInsertRequestDto insert)

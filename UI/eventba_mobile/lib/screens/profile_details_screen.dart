@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:eventba_mobile/screens/welcome_screen.dart';
 import 'package:eventba_mobile/utils/authorization.dart';
 import 'package:flutter/material.dart';
@@ -68,7 +67,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
       final categories = await Provider.of<CategoryProvider>(
         context,
         listen: false,
-      ).get();
+      ).get(authorized: false, filter: {'page': 1, 'pageSize': 1000});
       setState(() {
         _categories = categories.result;
         _isLoadingCategories = false;
@@ -92,7 +91,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
         lastNameController.text = user.lastName;
         emailController.text = user.email;
         phoneController.text = user.phoneNumber ?? '';
-        _selectedCategoryIds = user.interests!
+        _selectedCategoryIds = user.interests
             .map((interest) => interest.id)
             .toList();
       });
@@ -352,8 +351,10 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
           'interestCategoryIds': _selectedCategoryIds,
         };
 
-        await Provider.of<UserProvider>(context, listen: false)
-            .update(_user!.id, request);
+        await Provider.of<UserProvider>(
+          context,
+          listen: false,
+        ).update(_user!.id, request);
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -381,9 +382,12 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
 
   void _changePassword() async {
     setState(() {
-      _isCurrentPasswordValid = currentPasswordController.text.trim().isNotEmpty;
-      _currentPasswordErrorMessage =
-      _isCurrentPasswordValid ? null : 'Current password is required';
+      _isCurrentPasswordValid = currentPasswordController.text
+          .trim()
+          .isNotEmpty;
+      _currentPasswordErrorMessage = _isCurrentPasswordValid
+          ? null
+          : 'Current password is required';
 
       _isNewPasswordValid = RegExp(
         r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$',
@@ -394,8 +398,9 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
 
       _isConfirmPasswordValid =
           confirmPasswordController.text == newPasswordController.text;
-      _confirmPasswordErrorMessage =
-      _isConfirmPasswordValid ? null : 'Passwords do not match';
+      _confirmPasswordErrorMessage = _isConfirmPasswordValid
+          ? null
+          : 'Passwords do not match';
     });
 
     if (_isCurrentPasswordValid &&
@@ -417,10 +422,8 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
         Navigator.pop(context);
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(
-            builder: (context) => const WelcomeScreen(),
-          ),
-              (route) => false,
+          MaterialPageRoute(builder: (context) => const WelcomeScreen()),
+          (route) => false,
         );
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -1,6 +1,8 @@
 import 'package:eventba_mobile/widgets/master_screen.dart';
 import 'package:eventba_mobile/widgets/primary_button.dart';
+import 'package:eventba_mobile/providers/user_question_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class SupportScreen extends StatefulWidget {
   const SupportScreen({super.key});
@@ -11,8 +13,66 @@ class SupportScreen extends StatefulWidget {
 
 class _SupportScreenState extends State<SupportScreen> {
   final TextEditingController questionController = TextEditingController();
-  String selectedCategory = "General";
-  final List<String> categories = ["General", "Technical", "Billing", "Events"];
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    questionController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submitQuestion() async {
+    if (questionController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text("Please enter your question"),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final questionProvider = Provider.of<UserQuestionProvider>(
+        context,
+        listen: false,
+      );
+
+      await questionProvider.insert({
+        'question': questionController.text.trim(),
+        'isQuestionForAdmin': true,
+      });
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text("Question submitted successfully!"),
+        ),
+      );
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text("Failed to submit question: ${e.toString()}"),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,14 +108,8 @@ class _SupportScreenState extends State<SupportScreen> {
             ),
             const SizedBox(height: 24),
             PrimaryButton(
-              text: "Ask",
-              onPressed: () {
-                // Submit question logic
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Question submitted successfully!")),
-                );
-                Navigator.pop(context);
-              },
+              text: _isLoading ? "Submitting..." : "Ask",
+              onPressed: _isLoading ? () {} : _submitQuestion,
               width: double.infinity,
             ),
           ],

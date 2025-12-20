@@ -1,6 +1,5 @@
 import 'package:eventba_mobile/providers/user_provider.dart';
 import 'package:eventba_mobile/widgets/primary_button.dart';
-import 'package:eventba_mobile/screens/organizer_profile_screen.dart';
 import 'package:eventba_mobile/widgets/user_card.dart';
 import 'package:flutter/material.dart';
 
@@ -11,48 +10,61 @@ class OrganizerSection extends StatefulWidget {
     this.name = 'Dylan Malik',
     this.organizerId = "123",
     this.bio = '',
+    this.isFollowing = false,
   });
 
   final String imageUrl;
   final String name;
   final String organizerId;
   final String bio;
+  final bool isFollowing;
 
   @override
   State<OrganizerSection> createState() => _OrganizerSectionState();
 }
 
 class _OrganizerSectionState extends State<OrganizerSection> {
-  bool isFollowing = false;
+  late bool isFollowing;
   final UserProvider _userProvider = UserProvider();
+
+  @override
+  void initState() {
+    super.initState();
+    isFollowing = widget.isFollowing;
+  }
 
   Future<void> _handleFollowUnfollow() async {
     try {
       if (isFollowing) {
-        await _userProvider.unfollowUser(widget.organizerId.toString());
+        await _userProvider.unfollowUser(widget.organizerId);
       } else {
-        await _userProvider.followUser(widget.organizerId.toString());
+        await _userProvider.followUser(widget.organizerId);
       }
 
+      final wasFollowing = isFollowing;
       setState(() {
         isFollowing = !isFollowing;
       });
 
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => OrganizerProfileScreen(
-            userId: widget.organizerId,
-            name: widget.name,
-            avatarUrl: widget.imageUrl,
-            bio: widget.bio,
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text(
+            !wasFollowing
+                ? "Following ${widget.name}"
+                : "Unfollowed ${widget.name}",
           ),
         ),
       );
     } catch (e) {
       print("Error: $e");
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to ${isFollowing ? 'unfollow' : 'follow'} user.")),
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text(
+            "Failed to ${isFollowing ? 'unfollow' : 'follow'} user.",
+          ),
+        ),
       );
     }
   }

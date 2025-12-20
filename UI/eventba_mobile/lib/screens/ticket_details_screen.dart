@@ -372,6 +372,11 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                               'assets/images/profile_placeholder.png',
                           name:
                               "${_organizer!.firstName} ${_organizer!.lastName}",
+                          isFollowing:
+                              _currentUser != null &&
+                              _currentUser!.following.any(
+                                (u) => u.id == _organizer!.id,
+                              ),
                         ),
 
                       const SizedBox(height: 16),
