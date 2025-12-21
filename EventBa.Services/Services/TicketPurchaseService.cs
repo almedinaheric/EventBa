@@ -10,6 +10,7 @@ using EventBa.Services.Database;
 using EventBa.Services.Database.Context;
 using EventBa.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using QRCoder;
 
 namespace EventBa.Services.Services;
@@ -30,20 +31,23 @@ public class TicketPurchaseService : BaseCRUDService<TicketPurchaseResponseDto, 
 
     public override async Task BeforeInsert(TicketPurchase entity, TicketPurchaseInsertRequestDto insert)
     {
+        // Store the entity entry to check state later
+        var entityEntryBefore = _context.Entry(entity);
+        Console.WriteLine($"BeforeInsert: Entity state at start: {entityEntryBefore.State}");
+        
         var currentUser = await _userService.GetUserEntityAsync();
-        entity.User = currentUser;
+        
+        // Ensure EventId and TicketId are set from the insert DTO first
+        entity.EventId = insert.EventId;
+        entity.TicketId = insert.TicketId;
         entity.UserId = currentUser.Id;
+        
+        // Don't set navigation properties - just set the foreign key IDs
+        // Setting navigation properties can cause tracking issues
+        // entity.User = ...; // Don't set this, let EF Core handle it via UserId
 
-        // Detach any existing tracked ticket entity to ensure we get fresh data
-        var existingTicketEntity = await _context.Tickets.FindAsync(insert.TicketId);
-        if (existingTicketEntity != null)
-        {
-            var entry = _context.Entry(existingTicketEntity);
-            if (entry.State != EntityState.Detached)
-            {
-                entry.State = EntityState.Detached;
-            }
-        }
+        // Don't detach entities - this might be causing the TicketPurchase to become detached
+        // Instead, just query with AsNoTracking for read-only checks
 
         // Check ticket availability - reload from database to get current values
         var ticket = await _context.Tickets
@@ -77,6 +81,10 @@ public class TicketPurchaseService : BaseCRUDService<TicketPurchaseResponseDto, 
         entity.PricePaid = ticket.Price;
         entity.IsValid = true;
 
+        // Check entity state before loading related entities
+        var entityEntryMid = _context.Entry(entity);
+        Console.WriteLine($"BeforeInsert: Entity state before loading ticket: {entityEntryMid.State}");
+        
         // Reload ticket entity for tracking and update quantities
         var ticketToUpdate = await _context.Tickets
             .Include(t => t.Event)
@@ -85,16 +93,148 @@ public class TicketPurchaseService : BaseCRUDService<TicketPurchaseResponseDto, 
         if (ticketToUpdate == null)
             throw new UserException("Ticket not found");
 
-        // Update ticket quantities
+        // Check entity state after loading ticket
+        var entityEntryAfterTicket = _context.Entry(entity);
+        Console.WriteLine($"BeforeInsert: Entity state after loading ticket: {entityEntryAfterTicket.State}");
+
+        // Ensure EventId is set on the entity (from insert DTO or ticket)
+        if (entity.EventId == Guid.Empty)
+        {
+            entity.EventId = insert.EventId != Guid.Empty ? insert.EventId : ticketToUpdate.EventId;
+        }
+
+        // Update ticket quantities (decrease available, increase sold)
         ticketToUpdate.QuantityAvailable--;
         ticketToUpdate.QuantitySold++;
 
-        // Update event attendees
+        // Update event attendees and available tickets count
+        // Ensure Event is loaded and tracked
         var eventEntity = ticketToUpdate.Event;
+        if (eventEntity == null)
+        {
+            // Load event separately if not loaded via Include
+            eventEntity = await _context.Events.FindAsync(insert.EventId);
+            if (eventEntity == null)
+                throw new UserException("Event not found");
+        }
+        
         eventEntity.CurrentAttendees++;
+        // Recalculate available tickets count from all tickets for this event
         eventEntity.AvailableTicketsCount = await _context.Tickets
             .Where(t => t.EventId == eventEntity.Id)
             .SumAsync(t => t.QuantityAvailable);
+        
+        // Final check of entity state
+        var entityEntryFinal = _context.Entry(entity);
+        Console.WriteLine($"BeforeInsert: Entity state at end: {entityEntryFinal.State}");
+        
+        // If entity became detached, re-attach it
+        if (entityEntryFinal.State == EntityState.Detached)
+        {
+            Console.WriteLine("WARNING: Entity became detached in BeforeInsert! Re-attaching...");
+            _context.Entry(entity).State = EntityState.Added;
+            Console.WriteLine($"Entity state after re-attaching: {_context.Entry(entity).State}");
+        }
+    }
+
+    public override async Task<TicketPurchaseResponseDto> Insert(TicketPurchaseInsertRequestDto insert)
+    {
+        try
+        {
+            Console.WriteLine($"TicketPurchaseService.Insert called for TicketId: {insert.TicketId}, EventId: {insert.EventId}");
+            
+            var set = _context.Set<TicketPurchase>();
+            var entity = _mapper.Map<TicketPurchase>(insert);
+            
+            Console.WriteLine($"Mapped entity - EventId: {entity.EventId}, TicketId: {entity.TicketId}, UserId: {entity.UserId}");
+            
+            set.Add(entity);
+            Console.WriteLine($"Entity added to context. State: {_context.Entry(entity).State}");
+            
+            await BeforeInsert(entity, insert);
+            Console.WriteLine($"BeforeInsert completed. Entity EventId: {entity.EventId}, TicketId: {entity.TicketId}, UserId: {entity.UserId}");
+            
+            // Ensure entity is still tracked and in Added state before SaveChanges
+            var entityEntry = _context.Entry(entity);
+            Console.WriteLine($"Entity state after BeforeInsert: {entityEntry.State}");
+            
+            if (entityEntry.State == EntityState.Detached)
+            {
+                Console.WriteLine("Entity was detached! Re-adding to context...");
+                // Clear any navigation properties that might be causing issues
+                var eventId = entity.EventId;
+                var ticketId = entity.TicketId;
+                var userId = entity.UserId;
+                var ticketCode = entity.TicketCode;
+                var qrData = entity.QrData;
+                var qrVerificationHash = entity.QrVerificationHash;
+                var qrCodeImage = entity.QrCodeImage;
+                var pricePaid = entity.PricePaid;
+                var isValid = entity.IsValid;
+                
+                // Create a new entity instance to avoid tracking conflicts
+                var newEntity = new TicketPurchase
+                {
+                    EventId = eventId,
+                    TicketId = ticketId,
+                    UserId = userId,
+                    TicketCode = ticketCode,
+                    QrData = qrData,
+                    QrVerificationHash = qrVerificationHash,
+                    QrCodeImage = qrCodeImage,
+                    PricePaid = pricePaid,
+                    IsValid = isValid
+                };
+                
+                set.Add(newEntity);
+                entity = newEntity;
+                entityEntry = _context.Entry(entity);
+                Console.WriteLine($"Entity state after re-adding: {entityEntry.State}");
+            }
+            
+            Console.WriteLine($"Entity state before SaveChanges: {entityEntry.State}");
+            
+            if (entityEntry.State != EntityState.Added)
+            {
+                Console.WriteLine($"WARNING: Entity is not in Added state! Current state: {entityEntry.State}. Attempting to set to Added...");
+                entityEntry.State = EntityState.Added;
+            }
+            
+            await _context.SaveChangesAsync();
+            Console.WriteLine($"SaveChangesAsync completed successfully. Entity ID: {entity.Id}");
+            
+            // Reload the entity with all includes to ensure related entities are populated
+            var entityWithIncludes = await AddInclude(_context.Set<TicketPurchase>().Where(tp => tp.Id == entity.Id))
+                .FirstOrDefaultAsync();
+            
+            if (entityWithIncludes != null)
+            {
+                Console.WriteLine($"Reloaded entity with includes. Returning mapped response.");
+                return _mapper.Map<TicketPurchaseResponseDto>(entityWithIncludes);
+            }
+            
+            Console.WriteLine($"Entity not found after reload. Returning mapped original entity.");
+            return _mapper.Map<TicketPurchaseResponseDto>(entity);
+        }
+        catch (DbUpdateException dbEx)
+        {
+            Console.WriteLine($"DbUpdateException in TicketPurchaseService.Insert: {dbEx.Message}");
+            if (dbEx.InnerException != null)
+            {
+                Console.WriteLine($"Inner exception: {dbEx.InnerException.Message}");
+            }
+            throw;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Exception in TicketPurchaseService.Insert for TicketId: {insert.TicketId}, EventId: {insert.EventId}. Error: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            if (ex.InnerException != null)
+            {
+                Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
+            }
+            throw;
+        }
     }
 
     private string GenerateTicketCode()
