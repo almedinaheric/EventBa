@@ -7,6 +7,7 @@ import 'package:eventba_mobile/screens/ticket_scanner_screen.dart';
 import 'package:eventba_mobile/widgets/master_screen.dart';
 import 'package:eventba_mobile/providers/event_provider.dart';
 import 'package:eventba_mobile/providers/event_review_provider.dart';
+import 'package:eventba_mobile/providers/user_provider.dart';
 import 'package:eventba_mobile/models/event/event.dart';
 import 'package:eventba_mobile/models/event_review/event_review.dart';
 import 'package:eventba_mobile/utils/image_helpers.dart';
@@ -28,11 +29,25 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
   List<EventReview> _reviews = [];
   bool _isLoading = true;
   bool _isPast = false;
+  bool _isAdmin = false;
 
   @override
   void initState() {
     super.initState();
+    _checkUserRole();
     _loadEventData();
+  }
+
+  Future<void> _checkUserRole() async {
+    try {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final user = await userProvider.getProfile();
+      setState(() {
+        _isAdmin = user.role.name.toLowerCase() == 'admin';
+      });
+    } catch (e) {
+      print("Failed to check user role: $e");
+    }
   }
 
   Future<void> _loadEventData() async {
@@ -288,6 +303,48 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
       );
     }
 
+    // Admin view - only Scan QR Code button
+    if (_isAdmin) {
+      return MasterScreenWidget(
+        initialIndex: 4,
+        showBottomNavBar: false, // Hide bottom nav for admin
+        appBarType: AppBarType.iconsSideTitleCenter,
+        title: _event!.title,
+        leftIcon: Icons.arrow_back,
+        onLeftButtonPressed: () {
+          Navigator.pop(context);
+        },
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: SizedBox(
+              width: double.infinity,
+              child: _buildActionButton(
+                context,
+                "Scan QR Code",
+                Icons.qr_code_scanner,
+                Colors.green,
+                () {
+                  Navigator.push(
+                    context,
+                    PageRouteBuilder(
+                      pageBuilder: (_, __, ___) => TicketScannerScreen(
+                        eventId: widget.eventId,
+                        eventData: _buildEventData(),
+                      ),
+                      transitionDuration: Duration.zero,
+                      reverseTransitionDuration: Duration.zero,
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Customer view - full details
     final totalAttendees =
         _statistics?['attendees'] ?? _event!.currentAttendees;
 

@@ -5,6 +5,7 @@ import 'package:eventba_mobile/screens/notifications_screen.dart';
 import 'package:eventba_mobile/screens/profile_screen.dart';
 import 'package:eventba_mobile/screens/tickets_screen.dart';
 import 'package:eventba_mobile/providers/notification_provider.dart';
+import 'package:eventba_mobile/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -47,18 +48,41 @@ class MasterScreenWidget extends StatefulWidget {
 class _MasterScreenWidgetState extends State<MasterScreenWidget> {
   late int _selectedIndex;
   int _unreadNotificationCount = 0;
+  bool _isAdmin = false;
 
   @override
   void initState() {
     super.initState();
     _selectedIndex = widget.initialIndex;
+    _checkUserRole();
     _fetchUnreadNotifications();
+  }
+
+  Future<void> _checkUserRole() async {
+    try {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final user = await userProvider.getProfile();
+      setState(() {
+        _isAdmin = user.role.name.toLowerCase() == 'admin';
+      });
+    } catch (e) {
+      print("Failed to check user role: $e");
+      // If we can't check role, assume not admin
+      setState(() {
+        _isAdmin = false;
+      });
+    }
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _fetchUnreadNotifications();
+    // Check user role first, then fetch notifications
+    _checkUserRole().then((_) {
+      if (mounted) {
+        _fetchUnreadNotifications();
+      }
+    });
   }
 
   Future<void> _fetchUnreadNotifications() async {
@@ -112,7 +136,7 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
               ? AppBarType.titleLeftIconRight
               : AppBarType.titleCenterIconRight,
           title: index == 0 ? null : _getTitleForIndex(index),
-          showBottomNavBar: true,
+          showBottomNavBar: !_isAdmin, // Never show bottom nav for admin users
           initialIndex: index,
           child: screen,
         ),
@@ -164,41 +188,43 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
             ],
           ),
           actions: [
-            Stack(
-              children: [
-                IconButton(
-                  iconSize: 32,
-                  icon: const Icon(Icons.notifications_outlined),
-                  onPressed: () async {
-                    final result = await Navigator.push(
-                      context,
-                      PageRouteBuilder(
-                        pageBuilder: (_, __, ___) =>
-                            const NotificationsScreen(),
-                        transitionDuration: Duration.zero,
-                        reverseTransitionDuration: Duration.zero,
-                      ),
-                    );
-                    if (result == true) {
-                      _fetchUnreadNotifications();
-                    }
-                  },
-                ),
-                if (_unreadNotificationCount > 0)
-                  Positioned(
-                    right: 10,
-                    top: 10,
-                    child: Container(
-                      width: 10,
-                      height: 10,
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
+            // Don't show notification icon for admin users
+            if (!_isAdmin)
+              Stack(
+                children: [
+                  IconButton(
+                    iconSize: 32,
+                    icon: const Icon(Icons.notifications_outlined),
+                    onPressed: () async {
+                      final result = await Navigator.push(
+                        context,
+                        PageRouteBuilder(
+                          pageBuilder: (_, __, ___) =>
+                              const NotificationsScreen(),
+                          transitionDuration: Duration.zero,
+                          reverseTransitionDuration: Duration.zero,
+                        ),
+                      );
+                      if (result == true) {
+                        _fetchUnreadNotifications();
+                      }
+                    },
+                  ),
+                  if (_unreadNotificationCount > 0)
+                    Positioned(
+                      right: 10,
+                      top: 10,
+                      child: Container(
+                        width: 10,
+                        height: 10,
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
                       ),
                     ),
-                  ),
-              ],
-            ),
+                ],
+              ),
             const SizedBox(width: 16),
           ],
         );
@@ -258,11 +284,14 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
 
   @override
   Widget build(BuildContext context) {
+    // Never show bottom nav bar for admin users, regardless of widget.showBottomNavBar
+    final shouldShowBottomNav = widget.showBottomNavBar && !_isAdmin;
+
     return Scaffold(
       appBar: _buildAppBar(),
       body: widget.child,
       resizeToAvoidBottomInset: false,
-      bottomNavigationBar: widget.showBottomNavBar
+      bottomNavigationBar: shouldShowBottomNav
           ? BottomAppBar(
               shape: const CircularNotchedRectangle(),
               notchMargin: 8.0,
@@ -281,7 +310,7 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
               ),
             )
           : null,
-      floatingActionButton: widget.showBottomNavBar
+      floatingActionButton: shouldShowBottomNav
           ? FloatingActionButton(
               onPressed: () => _onBottomNavTap(2),
               shape: const CircleBorder(),

@@ -107,7 +107,7 @@ public class TicketPurchaseService : BaseCRUDService<TicketPurchaseResponseDto, 
         ticketToUpdate.QuantityAvailable--;
         ticketToUpdate.QuantitySold++;
 
-        // Update event attendees and available tickets count
+        // Update event available tickets count
         // Ensure Event is loaded and tracked
         var eventEntity = ticketToUpdate.Event;
         if (eventEntity == null)
@@ -118,7 +118,8 @@ public class TicketPurchaseService : BaseCRUDService<TicketPurchaseResponseDto, 
                 throw new UserException("Event not found");
         }
         
-        eventEntity.CurrentAttendees++;
+        // Note: CurrentAttendees is NOT incremented here - it will be incremented when the ticket is validated/scanned
+        // This way we track actual attendance, not just ticket sales
         // Recalculate available tickets count from all tickets for this event
         eventEntity.AvailableTicketsCount = await _context.Tickets
             .Where(t => t.EventId == eventEntity.Id)
@@ -303,12 +304,28 @@ public class TicketPurchaseService : BaseCRUDService<TicketPurchaseResponseDto, 
 
         // Update ticket quantities
         var ticket = purchase.Ticket;
-        ticket.QuantityAvailable--;
-        ticket.QuantitySold++;
-
-        // Update event attendees
+        // Note: QuantityAvailable and QuantitySold are already updated when ticket was purchased
+        // We don't need to update them again here, just mark the ticket as used
+        
+        // Update event attendees - increment when ticket is validated/scanned (actual attendance)
         var eventEntity = ticket.Event;
+        if (eventEntity == null)
+        {
+            // Load event separately if not loaded via Include
+            eventEntity = await _context.Events.FindAsync(eventId);
+            if (eventEntity == null)
+                throw new UserException("Event not found");
+        }
+        
+        // Check if we would exceed capacity
+        if (eventEntity.CurrentAttendees >= eventEntity.Capacity)
+        {
+            throw new UserException("Event has reached maximum capacity");
+        }
+        
+        // Increment current attendees when ticket is validated (actual attendance tracking)
         eventEntity.CurrentAttendees++;
+        // Decrease available tickets count
         eventEntity.AvailableTicketsCount--;
 
         await _context.SaveChangesAsync();

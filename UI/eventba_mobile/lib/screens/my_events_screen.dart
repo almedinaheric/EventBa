@@ -3,7 +3,9 @@ import 'package:eventba_mobile/widgets/master_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:eventba_mobile/providers/event_provider.dart';
+import 'package:eventba_mobile/providers/user_provider.dart';
 import 'package:eventba_mobile/models/event/event.dart';
+import 'package:eventba_mobile/models/enums/event_status.dart';
 import 'my_event_details_screen.dart';
 
 class MyEventsScreen extends StatefulWidget {
@@ -16,11 +18,25 @@ class MyEventsScreen extends StatefulWidget {
 class _MyEventsScreenState extends State<MyEventsScreen> {
   List<Event> _events = [];
   bool _isLoading = true;
+  bool _isAdmin = false;
 
   @override
   void initState() {
     super.initState();
+    _checkUserRole();
     _loadMyEvents();
+  }
+
+  Future<void> _checkUserRole() async {
+    try {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final user = await userProvider.getProfile();
+      setState(() {
+        _isAdmin = user.role.name.toLowerCase() == 'admin';
+      });
+    } catch (e) {
+      print("Failed to check user role: $e");
+    }
   }
 
   @override
@@ -42,7 +58,14 @@ class _MyEventsScreenState extends State<MyEventsScreen> {
       final events = await eventProvider.getMyEvents();
       if (mounted) {
         setState(() {
-          _events = events;
+          // For admin users, filter to show only upcoming events
+          if (_isAdmin) {
+            _events = events
+                .where((event) => event.status == EventStatus.Upcoming)
+                .toList();
+          } else {
+            _events = events;
+          }
           _isLoading = false;
         });
       }
@@ -60,6 +83,7 @@ class _MyEventsScreenState extends State<MyEventsScreen> {
   Widget build(BuildContext context) {
     return MasterScreenWidget(
       initialIndex: 4, // set your bottom nav index accordingly
+      showBottomNavBar: !_isAdmin, // Hide bottom nav for admin users
       appBarType: AppBarType.iconsSideTitleCenter,
       title: "My Events",
       leftIcon: Icons.arrow_back,

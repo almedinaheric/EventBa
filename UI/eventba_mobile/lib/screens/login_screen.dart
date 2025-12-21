@@ -1,6 +1,7 @@
 import 'package:eventba_mobile/providers/user_provider.dart';
 import 'package:eventba_mobile/screens/forgot_password_screen.dart';
 import 'package:eventba_mobile/screens/home_screen.dart';
+import 'package:eventba_mobile/screens/profile_screen.dart';
 import 'package:eventba_mobile/screens/signup_screen.dart';
 import 'package:eventba_mobile/utils/authorization.dart';
 import 'package:eventba_mobile/widgets/master_screen.dart';
@@ -40,15 +41,35 @@ class _LoginScreenState extends State<LoginScreen> {
     Authorization.password = password;
 
     try {
-      await Provider.of<UserProvider>(context, listen: false).getProfile();
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final user = await userProvider.getProfile();
       if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) =>
-              const MasterScreenWidget(initialIndex: 0, child: HomeScreen()),
-        ),
-      );
+
+      // Check user role and navigate accordingly
+      final isAdmin = user.role.name.toLowerCase() == 'admin';
+
+      if (isAdmin) {
+        // Admin users go directly to profile screen (simplified view)
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => MasterScreenWidget(
+              initialIndex: 4,
+              showBottomNavBar: false, // Hide bottom nav for admin
+              child: const ProfileScreen(),
+            ),
+          ),
+        );
+      } else {
+        // Customer users go to home screen with full navigation
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) =>
+                const MasterScreenWidget(initialIndex: 0, child: HomeScreen()),
+          ),
+        );
+      }
     } catch (e) {
       // Clear credentials on failed login
       Authorization.email = null;

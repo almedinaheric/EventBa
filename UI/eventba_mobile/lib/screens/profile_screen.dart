@@ -299,6 +299,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  bool get _isAdmin {
+    return _user?.role.name.toLowerCase() == 'admin';
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -311,6 +315,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final followingCount = _user?.following.length ?? 0;
     final eventsCount = _eventsCount;
 
+    // Admin view - simplified profile screen
+    if (_isAdmin) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF7F8FA),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              // My Events section (no profile picture or name for admin)
+              _buildSectionCard(context, "Account", [
+                _buildListTile(context, "My Events", Icons.event, () {
+                  Navigator.push(
+                    context,
+                    PageRouteBuilder(
+                      pageBuilder: (_, __, ___) => const MyEventsScreen(),
+                      transitionDuration: Duration.zero,
+                      reverseTransitionDuration: Duration.zero,
+                    ),
+                  );
+                }),
+              ]),
+              const SizedBox(height: 16),
+
+              // Logout section
+              _buildSectionCard(context, "Logout", [
+                _buildListTile(context, "Log Out", Icons.logout, _logout),
+              ]),
+              const SizedBox(height: 24),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Customer view - full profile screen
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FA),
       body: SingleChildScrollView(
