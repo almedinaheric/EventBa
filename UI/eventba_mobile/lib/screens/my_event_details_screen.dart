@@ -1,32 +1,299 @@
+import 'dart:convert';
 import 'package:eventba_mobile/screens/edit_event_screen.dart';
 import 'package:eventba_mobile/screens/event_questions_screen.dart';
 import 'package:eventba_mobile/screens/event_reviews_screen.dart';
 import 'package:eventba_mobile/screens/event_statistics_screen.dart';
 import 'package:eventba_mobile/screens/ticket_scanner_screen.dart';
 import 'package:eventba_mobile/widgets/master_screen.dart';
+import 'package:eventba_mobile/providers/event_provider.dart';
+import 'package:eventba_mobile/providers/event_review_provider.dart';
+import 'package:eventba_mobile/models/event/event.dart';
+import 'package:eventba_mobile/models/event_review/event_review.dart';
+import 'package:eventba_mobile/utils/image_helpers.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class MyEventDetailsScreen extends StatefulWidget {
-  final String eventTitle;
-  final Map<String, dynamic> eventData;
+  final String eventId;
 
-  const MyEventDetailsScreen({
-    super.key,
-    required this.eventTitle,
-    required this.eventData,
-  });
+  const MyEventDetailsScreen({super.key, required this.eventId});
 
   @override
   State<MyEventDetailsScreen> createState() => _MyEventDetailsScreenState();
 }
 
 class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
+  Event? _event;
+  Map<String, dynamic>? _statistics;
+  List<EventReview> _reviews = [];
+  bool _isLoading = true;
+  bool _isPast = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadEventData();
+  }
+
+  Future<void> _loadEventData() async {
+    try {
+      final eventProvider = Provider.of<EventProvider>(context, listen: false);
+      final reviewProvider = Provider.of<EventReviewProvider>(
+        context,
+        listen: false,
+      );
+
+      // Load event details
+      final event = await eventProvider.getById(widget.eventId);
+
+      // Check if event is past
+      final eventStartDateTime = DateTime.parse(
+        '${event.startDate} ${event.startTime}',
+      );
+      final isPast = eventStartDateTime.isBefore(DateTime.now());
+
+      // Load event statistics
+      Map<String, dynamic>? statistics;
+      try {
+        statistics = await eventProvider.getEventStatistics(widget.eventId);
+      } catch (e) {
+        print("Failed to load statistics: $e");
+      }
+
+      // Load event reviews only if event is past
+      List<EventReview> reviews = [];
+      if (isPast) {
+        try {
+          reviews = await reviewProvider.getReviewsForEvent(widget.eventId);
+        } catch (e) {
+          print("Failed to load reviews: $e");
+        }
+      }
+
+      setState(() {
+        _event = event;
+        _statistics = statistics;
+        _reviews = reviews;
+        _isPast = isPast;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print("Error loading event data: $e");
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  String _formatDate(String dateStr) {
+    try {
+      final date = DateTime.parse(dateStr);
+      return "${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}";
+    } catch (e) {
+      return dateStr;
+    }
+  }
+
+  String _formatTime(String timeStr) {
+    try {
+      final parts = timeStr.split(':');
+      if (parts.length >= 2) {
+        return "${parts[0].padLeft(2, '0')}:${parts[1].padLeft(2, '0')}";
+      }
+      return timeStr;
+    } catch (e) {
+      return timeStr;
+    }
+  }
+
+  void _showImageDialog(int initialIndex) {
+    if (_event == null) return;
+
+    // Build list of images: cover image first, then gallery images
+    List<String> allImages = [];
+
+    if (_event!.coverImage?.data != null) {
+      allImages.add(_event!.coverImage!.data!);
+    }
+    if (_event!.galleryImages != null) {
+      for (var galleryImage in _event!.galleryImages!) {
+        if (galleryImage.data != null) {
+          allImages.add(galleryImage.data!);
+        }
+      }
+    }
+
+    if (allImages.isEmpty) return;
+
+    showDialog(
+      context: context,
+      barrierColor: Colors.black87,
+      builder: (BuildContext dialogContext) {
+        final pageController = PageController(initialPage: initialIndex);
+        int currentIndex = initialIndex;
+
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return Dialog(
+              backgroundColor: Colors.transparent,
+              insetPadding: const EdgeInsets.all(0),
+              child: Stack(
+                children: [
+                  PageView.builder(
+                    controller: pageController,
+                    itemCount: allImages.length,
+                    physics: const PageScrollPhysics(),
+                    onPageChanged: (index) {
+                      setDialogState(() {
+                        currentIndex = index;
+                      });
+                    },
+                    itemBuilder: (context, index) {
+                      final imageData = allImages[index];
+                      try {
+                        String base64String = imageData;
+                        if (imageData.startsWith('data:image')) {
+                          base64String = imageData.split(',').last;
+                        }
+                        return InteractiveViewer(
+                          minScale: 0.5,
+                          maxScale: 4.0,
+                          panEnabled: false,
+                          scaleEnabled: true,
+                          child: Center(
+                            child: Image.memory(
+                              base64Decode(base64String),
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Image.asset(
+                                  'assets/images/default_event_cover_image.png',
+                                  fit: BoxFit.contain,
+                                );
+                              },
+                            ),
+                          ),
+                        );
+                      } catch (e) {
+                        return Center(
+                          child: Image.asset(
+                            'assets/images/default_event_cover_image.png',
+                            fit: BoxFit.contain,
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                  Positioned(
+                    top: 40,
+                    right: 20,
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.close,
+                        color: Colors.white,
+                        size: 30,
+                      ),
+                      onPressed: () {
+                        pageController.dispose();
+                        Navigator.of(dialogContext).pop();
+                      },
+                    ),
+                  ),
+                  if (allImages.length > 1)
+                    Positioned(
+                      bottom: 20,
+                      left: 0,
+                      right: 0,
+                      child: Center(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            '${currentIndex + 1} / ${allImages.length}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Map<String, dynamic> _buildEventData() {
+    if (_event == null) return {};
+    return {
+      'id': _event!.id,
+      'name': _event!.title,
+      'category': _event!.category.name,
+      'categoryId': _event!.category.id,
+      'venue': _event!.location,
+      'date': _event!.startDate,
+      'startDate': _event!.startDate,
+      'endDate': _event!.endDate,
+      'startTime': _event!.startTime,
+      'endTime': _event!.endTime,
+      'description': _event!.description,
+      'capacity': _event!.capacity,
+      'currentAttendees': _event!.currentAttendees,
+      'isPaid': _event!.isPaid,
+      'status': _event!.status.toString(),
+      'type': _event!.type.toString(),
+      'isFeatured': _event!.isFeatured,
+      'coverImage': _event!.coverImage?.data,
+      'coverImageId': _event!.coverImage?.id,
+      'galleryImages': _event!.galleryImages?.map((img) => img.data).toList(),
+      'galleryImageIds': _event!.galleryImages?.map((img) => img.id).toList(),
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return MasterScreenWidget(
+        initialIndex: 4,
+        appBarType: AppBarType.iconsSideTitleCenter,
+        title: "Event Details",
+        leftIcon: Icons.arrow_back,
+        onLeftButtonPressed: () {
+          Navigator.pop(context);
+        },
+        child: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_event == null) {
+      return MasterScreenWidget(
+        initialIndex: 4,
+        appBarType: AppBarType.iconsSideTitleCenter,
+        title: "Event Details",
+        leftIcon: Icons.arrow_back,
+        onLeftButtonPressed: () {
+          Navigator.pop(context);
+        },
+        child: const Center(child: Text('Event not found')),
+      );
+    }
+
+    final totalAttendees =
+        _statistics?['attendees'] ?? _event!.currentAttendees;
+
     return MasterScreenWidget(
       initialIndex: 4,
       appBarType: AppBarType.iconsSideTitleCenter,
-      title: widget.eventTitle,
+      title: _event!.title,
       leftIcon: Icons.arrow_back,
       onLeftButtonPressed: () {
         Navigator.pop(context);
@@ -42,16 +309,24 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 16),
-                    Container(
-                      height: 200,
-                      decoration: BoxDecoration(
+                    // Event cover image
+                    GestureDetector(
+                      onTap: () => _showImageDialog(0),
+                      child: ClipRRect(
                         borderRadius: BorderRadius.circular(16),
-                        image: const DecorationImage(
-                          image: AssetImage(
-                            'assets/images/default_event_cover_image.png',
-                          ),
-                          fit: BoxFit.cover,
-                        ),
+                        child: _event!.coverImage?.data != null
+                            ? ImageHelpers.getImage(
+                                _event!.coverImage!.data,
+                                height: 200,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                              )
+                            : Image.asset(
+                                'assets/images/default_event_cover_image.png',
+                                height: 200,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                              ),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -77,36 +352,47 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    _buildDetailItem(Icons.location_on, "Location"),
+                                    _buildDetailItem(
+                                      Icons.location_on,
+                                      _event!.location,
+                                    ),
                                     const SizedBox(height: 8),
-                                    _buildDetailItem(Icons.calendar_today, "Date"),
+                                    _buildDetailItem(
+                                      Icons.calendar_today,
+                                      _formatDate(_event!.startDate),
+                                    ),
                                     const SizedBox(height: 8),
-                                    _buildDetailItem(Icons.access_time, "Time"),
+                                    _buildDetailItem(
+                                      Icons.access_time,
+                                      _formatTime(_event!.startTime),
+                                    ),
                                   ],
                                 ),
                               ),
                               Container(
                                 width: 1,
-                                margin: const EdgeInsets.symmetric(horizontal: 16),
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                ),
                                 color: Colors.grey.withOpacity(0.3),
                               ),
-                              const Expanded(
+                              Expanded(
                                 flex: 1,
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Text(
+                                    const Text(
                                       "Total attendees",
                                       style: TextStyle(
                                         fontSize: 12,
                                         color: Colors.grey,
                                       ),
                                     ),
-                                    SizedBox(height: 4),
+                                    const SizedBox(height: 4),
                                     Text(
-                                      "10",
-                                      style: TextStyle(
+                                      totalAttendees.toString(),
+                                      style: const TextStyle(
                                         fontSize: 24,
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -130,40 +416,46 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
                       mainAxisSpacing: 16,
                       childAspectRatio: 1.5,
                       children: [
-                        if (widget.eventData['status'] != 'PAST')
+                        if (!_isPast)
                           _buildActionButton(
                             context,
                             "Scan Tickets",
                             Icons.qr_code_scanner,
                             Colors.green,
-                                () {
+                            () {
                               Navigator.push(
                                 context,
                                 PageRouteBuilder(
                                   pageBuilder: (_, __, ___) =>
-                                      TicketScannerScreen(eventData: widget.eventData),
+                                      TicketScannerScreen(
+                                        eventId: widget.eventId,
+                                        eventData: _buildEventData(),
+                                      ),
                                   transitionDuration: Duration.zero,
                                   reverseTransitionDuration: Duration.zero,
                                 ),
                               );
                             },
                           ),
-                        if (widget.eventData['status'] != 'PAST')
+                        if (!_isPast)
                           _buildActionButton(
                             context,
                             "Edit Event Details",
                             Icons.edit,
                             Colors.blue,
-                                () {
-                              Navigator.push(
+                            () async {
+                              final result = await Navigator.push(
                                 context,
                                 PageRouteBuilder(
                                   pageBuilder: (_, __, ___) =>
-                                      EditEventScreen(event: widget.eventData),
+                                      EditEventScreen(event: _buildEventData()),
                                   transitionDuration: Duration.zero,
                                   reverseTransitionDuration: Duration.zero,
                                 ),
                               );
+                              if (result == true && mounted) {
+                                await _loadEventData();
+                              }
                             },
                           ),
                         _buildActionButton(
@@ -171,12 +463,15 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
                           "Questions",
                           Icons.question_answer,
                           Colors.orange,
-                              () {
+                          () {
                             Navigator.push(
                               context,
                               PageRouteBuilder(
                                 pageBuilder: (_, __, ___) =>
-                                    EventQuestionsScreen(eventData: widget.eventData),
+                                    EventQuestionsScreen(
+                                      eventId: widget.eventId,
+                                      eventData: _buildEventData(),
+                                    ),
                                 transitionDuration: Duration.zero,
                                 reverseTransitionDuration: Duration.zero,
                               ),
@@ -188,29 +483,36 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
                           "Statistics",
                           Icons.bar_chart,
                           Colors.purple,
-                              () {
+                          () {
                             Navigator.push(
                               context,
                               PageRouteBuilder(
                                 pageBuilder: (_, __, ___) =>
-                                    EventStatisticsScreen(eventData: widget.eventData),
+                                    EventStatisticsScreen(
+                                      eventId: widget.eventId,
+                                      eventData: _buildEventData(),
+                                    ),
                                 transitionDuration: Duration.zero,
                                 reverseTransitionDuration: Duration.zero,
                               ),
                             );
                           },
                         ),
-                        //if (widget.eventData['status'] != 'UPCOMING')
+                        if (_isPast)
                           _buildActionButton(
                             context,
-                            "Reviews",
+                            "Reviews (${_reviews.length})",
                             Icons.reviews,
                             Colors.redAccent,
-                                () {
+                            () {
                               Navigator.push(
                                 context,
                                 PageRouteBuilder(
-                                  pageBuilder: (_, __, ___) => EventReviewsScreen(eventTitle: widget.eventTitle),
+                                  pageBuilder: (_, __, ___) =>
+                                      EventReviewsScreen(
+                                        eventTitle: _event!.title,
+                                        eventId: widget.eventId,
+                                      ),
                                   transitionDuration: Duration.zero,
                                   reverseTransitionDuration: Duration.zero,
                                 ),
@@ -235,11 +537,12 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
       children: [
         Icon(icon, size: 16, color: Colors.grey),
         const SizedBox(width: 8),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 14,
-            color: Colors.grey,
+        Expanded(
+          child: Text(
+            label,
+            style: const TextStyle(fontSize: 14, color: Colors.grey),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ],
@@ -247,16 +550,16 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
   }
 
   Widget _buildActionButton(
-      BuildContext context,
-      String title,
-      IconData icon,
-      Color color,
-      VoidCallback onTap,
-      ) {
+    BuildContext context,
+    String title,
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+  ) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       elevation: 2,
-      margin: EdgeInsets.zero, // <-- No padding around cards
+      margin: EdgeInsets.zero,
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: onTap,
@@ -270,7 +573,10 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
               Text(
                 title,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ],
           ),

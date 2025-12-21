@@ -95,7 +95,60 @@ class _EditEventScreenState extends State<EditEventScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadCategories();
       _loadExistingTickets();
+      // Always fetch event from backend to get proper gallery image IDs
+      // This ensures we have the actual IDs even if the event data map doesn't have them
+      _fetchGalleryImageIds();
     });
+  }
+
+  Future<void> _fetchGalleryImageIds() async {
+    try {
+      final eventProvider = Provider.of<EventProvider>(context, listen: false);
+      final eventId = widget.event['id'];
+      print("Fetching event $eventId from backend to get gallery image IDs...");
+
+      // Fetch the raw JSON response to get galleryImageIds directly
+      // The backend returns galleryImageIds as a separate property
+      final url = "${eventProvider.baseUrl}Event/$eventId";
+      final uri = Uri.parse(url);
+      final headers = eventProvider.createHeaders();
+      final response = await http.get(uri, headers: headers);
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final jsonData = jsonDecode(response.body);
+        final galleryImageIds = jsonData['galleryImageIds'];
+
+        print("Raw JSON galleryImageIds: $galleryImageIds");
+
+        if (galleryImageIds != null && galleryImageIds is List) {
+          final fetchedIds = galleryImageIds
+              .map((e) => e?.toString())
+              .whereType<String>()
+              .where((id) => id.isNotEmpty)
+              .toList();
+
+          if (fetchedIds.isNotEmpty) {
+            setState(() {
+              _existingGalleryImageIds = fetchedIds;
+            });
+            print(
+              "Fetched ${fetchedIds.length} gallery image IDs from backend JSON: $fetchedIds",
+            );
+          } else {
+            print("WARNING: galleryImageIds array is empty");
+          }
+        } else {
+          print(
+            "WARNING: galleryImageIds not found in JSON response or not a list",
+          );
+        }
+      } else {
+        print("Error fetching event: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Error fetching gallery image IDs: $e");
+      // Don't fail silently - if we can't fetch, at least log it
+    }
   }
 
   Future<void> _loadCategories() async {
@@ -132,9 +185,11 @@ class _EditEventScreenState extends State<EditEventScreen> {
 
     // Load cover image ID
     _existingCoverImageId = widget.event['coverImageId'];
+    print("Loaded existing cover image ID: $_existingCoverImageId");
 
     // Load gallery images - handle both list of strings and list of objects
     final galleryImages = widget.event['galleryImages'];
+    print("Loading gallery images from event data: $galleryImages");
     if (galleryImages != null && galleryImages is List) {
       _existingGalleryImageData = galleryImages
           .map((e) {
@@ -148,16 +203,32 @@ class _EditEventScreenState extends State<EditEventScreen> {
           .whereType<String>()
           .where((e) => e.isNotEmpty)
           .toList();
+      print("Loaded ${_existingGalleryImageData.length} gallery images");
+    } else {
+      print("No gallery images found or invalid format");
     }
 
     // Load gallery image IDs
     final galleryImageIds = widget.event['galleryImageIds'];
+    print("Loading gallery image IDs from event data: $galleryImageIds");
     if (galleryImageIds != null && galleryImageIds is List) {
       _existingGalleryImageIds = galleryImageIds
           .map((e) => e?.toString())
           .whereType<String>()
           .where((e) => e.isNotEmpty)
           .toList();
+      print(
+        "Loaded ${_existingGalleryImageIds.length} gallery image IDs: $_existingGalleryImageIds",
+      );
+    } else {
+      print("No gallery image IDs found in event data");
+      // If galleryImageIds is null but we have gallery images, try to fetch the event from backend
+      // to get the actual IDs
+      if (_existingGalleryImageData.isNotEmpty) {
+        print(
+          "WARNING: Gallery images exist but no IDs found. Will need to fetch event from backend.",
+        );
+      }
     }
   }
 
@@ -686,6 +757,61 @@ class _EditEventScreenState extends State<EditEventScreen> {
         coverImageId = null;
       }
 
+      // Convert status string to integer enum value
+      // C# EventStatus: Upcoming=0, Past=1, Cancelled=2
+      int statusValue;
+      final statusStr = (event['status'] ?? 'Upcoming').toString();
+      switch (statusStr) {
+        case 'Upcoming':
+          statusValue = 0;
+          break;
+        case 'Past':
+          statusValue = 1;
+          break;
+        case 'Cancelled':
+          statusValue = 2;
+          break;
+        default:
+          statusValue = 0; // Default to Upcoming
+      }
+
+      // Format time to HH:mm:ss format for TimeOnly
+      String formatTime(String timeStr) {
+        // Remove any AM/PM and whitespace
+        String cleaned = timeStr.trim().toUpperCase();
+
+        // Check if it contains AM/PM
+        bool isPM = cleaned.contains('PM');
+        bool isAM = cleaned.contains('AM');
+
+        // Remove AM/PM
+        cleaned = cleaned.replaceAll(RegExp(r'\s*(AM|PM)\s*'), '');
+
+        // Split by colon
+        final parts = cleaned.split(':');
+        if (parts.length < 2) {
+          // If format is invalid, try to parse as HH:mm:ss
+          return timeStr.length >= 8 ? timeStr.substring(0, 8) : '$timeStr:00';
+        }
+
+        int hour = int.tryParse(parts[0]) ?? 0;
+        int minute = int.tryParse(parts[1]) ?? 0;
+        int second = parts.length > 2 ? (int.tryParse(parts[2]) ?? 0) : 0;
+
+        // Handle AM/PM conversion
+        if (isPM && hour != 12) {
+          hour += 12;
+        } else if (isAM && hour == 12) {
+          hour = 0;
+        }
+
+        // Format as HH:mm:ss
+        return '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}:${second.toString().padLeft(2, '0')}';
+      }
+
+      final startTimeFormatted = formatTime(_startTimeController.text);
+      final endTimeFormatted = formatTime(_endTimeController.text);
+
       // Prepare update data
       final updateData = {
         'id': event['id'],
@@ -694,21 +820,31 @@ class _EditEventScreenState extends State<EditEventScreen> {
         'location': _venueController.text,
         'startDate': dateStr,
         'endDate': dateStr,
-        'startTime': _startTimeController.text,
-        'endTime': _endTimeController.text,
+        'startTime': startTimeFormatted,
+        'endTime': endTimeFormatted,
         'capacity': calculatedCapacity,
         'currentAttendees': event['currentAttendees'] ?? 0,
         'availableTicketsCount': calculatedCapacity,
-        'status': event['status'] ?? 'Upcoming',
+        'status': statusValue,
         'isFeatured': event['isFeatured'] ?? false,
-        'type': event['type'] ?? 'Public',
+        'type': 1, // Private = 1 (C# EventType: Public=0, Private=1)
         'isPublished': true,
         'isPaid': _isPaid, // Set based on free/paid selection
-        'categoryId': event['categoryId'],
+        'categoryId': _selectedCategory ?? event['categoryId'],
         'coverImageId': coverImageId,
       };
 
       await eventProvider.update(event['id'], updateData);
+
+      // Ensure we have gallery image IDs before processing
+      // If IDs are missing but we have gallery images, fetch them now
+      if (_existingGalleryImageData.isNotEmpty &&
+          _existingGalleryImageIds.isEmpty) {
+        print(
+          "Gallery image IDs missing, fetching from backend before processing...",
+        );
+        await _fetchGalleryImageIds();
+      }
 
       // Handle gallery images - combine new and existing ones
       final imageProvider = Provider.of<EventImageProvider>(
@@ -717,7 +853,13 @@ class _EditEventScreenState extends State<EditEventScreen> {
       );
       List<String> finalGalleryImageIds = [];
 
+      print(
+        "Processing gallery images - New: ${_additionalImages.length}, Existing IDs: ${_existingGalleryImageIds.length}",
+      );
+      print("Existing gallery image IDs: $_existingGalleryImageIds");
+
       // Process each of the 3 gallery image slots
+      // For each slot: if new image is selected, upload it; otherwise, preserve existing image for that slot
       for (int i = 0; i < 3; i++) {
         if (i < _additionalImages.length) {
           // New image selected for this slot - upload it
@@ -733,15 +875,25 @@ class _EditEventScreenState extends State<EditEventScreen> {
           final imageResponse = await imageProvider.insert(imageRequest);
           if (imageResponse.id != null && imageResponse.id!.isNotEmpty) {
             finalGalleryImageIds.add(imageResponse.id!);
+            print("Added new image at slot $i with ID: ${imageResponse.id}");
           }
         } else if (i < _existingGalleryImageIds.length) {
-          // No new image for this slot, but existing image exists - keep it
+          // No new image for this slot, but existing image exists - preserve it
           finalGalleryImageIds.add(_existingGalleryImageIds[i]);
+          print(
+            "Preserved existing image at slot $i with ID: ${_existingGalleryImageIds[i]}",
+          );
         }
         // If neither new nor existing image for this slot, skip it (slot remains empty)
       }
 
-      // Replace all gallery images with the final list (combines new and existing)
+      print(
+        "Final gallery image IDs count: ${finalGalleryImageIds.length} (New: ${_additionalImages.length}, Preserved: ${finalGalleryImageIds.length - _additionalImages.length})",
+      );
+      print("Final gallery image IDs: $finalGalleryImageIds");
+
+      // Replace gallery images with the final list (includes new uploads + preserved existing ones)
+      // Backend will only remove images that are NOT in this list
       await _replaceGalleryImages(event['id'], finalGalleryImageIds);
 
       // Handle tickets based on event type change (paid/free)

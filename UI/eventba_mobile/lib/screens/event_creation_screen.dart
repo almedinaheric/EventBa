@@ -854,9 +854,10 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
         'endTime': '${endTimeParts[0]}:${endTimeParts[1]}:00',
         'capacity': totalCapacity,
         'availableTicketsCount': totalCapacity,
-        'status': 'Upcoming',
+        'status':
+            0, // Upcoming = 0 (C# EventStatus: Upcoming=0, Past=1, Cancelled=2)
         'isFeatured': true,
-        'type': _isPaid ? 'Public' : 'Private',
+        'type': 1, // Private = 1 (C# EventType: Public=0, Private=1)
         'isPublished': true,
         'isPaid': _isPaid, // Set based on free/paid selection
         'categoryId': _selectedCategoryId,

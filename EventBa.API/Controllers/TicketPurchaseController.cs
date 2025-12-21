@@ -26,4 +26,24 @@ public class TicketPurchaseController : BaseCRUDController<TicketPurchaseRespons
         var purchases = await _ticketPurchaseService.GetMyPurchases();
         return Ok(purchases);
     }
+
+    [HttpPost("validate/{eventId}")]
+    [Authorize]
+    public async Task<IActionResult> ValidateTicket([FromRoute] Guid eventId, [FromBody] ValidateTicketRequest request)
+    {
+        try
+        {
+            var result = await _ticketPurchaseService.ValidateTicket(request.TicketCode, eventId);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+}
+
+public class ValidateTicketRequest
+{
+    public string TicketCode { get; set; } = null!;
 }

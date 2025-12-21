@@ -80,37 +80,7 @@ class _MyEventsScreenState extends State<MyEventsScreen> {
                               context,
                               PageRouteBuilder(
                                 pageBuilder: (_, __, ___) =>
-                                    MyEventDetailsScreen(
-                                      eventTitle: event.title,
-                                      eventData: {
-                                        'id': event.id,
-                                        'name': event.title,
-                                        'category': event.category.name,
-                                        'categoryId': event.category.id,
-                                        'venue': event.location,
-                                        'date': event.startDate,
-                                        'startTime': event.startTime,
-                                        'endTime': event.endTime,
-                                        'description': event.description,
-                                        'capacity': event.capacity,
-                                        'currentAttendees':
-                                            event.currentAttendees,
-                                        'vipPrice': 150.0,
-                                        'vipCount': 100,
-                                        'ecoPrice': 50.0,
-                                        'ecoCount': 900,
-                                        'isPaid': event.isPaid,
-                                        'status': event.status.toString(),
-                                        'coverImage': event.coverImage?.data,
-                                        'coverImageId': event.coverImage?.id,
-                                        'galleryImages': event.galleryImages
-                                            ?.map((img) => img.data)
-                                            .toList(),
-                                        'galleryImageIds': event.galleryImages
-                                            ?.map((img) => img.id)
-                                            .toList(),
-                                      },
-                                    ),
+                                    MyEventDetailsScreen(eventId: event.id),
                                 transitionDuration: Duration.zero,
                                 reverseTransitionDuration: Duration.zero,
                               ),

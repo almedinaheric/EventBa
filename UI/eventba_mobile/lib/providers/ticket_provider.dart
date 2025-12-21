@@ -154,4 +154,20 @@ class TicketProvider extends BaseProvider<Ticket> {
       throw Exception("Failed to delete tickets for event");
     }
   }
+
+  // Validate a ticket by ticket code
+  Future<void> validateTicket(String eventId, String ticketCode) async {
+    var url = "${baseUrl}TicketPurchase/validate/$eventId";
+    var uri = Uri.parse(url);
+    var headers = createHeaders();
+    var jsonRequest = jsonEncode({'ticketCode': ticketCode});
+
+    var response = await http.post(uri, headers: headers, body: jsonRequest);
+
+    if (!isValidResponse(response)) {
+      var errorBody = jsonDecode(response.body);
+      var errorMessage = errorBody['message'] ?? 'Failed to validate ticket';
+      throw Exception(errorMessage);
+    }
+  }
 }

@@ -133,4 +133,46 @@ public class TicketPurchaseService : BaseCRUDService<TicketPurchaseResponseDto, 
 
         return _mapper.Map<List<TicketPurchaseResponseDto>>(purchases);
     }
+
+    public async Task<TicketPurchaseResponseDto> ValidateTicket(string ticketCode, Guid eventId)
+    {
+        // Find the ticket purchase by ticket code and event ID
+        var purchase = await _context.TicketPurchases
+            .Include(x => x.Ticket)
+            .ThenInclude(x => x.Event)
+            .Include(x => x.User)
+            .FirstOrDefaultAsync(x => x.TicketCode == ticketCode && x.EventId == eventId);
+
+        if (purchase == null)
+            throw new UserException("Ticket not found");
+
+        // Validate ticket
+        if (!purchase.IsValid)
+            throw new UserException("Ticket is no longer valid");
+
+        if (purchase.IsUsed)
+            throw new UserException("Ticket has already been used");
+
+        // Mark ticket as used
+        purchase.IsValid = false;
+        purchase.IsUsed = true;
+        purchase.UsedAt = DateTime.UtcNow;
+        purchase.InvalidatedAt = DateTime.UtcNow;
+
+        // Update ticket quantities
+        var ticket = purchase.Ticket;
+        ticket.QuantityAvailable--;
+        ticket.QuantitySold++;
+
+        // Update event attendees
+        var eventEntity = ticket.Event;
+        eventEntity.CurrentAttendees++;
+        eventEntity.AvailableTicketsCount = await _context.Tickets
+            .Where(t => t.EventId == eventEntity.Id)
+            .SumAsync(t => t.QuantityAvailable);
+
+        await _context.SaveChangesAsync();
+
+        return _mapper.Map<TicketPurchaseResponseDto>(purchase);
+    }
 }
