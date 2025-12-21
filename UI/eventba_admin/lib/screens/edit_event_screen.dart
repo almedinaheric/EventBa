@@ -700,13 +700,19 @@ class _EditEventScreenState extends State<EditEventScreen> {
         // Event changed from FREE to PAID - create tickets
         await _createTicketsForPaidEvent(eventId, eventDate, ticketProvider);
       } else if (wasPaid && !isNowPaid) {
-        // Event changed from PAID to FREE - validate and delete tickets
-        await _validateAndDeleteTicketsForFreeEvent(eventId, ticketProvider);
+        // Event changed from PAID to FREE - validate and delete tickets, then create free ticket
+        await _validateAndDeleteTicketsForFreeEvent(
+          eventId,
+          eventDate,
+          ticketProvider,
+        );
       } else if (wasPaid && isNowPaid) {
         // Event was and still is PAID - update existing tickets
         await _updateTicketsForPaidEvent(eventId, eventDate, ticketProvider);
+      } else if (!wasPaid && !isNowPaid) {
+        // Event was and still is FREE - update or create free ticket
+        await _updateTicketsForFreeEvent(eventId, eventDate, ticketProvider);
       }
-      // If was free and still free, no ticket changes needed
     } catch (e) {
       print("Error handling ticket type change: $e");
       rethrow; // Re-throw to show error to user
@@ -715,6 +721,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
 
   Future<void> _validateAndDeleteTicketsForFreeEvent(
     String eventId,
+    String eventDate,
     TicketProvider ticketProvider,
   ) async {
     // Check if any tickets have been sold
@@ -729,6 +736,37 @@ class _EditEventScreenState extends State<EditEventScreen> {
     // If no tickets sold, delete all tickets
     if (_existingTickets.isNotEmpty) {
       await ticketProvider.deleteAllTicketsForEvent(eventId);
+    }
+
+    // Create free ticket for the free event (same as mobile app)
+    final capacity = int.tryParse(_capacityController.text) ?? 0;
+    if (capacity > 0) {
+      DateTime saleStartDate = DateTime.now();
+      DateTime eventDateParsed = DateTime.parse(eventDate);
+      DateTime eventDateEndOfDay = DateTime(
+        eventDateParsed.year,
+        eventDateParsed.month,
+        eventDateParsed.day,
+        23,
+        59,
+        59,
+      );
+      DateTime saleEndDate =
+          eventDateEndOfDay.isBefore(saleStartDate) ||
+              eventDateEndOfDay.isAtSameMomentAs(saleStartDate)
+          ? saleStartDate.add(const Duration(days: 1))
+          : eventDateEndOfDay;
+
+      final freeTicketData = {
+        'eventId': eventId,
+        'ticketType': 'Free',
+        'price': 0.0,
+        'quantity': capacity,
+        'saleStartDate': saleStartDate.toIso8601String(),
+        'saleEndDate': saleEndDate.toIso8601String(),
+      };
+      await ticketProvider.createTicket(freeTicketData);
+      print('Free ticket created for free event');
     }
   }
 
@@ -816,6 +854,64 @@ class _EditEventScreenState extends State<EditEventScreen> {
         'saleEndDate': saleEndDate.toIso8601String(),
       };
       await ticketProvider.createTicket(ecoTicketData);
+    }
+  }
+
+  Future<void> _updateTicketsForFreeEvent(
+    String eventId,
+    String eventDate,
+    TicketProvider ticketProvider,
+  ) async {
+    final capacity = int.tryParse(_capacityController.text) ?? 0;
+
+    if (capacity <= 0) {
+      throw Exception('Free events require a capacity greater than 0');
+    }
+
+    // Find existing free ticket
+    Ticket? existingFreeTicket;
+    for (var ticket in _existingTickets) {
+      if (ticket.ticketType == 'Free' && ticket.price == 0) {
+        existingFreeTicket = ticket;
+        break;
+      }
+    }
+
+    // Parse the date for ticket sale dates
+    DateTime saleStartDate = DateTime.now();
+    DateTime eventDateParsed = DateTime.parse(eventDate);
+    DateTime eventDateEndOfDay = DateTime(
+      eventDateParsed.year,
+      eventDateParsed.month,
+      eventDateParsed.day,
+      23,
+      59,
+      59,
+    );
+    DateTime saleEndDate =
+        eventDateEndOfDay.isBefore(saleStartDate) ||
+            eventDateEndOfDay.isAtSameMomentAs(saleStartDate)
+        ? saleStartDate.add(const Duration(days: 1))
+        : eventDateEndOfDay;
+
+    final freeTicketData = {
+      'eventId': eventId,
+      'ticketType': 'Free',
+      'price': 0.0,
+      'quantity': capacity,
+      'saleStartDate': saleStartDate.toIso8601String(),
+      'saleEndDate': saleEndDate.toIso8601String(),
+    };
+
+    if (existingFreeTicket != null) {
+      // Update existing free ticket
+      freeTicketData['id'] = existingFreeTicket.id;
+      await ticketProvider.updateTicket(existingFreeTicket.id, freeTicketData);
+      print('Free ticket updated');
+    } else {
+      // Create new free ticket if it doesn't exist
+      await ticketProvider.createTicket(freeTicketData);
+      print('Free ticket created');
     }
   }
 

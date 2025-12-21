@@ -1031,8 +1031,30 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
           }
           print('Economy ticket created');
         }
+      } else {
+        // Create free ticket for free events (same as mobile app)
+        final freeTicketRequest = {
+          'eventId': eventId,
+          'ticketType': 'Free',
+          'price': 0.0,
+          'quantity': int.parse(_capacityController.text.trim()),
+          'saleStartDate': saleStartDate.toIso8601String(),
+          'saleEndDate': saleEndDate.toIso8601String(),
+        };
+
+        final freeResponse = await http.post(
+          uri,
+          headers: headers,
+          body: jsonEncode(freeTicketRequest),
+        );
+
+        if (freeResponse.statusCode >= 300) {
+          throw Exception(
+            'Failed to create free ticket: ${freeResponse.statusCode}',
+          );
+        }
+        print('Free ticket created');
       }
-      // Note: For free events, we don't create tickets as the backend will handle capacity through the event entity
     } catch (e) {
       print('Error creating tickets: $e');
       // Don't throw - tickets are supplementary, event is already created

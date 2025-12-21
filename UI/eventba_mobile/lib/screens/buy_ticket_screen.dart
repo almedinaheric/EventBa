@@ -465,52 +465,71 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
       onLeftButtonPressed: () {
         Navigator.pop(context);
       },
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: ListView(
-          children: [
-            const Text(
-              'Select ticket types and quantity',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            ...widget.tickets
-                .map((ticket) => _buildTicketSelector(ticket))
-                .toList(),
-            const SizedBox(height: 24),
-            const Text(
-              'Payment method',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-            _buildPaymentOption(0, 'Stripe'),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
               children: [
-                const Text(
-                  'Total',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  '\$${_totalPrice.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    color: Colors.blue,
-                    fontWeight: FontWeight.bold,
+                Expanded(
+                  child: ListView(
+                    children: [
+                      const Text(
+                        'Select ticket types and quantity',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      ...widget.tickets
+                          .map((ticket) => _buildTicketSelector(ticket))
+                          .toList(),
+                      const SizedBox(height: 24),
+                      const Text(
+                        'Payment method',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      _buildPaymentOption(0, 'Stripe'),
+                    ],
                   ),
                 ),
+                // Total and button at bottom above bottom nav
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Total',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      '\$${_totalPrice.toStringAsFixed(2)}',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        color: Colors.blue,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                PrimaryButton(
+                  text: _isProcessing ? 'Processing...' : 'Pay',
+                  onPressed: _isProcessing ? () {} : _confirmPayment,
+                  width: double.infinity,
+                ),
+                const SizedBox(height: 24), // Space above bottom nav
               ],
             ),
-            const SizedBox(height: 16),
-            PrimaryButton(
-              text: _isProcessing ? 'Processing...' : 'Pay',
-              onPressed: _isProcessing ? () {} : _confirmPayment,
-              width: double.infinity,
-            ),
-            const SizedBox(height: 24),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

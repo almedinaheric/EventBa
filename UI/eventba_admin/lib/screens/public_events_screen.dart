@@ -49,16 +49,35 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
 
     try {
       final eventProvider = Provider.of<EventProvider>(context, listen: false);
-      final events = await eventProvider.getPublicEvents(
+
+      // Fetch both public events and my events to include all events including those created by current user
+      final publicEvents = await eventProvider.getPublicEvents(
         searchTerm: _searchTerm.isNotEmpty ? _searchTerm : null,
       );
 
+      final myEvents = await eventProvider.getMyEvents();
+
       if (!mounted) return;
 
-      // Filter only published events (backend should already filter, but keep for safety)
-      final publishedEvents = events
-          .where((event) => event.isPublished)
-          .toList();
+      // Combine both lists and remove duplicates (by ID)
+      final allEventsMap = <String, Event>{};
+
+      // Add public events
+      for (var event in publicEvents) {
+        if (event.isPublished) {
+          allEventsMap[event.id] = event;
+        }
+      }
+
+      // Add my events (these are public events created by current user)
+      for (var event in myEvents) {
+        if (event.isPublished && event.type.name == 'Public') {
+          allEventsMap[event.id] = event;
+        }
+      }
+
+      // Filter only published events and convert to list
+      final publishedEvents = allEventsMap.values.toList();
 
       setState(() {
         _allEvents = publishedEvents;

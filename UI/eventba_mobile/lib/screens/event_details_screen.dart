@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:eventba_mobile/models/user/user.dart';
 import 'package:eventba_mobile/providers/user_provider.dart';
 import 'package:eventba_mobile/screens/buy_ticket_screen.dart';
+import 'package:eventba_mobile/screens/reserve_place_screen.dart';
 import 'package:eventba_mobile/screens/organizer_profile_screen.dart';
 import 'package:eventba_mobile/utils/image_helpers.dart';
 import 'package:flutter/material.dart';
@@ -34,6 +35,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   List<Ticket> _tickets = [];
   bool _isLoading = true;
   int _totalTicketsLeft = 0;
+  bool _isDescriptionExpanded = false;
 
   @override
   void initState() {
@@ -706,7 +708,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                                     const SizedBox(height: 8),
                                     _buildDetailItem(
                                       Icons.access_time,
-                                      _event!.endDate,
+                                      _formatTime(_event!.startTime),
                                     ),
                                   ],
                                 ),
@@ -874,13 +876,44 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      _event!.description,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey,
-                        height: 1.5,
-                      ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _isDescriptionExpanded
+                              ? _event!.description
+                              : (_event!.description.length > 150
+                                    ? '${_event!.description.substring(0, 150)}...'
+                                    : _event!.description),
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey,
+                            height: 1.5,
+                          ),
+                        ),
+                        if (_event!.description.length > 150)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _isDescriptionExpanded =
+                                      !_isDescriptionExpanded;
+                                });
+                              },
+                              child: Text(
+                                _isDescriptionExpanded
+                                    ? "Show less"
+                                    : "Show more",
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Color(0xFF5B7CF6),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
 
                     const SizedBox(height: 24),
@@ -1002,7 +1035,22 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: _showReserveDialog,
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              PageRouteBuilder(
+                                pageBuilder: (_, __, ___) => ReservePlaceScreen(
+                                  eventId: widget.eventId,
+                                  availablePlaces: _totalTicketsLeft,
+                                ),
+                                transitionDuration: Duration.zero,
+                                reverseTransitionDuration: Duration.zero,
+                              ),
+                            ).then((_) {
+                              // Reload event data when returning from reserve screen
+                              _loadEventData();
+                            });
+                          },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF5B7CF6),
                             padding: const EdgeInsets.symmetric(vertical: 16),
@@ -1045,5 +1093,17 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
         ),
       ],
     );
+  }
+
+  String _formatTime(String timeStr) {
+    try {
+      final parts = timeStr.split(':');
+      if (parts.length >= 2) {
+        return "${parts[0].padLeft(2, '0')}:${parts[1].padLeft(2, '0')}";
+      }
+      return timeStr;
+    } catch (e) {
+      return timeStr;
+    }
   }
 }
