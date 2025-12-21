@@ -78,7 +78,7 @@ public class EventController : BaseCRUDController<EventResponseDto, EventSearchO
     }
 
     [HttpGet("{id}/statistics")]
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     public async Task<IActionResult> GetEventStatistics(Guid id)
     {
         var statistics = await _eventService.GetEventStatistics(id);

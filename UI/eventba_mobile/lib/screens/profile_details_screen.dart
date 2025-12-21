@@ -89,9 +89,12 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
         lastNameController.text = user.lastName;
         emailController.text = user.email;
         phoneController.text = user.phoneNumber ?? '';
-        _selectedCategoryIds = user.interests
-            .map((interest) => interest.id)
-            .toList();
+        // Load selected category IDs from user interests
+        _selectedCategoryIds = user.interests.isNotEmpty
+            ? user.interests.map((interest) => interest.id).toList()
+            : [];
+        print("Loaded user interests: ${user.interests.length} categories");
+        print("Selected category IDs: $_selectedCategoryIds");
       });
     } catch (e) {
       // Handle error silently for now

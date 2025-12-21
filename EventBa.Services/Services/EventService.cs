@@ -430,6 +430,25 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
         if (eventEntity == null)
             return null;
 
+        // Check if current user is the organizer or an admin
+        var currentUser = await _userService.GetUserEntityAsync();
+        
+        // Load role if not already loaded
+        if (currentUser.Role == null)
+        {
+            currentUser = await _context.Users
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.Id == currentUser.Id);
+        }
+        
+        var isAdmin = currentUser?.Role?.Name == RoleName.Admin;
+        var isOrganizer = eventEntity.OrganizerId == currentUser.Id;
+
+        if (!isAdmin && !isOrganizer)
+        {
+            throw new UserException("You do not have permission to view statistics for this event.");
+        }
+
         // Check if event is past
         var eventEndDateTime = new DateTime(
             eventEntity.EndDate.Year,

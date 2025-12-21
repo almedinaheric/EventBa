@@ -29,6 +29,22 @@ class _CategorySelectionWidgetState extends State<CategorySelectionWidget> {
     _selectedCategoryIds = List.from(widget.selectedCategoryIds);
   }
 
+  @override
+  void didUpdateWidget(CategorySelectionWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Update selected category IDs when parent widget updates them
+    // Compare lists by length and content
+    if (oldWidget.selectedCategoryIds.length !=
+            widget.selectedCategoryIds.length ||
+        !oldWidget.selectedCategoryIds.every(
+          (id) => widget.selectedCategoryIds.contains(id),
+        )) {
+      setState(() {
+        _selectedCategoryIds = List.from(widget.selectedCategoryIds);
+      });
+    }
+  }
+
   void _toggleCategory(String categoryId) {
     setState(() {
       if (_selectedCategoryIds.contains(categoryId)) {
@@ -47,10 +63,7 @@ class _CategorySelectionWidgetState extends State<CategorySelectionWidget> {
       children: [
         Text(
           widget.subtitle,
-          style: const TextStyle(
-            fontSize: 14,
-            color: Colors.grey,
-          ),
+          style: const TextStyle(fontSize: 14, color: Colors.grey),
         ),
         const SizedBox(height: 12),
         Wrap(
@@ -61,8 +74,10 @@ class _CategorySelectionWidgetState extends State<CategorySelectionWidget> {
                 (category) => GestureDetector(
                   onTap: () => _toggleCategory(category.id),
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: _selectedCategoryIds.contains(category.id)
                           ? const Color(0xFF5B7CF6)

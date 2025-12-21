@@ -239,20 +239,10 @@ Event: ${_event!.title}
 Location: ${_event!.location}
 Date: ${formatDate(_event!.startDate)} - ${formatDate(_event!.endDate)}
 Time: ${formatTime(_event!.startTime)} - ${formatTime(_event!.endTime)}
-Status: ${_event!.status}
-
-${'=' * 50}
-
-STATISTICS:
-${'=' * 50}
-
 Total Attendees: $totalAttendees
 Tickets Sold: $ticketsSold
 Revenue: \$${revenue.toStringAsFixed(2)}
 Average Rating: $averageRating
-
-${'=' * 50}
-
 Generated: ${DateTime.now().toString().split('.')[0]}
 ''';
 

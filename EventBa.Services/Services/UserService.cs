@@ -105,6 +105,50 @@ public class UserService :
         Console.WriteLine($"BeforeInsert completed for user: {insert.Email}");
     }
 
+    public override async Task<UserResponseDto> Update(Guid id, UserUpdateRequestDto update)
+    {
+        var set = _context.Set<User>();
+        var entity = await set
+            .Include(u => u.ProfileImage)
+            .FirstOrDefaultAsync(u => u.Id == id);
+        
+        if (entity == null)
+            throw new UserException("User not found");
+        
+        // Store old profile image ID before mapping (since mapper will overwrite it)
+        var oldProfileImageId = entity.ProfileImageId;
+        
+        // Map the update to the entity
+        _mapper.Map(update, entity);
+        
+        // Handle profile image replacement - only delete old profile image if it's being replaced with a different one
+        if (update.ProfileImageId.HasValue && oldProfileImageId.HasValue && 
+            update.ProfileImageId.Value != oldProfileImageId.Value)
+        {
+            // Old profile image is being replaced with a new one, delete the old one
+            var oldProfileImage = await _context.Images.FindAsync(oldProfileImageId.Value);
+            if (oldProfileImage != null)
+            {
+                _context.Images.Remove(oldProfileImage);
+            }
+        }
+        else if (update.ProfileImageId.HasValue && update.ProfileImageId.Value == oldProfileImageId)
+        {
+            // Same profile image ID - no change needed, just keep it
+        }
+        else if (!update.ProfileImageId.HasValue && oldProfileImageId.HasValue)
+        {
+            // No profile image ID in update but one exists - preserve the existing one
+            entity.ProfileImageId = oldProfileImageId;
+        }
+        
+        // Handle category interests
+        await BeforeUpdate(entity, update);
+        
+        await _context.SaveChangesAsync();
+        return _mapper.Map<UserResponseDto>(entity);
+    }
+
     public override async Task BeforeUpdate(User entity, UserUpdateRequestDto update)
     {
         var newCategoryIds = update.InterestCategoryIds ?? new List<Guid>();
@@ -222,14 +266,9 @@ public class UserService :
         if (userIdClaim == null)
             throw new UserException("User is not authenticated");
 
-        var user = await _context.Users
-            .Include(u => u.Role)
-            .Include(u => u.Followers)
-            .Include(u => u.Followings)
-            .Include(u => u.Categories)
-            .Include(u => u.ProfileImage)
-            .Include(u => u.FavoriteEvents)
-            .FirstOrDefaultAsync(u => u.Email.Equals(userIdClaim));
+        var query = _context.Users.AsQueryable();
+        query = AddInclude(query);
+        var user = await query.FirstOrDefaultAsync(u => u.Email.Equals(userIdClaim));
         
         if (user == null)
             throw new UserException("User not found");

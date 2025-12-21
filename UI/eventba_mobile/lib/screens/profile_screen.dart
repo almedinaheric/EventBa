@@ -261,6 +261,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     outlined: true,
                     small: true,
                     onPressed: () {
+                      // Close dialog first
+                      Navigator.pop(context);
+
                       // Clear authentication credentials
                       Authorization.email = null;
                       Authorization.password = null;
@@ -275,14 +278,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         print('Error clearing user provider: $e');
                       }
 
-                      Navigator.pop(context);
-                      Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const WelcomeScreen(),
-                        ),
-                        (route) => false,
-                      );
+                      // Navigate to welcome screen and clear navigation stack
+                      if (context.mounted) {
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const WelcomeScreen(),
+                          ),
+                          (route) => false,
+                        );
+                      }
                     },
                   ),
                 ],

@@ -52,10 +52,11 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
       );
       final isPast = eventEndDateTime.isBefore(DateTime.now());
 
-      // Load event statistics
+      // Load event statistics (for upcoming events, this returns revenue and tickets sold from ticket purchases)
       Map<String, dynamic>? statistics;
       try {
         statistics = await eventProvider.getEventStatistics(widget.eventId);
+        print("Loaded statistics for event ${widget.eventId}: $statistics");
       } catch (e) {
         print("Failed to load statistics: $e");
       }
@@ -593,11 +594,28 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
   }
 
   Widget _buildShortStats() {
+    // Revenue: sum of all PricePaid from ticket purchases for this event
+    // Tickets Sold: count of all ticket purchases for this event
+    // Both are calculated in backend GetEventStatistics for upcoming events
+    // Backend returns: TotalRevenue (camelCase: totalRevenue) and TotalTicketsSold (camelCase: totalTicketsSold)
     final revenue =
-        _statistics?['totalRevenue'] ?? _statistics?['revenue'] ?? 0.0;
+        (_statistics?['totalRevenue'] ??
+                _statistics?['TotalRevenue'] ??
+                _statistics?['revenue'] ??
+                0.0)
+            .toDouble();
     final ticketsSold =
-        _statistics?['totalTicketsSold'] ?? _statistics?['ticketsSold'] ?? 0;
+        (_statistics?['totalTicketsSold'] ??
+                _statistics?['TotalTicketsSold'] ??
+                _statistics?['ticketsSold'] ??
+                0)
+            as int;
     final ticketsLeft = _event!.availableTicketsCount;
+
+    print("Quick Stats Debug - Statistics map: $_statistics");
+    print(
+      "Quick Stats - Revenue: $revenue, Tickets Sold: $ticketsSold, Tickets Left: $ticketsLeft",
+    );
 
     return Container(
       padding: const EdgeInsets.all(16),

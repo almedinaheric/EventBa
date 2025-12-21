@@ -29,7 +29,7 @@ class UserProvider extends BaseProvider<User> {
   }
 
   Future<User> getProfile() async {
-    var url = "${baseUrl}User/profile/customer";
+    var url = "${baseUrl}User/profile";
     print("Making GET request to: $url");
 
     var uri = Uri.parse(url);
