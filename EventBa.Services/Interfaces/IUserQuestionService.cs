@@ -10,4 +10,5 @@ public interface IUserQuestionService : ICRUDService<UserQuestionResponseDto, Us
     Task<List<UserQuestionResponseDto>> GetMyQuestions();
     Task<List<UserQuestionResponseDto>> GetQuestionsForMe();
     Task<List<UserQuestionResponseDto>> GetAdminQuestions();
+    Task<List<UserQuestionResponseDto>> GetQuestionsForEvent(Guid eventId);
 }

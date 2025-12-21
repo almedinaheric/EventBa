@@ -48,4 +48,23 @@ class UserQuestionProvider extends BaseProvider<UserQuestion> {
       throw Exception("Unknown error in a GET request");
     }
   }
+
+  Future<List<UserQuestion>> getQuestionsForEvent(String eventId) async {
+    var url = "${baseUrl}UserQuestion/event/$eventId";
+
+    var uri = Uri.parse(url);
+    var headers = createHeaders();
+    var response = await http.get(uri, headers: headers);
+
+    if (isValidResponse(response)) {
+      var data = jsonDecode(response.body);
+      List<UserQuestion> questions = [];
+      for (var item in data) {
+        questions.add(fromJson(item));
+      }
+      return questions;
+    } else {
+      throw Exception("Unknown error in a GET request");
+    }
+  }
 }

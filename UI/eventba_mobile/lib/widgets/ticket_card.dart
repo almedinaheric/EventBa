@@ -5,7 +5,7 @@ class TicketCard extends StatelessWidget {
   final String date;
   final String time;
   final int ticketCount;
-  final String distance;
+  final String totalPrice;
   final VoidCallback onTap;
 
   const TicketCard({
@@ -14,7 +14,7 @@ class TicketCard extends StatelessWidget {
     required this.date,
     required this.time,
     required this.ticketCount,
-    required this.distance,
+    required this.totalPrice,
     required this.onTap,
   });
 
@@ -50,10 +50,7 @@ class TicketCard extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               "$date, $time",
-              style: const TextStyle(
-                fontSize: 14,
-                color: Colors.grey,
-              ),
+              style: const TextStyle(fontSize: 14, color: Colors.grey),
             ),
             const SizedBox(height: 12),
             Row(
@@ -67,7 +64,7 @@ class TicketCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  distance,
+                  totalPrice,
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,

@@ -227,6 +227,17 @@ class _TicketsScreenState extends State<TicketsScreen> {
       final date = _formatDate(eventStartDateTime);
       final time = _formatTime(eventStartDateTime);
 
+      // Calculate total price for paid tickets
+      double totalPrice = 0.0;
+      for (final purchase in purchases) {
+        totalPrice += purchase.pricePaid;
+      }
+
+      // Format total price
+      final formattedPrice = totalPrice > 0
+          ? "\$${totalPrice.toStringAsFixed(2)}"
+          : "Free";
+
       return Column(
         children: [
           TicketCard(
@@ -234,7 +245,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
             date: date,
             time: time,
             ticketCount: purchases.length,
-            distance: "0KM", // TODO: Calculate distance
+            totalPrice: formattedPrice,
             onTap: () {
               Navigator.push(
                 context,

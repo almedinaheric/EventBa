@@ -9,10 +9,13 @@ class UserQuestion {
   final String? answer;
   final String userId;
   final String receiverId;
+  final String? eventId;
   final DateTime createdAt;
   final DateTime? answeredAt;
-  final String userName;
-  final String receiverName;
+  @JsonKey(name: 'userFullName')
+  final String? userName;
+  @JsonKey(name: 'receiverFullName')
+  final String? receiverName;
 
   UserQuestion({
     required this.id,
@@ -20,10 +23,11 @@ class UserQuestion {
     this.answer,
     required this.userId,
     required this.receiverId,
+    this.eventId,
     required this.createdAt,
     this.answeredAt,
-    required this.userName,
-    required this.receiverName,
+    this.userName,
+    this.receiverName,
   });
 
   factory UserQuestion.fromJson(Map<String, dynamic> json) =>

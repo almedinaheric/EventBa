@@ -12,12 +12,13 @@ UserQuestion _$UserQuestionFromJson(Map<String, dynamic> json) => UserQuestion(
   answer: json['answer'] as String?,
   userId: json['userId'] as String,
   receiverId: json['receiverId'] as String,
+  eventId: json['eventId'] as String?,
   createdAt: DateTime.parse(json['createdAt'] as String),
   answeredAt: json['answeredAt'] == null
       ? null
       : DateTime.parse(json['answeredAt'] as String),
-  userName: json['userName'] as String,
-  receiverName: json['receiverName'] as String,
+  userName: json['userFullName'] as String?,
+  receiverName: json['receiverFullName'] as String?,
 );
 
 Map<String, dynamic> _$UserQuestionToJson(UserQuestion instance) =>
@@ -27,8 +28,9 @@ Map<String, dynamic> _$UserQuestionToJson(UserQuestion instance) =>
       'answer': instance.answer,
       'userId': instance.userId,
       'receiverId': instance.receiverId,
+      'eventId': instance.eventId,
       'createdAt': instance.createdAt.toIso8601String(),
       'answeredAt': instance.answeredAt?.toIso8601String(),
-      'userName': instance.userName,
-      'receiverName': instance.receiverName,
+      'userFullName': instance.userName,
+      'receiverFullName': instance.receiverName,
     };

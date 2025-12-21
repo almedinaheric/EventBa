@@ -9,6 +9,8 @@ import 'package:provider/provider.dart';
 import 'package:eventba_mobile/providers/event_provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:eventba_mobile/providers/category_provider.dart';
+import 'package:eventba_mobile/utils/image_helpers.dart';
+import 'package:eventba_mobile/screens/my_events_screen.dart';
 import 'package:http/http.dart' as http;
 
 class EventCreationScreen extends StatefulWidget {
@@ -816,19 +818,61 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
         throw FormatException('Invalid date format. Use YYYY-MM-DD');
       }
 
-      final startDateFormatted =
-          '${startDateParts[2]}-${startDateParts[1]}-${startDateParts[0]}';
-      final endDateFormatted =
-          '${endDateParts[2]}-${endDateParts[1]}-${endDateParts[0]}';
+      // Date is already in YYYY-MM-DD format from DateTime.toString()
+      // Just use it directly
+      final startDateFormatted = dateRangeParts[0].trim();
+      final endDateFormatted = dateRangeParts[1].trim();
 
-      final startTimeParts = _startTimeController.text.split(':');
-      final endTimeParts = _endTimeController.text.split(':');
+      // Format time from 12-hour format (e.g., "1:16 PM") to 24-hour format (HH:mm:ss)
+      String formatTime(String timeStr) {
+        try {
+          // Handle 12-hour format with AM/PM
+          if (timeStr.contains('AM') || timeStr.contains('PM')) {
+            final parts = timeStr
+                .replaceAll(' AM', '')
+                .replaceAll(' PM', '')
+                .split(':');
+            if (parts.length >= 2) {
+              int hour = int.parse(parts[0]);
+              int minute = int.parse(parts[1]);
+
+              // Convert to 24-hour format
+              if (timeStr.contains('PM') && hour != 12) {
+                hour += 12;
+              } else if (timeStr.contains('AM') && hour == 12) {
+                hour = 0;
+              }
+
+              return '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}:00';
+            }
+          } else {
+            // Already in 24-hour format or just HH:mm
+            final parts = timeStr.split(':');
+            if (parts.length >= 2) {
+              final hour = parts[0].padLeft(2, '0');
+              final minute = parts[1].padLeft(2, '0');
+              return '$hour:$minute:00';
+            }
+          }
+          return timeStr;
+        } catch (e) {
+          return timeStr;
+        }
+      }
+
+      final startTimeFormatted = formatTime(_startTimeController.text);
+      final endTimeFormatted = formatTime(_endTimeController.text);
 
       // Upload main/cover image
       String? coverImageId;
       if (_mainImage != null) {
         final bytes = await File(_mainImage!.path).readAsBytes();
-        final mainImageRequest = {'data': bytes, 'contentType': 'image/jpeg'};
+        final base64Image = base64Encode(bytes);
+        final mainImageRequest = {
+          'Data': base64Image,
+          'ContentType': ImageHelpers.getContentType(_mainImage!.path),
+          'ImageType': 'EventCover',
+        };
         final mainImageResponse = await imageProvider.insert(mainImageRequest);
         coverImageId = mainImageResponse.id;
       }
@@ -850,8 +894,8 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
         'location': _venueController.text.trim(),
         'startDate': startDateFormatted,
         'endDate': endDateFormatted,
-        'startTime': '${startTimeParts[0]}:${startTimeParts[1]}:00',
-        'endTime': '${endTimeParts[0]}:${endTimeParts[1]}:00',
+        'startTime': startTimeFormatted,
+        'endTime': endTimeFormatted,
         'capacity': totalCapacity,
         'availableTicketsCount': totalCapacity,
         'status':
@@ -877,7 +921,13 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
 
         for (var additionalImage in _additionalImages) {
           final bytes = await File(additionalImage.path).readAsBytes();
-          final imageRequest = {'data': bytes, 'contentType': 'image/jpeg'};
+          final base64Image = base64Encode(bytes);
+          final imageRequest = {
+            'Data': base64Image,
+            'ContentType': ImageHelpers.getContentType(additionalImage.path),
+            'ImageType': 'EventGallery',
+            'EventId': eventId,
+          };
           final imageResponse = await imageProvider.insert(imageRequest);
           if (imageResponse.id != null && imageResponse.id!.isNotEmpty) {
             galleryImageIds.add(imageResponse.id!);
@@ -901,7 +951,16 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
           content: Text('Event created successfully!'),
         ),
       );
-      Navigator.pop(context);
+
+      // Navigate to My Events screen
+      Navigator.pushReplacement(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (_, __, ___) => const MyEventsScreen(),
+          transitionDuration: Duration.zero,
+          reverseTransitionDuration: Duration.zero,
+        ),
+      );
     } catch (e) {
       print("Failed to create event: $e");
       ScaffoldMessenger.of(context).showSnackBar(

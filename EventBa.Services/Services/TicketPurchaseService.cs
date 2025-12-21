@@ -156,8 +156,10 @@ public class TicketPurchaseService : BaseCRUDService<TicketPurchaseResponseDto, 
         // Mark ticket as used
         purchase.IsValid = false;
         purchase.IsUsed = true;
-        purchase.UsedAt = DateTime.UtcNow;
-        purchase.InvalidatedAt = DateTime.UtcNow;
+        // Convert to local time (Unspecified kind) for PostgreSQL timestamp without time zone
+        var now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        purchase.UsedAt = now;
+        purchase.InvalidatedAt = now;
 
         // Update ticket quantities
         var ticket = purchase.Ticket;
@@ -167,9 +169,7 @@ public class TicketPurchaseService : BaseCRUDService<TicketPurchaseResponseDto, 
         // Update event attendees
         var eventEntity = ticket.Event;
         eventEntity.CurrentAttendees++;
-        eventEntity.AvailableTicketsCount = await _context.Tickets
-            .Where(t => t.EventId == eventEntity.Id)
-            .SumAsync(t => t.QuantityAvailable);
+        eventEntity.AvailableTicketsCount--;
 
         await _context.SaveChangesAsync();
 

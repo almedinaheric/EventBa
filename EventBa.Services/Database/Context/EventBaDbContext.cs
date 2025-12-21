@@ -721,6 +721,7 @@ public partial class EventBaDbContext : DbContext
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("updated_at");
             entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.EventId).HasColumnName("event_id");
 
             entity.HasOne(d => d.Receiver).WithMany(p => p.UserQuestionReceivers)
                 .HasForeignKey(d => d.ReceiverId)
@@ -731,6 +732,11 @@ public partial class EventBaDbContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("user_questions_user_id_fkey");
+
+            entity.HasOne(d => d.Event).WithMany()
+                .HasForeignKey(d => d.EventId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("user_questions_event_id_fkey");
         });
 
         OnModelCreatingPartial(modelBuilder);

@@ -42,4 +42,12 @@ public class UserQuestionController : BaseCRUDController<UserQuestionResponseDto
         var questions = await _userQuestionService.GetAdminQuestions();
         return Ok(questions);
     }
+
+    [HttpGet("event/{eventId}")]
+    [Authorize]
+    public async Task<IActionResult> GetQuestionsForEvent(Guid eventId)
+    {
+        var questions = await _userQuestionService.GetQuestionsForEvent(eventId);
+        return Ok(questions);
+    }
 }

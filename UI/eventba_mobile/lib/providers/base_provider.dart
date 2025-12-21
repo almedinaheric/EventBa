@@ -157,8 +157,44 @@ abstract class BaseProvider<T> with ChangeNotifier {
     } else if (response.statusCode == 401) {
       throw Exception("Unauthorized");
     } else {
-      print(response.body);
-      throw Exception("Something bad happened please try again");
+      print("Error response status: ${response.statusCode}");
+      print("Error response body: ${response.body}");
+
+      // Try to extract error message from response
+      try {
+        final errorData = jsonDecode(response.body);
+        if (errorData is Map) {
+          // Check for errors object (ASP.NET Core validation errors)
+          if (errorData.containsKey('errors')) {
+            final errors = errorData['errors'];
+            if (errors is Map) {
+              final errorMessages = <String>[];
+              errors.forEach((key, value) {
+                if (value is List) {
+                  errorMessages.addAll(value.map((e) => e.toString()));
+                } else {
+                  errorMessages.add(value.toString());
+                }
+              });
+              throw Exception(errorMessages.join(', '));
+            }
+          }
+          // Check for error message
+          if (errorData.containsKey('error')) {
+            throw Exception(errorData['error'].toString());
+          }
+          if (errorData.containsKey('message')) {
+            throw Exception(errorData['message'].toString());
+          }
+        }
+      } catch (e) {
+        // If parsing fails, use the original error
+        if (e is Exception) rethrow;
+      }
+
+      throw Exception(
+        "Something bad happened please try again (${response.statusCode})",
+      );
     }
   }
 

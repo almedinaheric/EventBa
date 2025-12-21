@@ -64,14 +64,47 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
 
       // Load tickets for the event
       final tickets = await ticketProvider.getTicketsForEvent(widget.eventId);
-      final ticketsMap = {for (var t in tickets) t.id: t};
+      var ticketsMap = {for (var t in tickets) t.id: t};
 
-      // Group purchases by ticket ID
+      // Debug: Print all ticket IDs
+      print("Loaded ticket IDs: ${tickets.map((t) => t.id).toList()}");
+
+      // Group purchases by ticket ID and load missing tickets
       final purchasesByTicketId = <String, List<TicketPurchase>>{};
       for (final purchase in widget.purchases) {
+        print("Purchase ticket ID: ${purchase.ticketId}");
+
+        // If ticket not found in event tickets, try to load it directly
+        if (!ticketsMap.containsKey(purchase.ticketId)) {
+          try {
+            print(
+              "Ticket ${purchase.ticketId} not found in event tickets, loading directly...",
+            );
+            final ticket = await ticketProvider.getById(purchase.ticketId);
+            ticketsMap[purchase.ticketId] = ticket;
+            print("Successfully loaded ticket ${purchase.ticketId}");
+          } catch (e) {
+            print("Failed to load ticket ${purchase.ticketId}: $e");
+          }
+        }
+
         purchasesByTicketId
             .putIfAbsent(purchase.ticketId, () => [])
             .add(purchase);
+      }
+
+      // Debug: Check if any purchase ticket IDs match loaded tickets
+      for (var purchase in widget.purchases) {
+        final found = ticketsMap.containsKey(purchase.ticketId);
+        print("Purchase ${purchase.ticketId} found in tickets: $found");
+        if (!found) {
+          // Try to find by comparing all tickets
+          final matchingTicket = tickets.firstWhere(
+            (t) => t.id == purchase.ticketId,
+            orElse: () => tickets.first, // Fallback to first ticket if no match
+          );
+          print("Attempting to match purchase to ticket: ${matchingTicket.id}");
+        }
       }
 
       // Load organizer
@@ -108,6 +141,17 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
           userReview = null;
         }
       }
+
+      // Debug logging
+      print("=== TICKET DETAILS DEBUG ===");
+      print("Total purchases: ${widget.purchases.length}");
+      print("Purchases by ticket ID: ${purchasesByTicketId.length} groups");
+      print("Tickets loaded: ${ticketsMap.length}");
+      for (var entry in purchasesByTicketId.entries) {
+        print("  Ticket ID: ${entry.key}, Purchases: ${entry.value.length}");
+        print("  Ticket found: ${ticketsMap.containsKey(entry.key)}");
+      }
+      print("=== END DEBUG ===");
 
       setState(() {
         _event = event;
@@ -392,18 +436,44 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                       const SizedBox(height: 24),
 
                       // Display tickets grouped by ticket type
-                      ..._purchasesByTicketId.entries.map((entry) {
-                        final ticketId = entry.key;
-                        final purchases = entry.value;
-                        final ticket = _tickets[ticketId];
+                      if (_purchasesByTicketId.isNotEmpty)
+                        ..._purchasesByTicketId.entries.expand((entry) {
+                          final ticketId = entry.key;
+                          final purchases = entry.value;
+                          final ticket = _tickets[ticketId];
 
-                        if (ticket == null) return const SizedBox.shrink();
+                          if (ticket == null) {
+                            print(
+                              "WARNING: Ticket not found for ID: $ticketId. Available ticket IDs: ${_tickets.keys.toList()}",
+                            );
+                            // Still show the purchase, but with fallback data
+                            return purchases.map((purchase) {
+                              final priceText = purchase.pricePaid > 0
+                                  ? "\$${purchase.pricePaid.toStringAsFixed(2)}"
+                                  : "Free";
+                              return TicketTypeBadge(
+                                type: "Ticket",
+                                price: priceText,
+                                onShowQR: () {
+                                  setState(() {
+                                    _selectedQRCode =
+                                        purchase.qrCodeImage != null
+                                        ? base64Encode(purchase.qrCodeImage!)
+                                        : null;
+                                    _selectedTicketCode = purchase.ticketCode;
+                                  });
+                                },
+                              );
+                            });
+                          }
 
-                        return Column(
-                          children: purchases.map((purchase) {
+                          return purchases.map((purchase) {
+                            final priceText = purchase.pricePaid > 0
+                                ? "\$${purchase.pricePaid.toStringAsFixed(2)}"
+                                : "Free";
                             return TicketTypeBadge(
                               type: ticket.ticketType,
-                              price: "${ticket.price.toStringAsFixed(2)}KM",
+                              price: priceText,
                               onShowQR: () {
                                 setState(() {
                                   _selectedQRCode = purchase.qrCodeImage != null
@@ -413,9 +483,24 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                 });
                               },
                             );
-                          }).toList(),
-                        );
-                      }).toList(),
+                          });
+                        }).toList()
+                      else if (widget.purchases.isNotEmpty)
+                        const Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: Text(
+                            "Loading ticket information...",
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        )
+                      else
+                        const Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: Text(
+                            "No tickets found",
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        ),
 
                       const SizedBox(height: 24),
 

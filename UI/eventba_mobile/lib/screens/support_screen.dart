@@ -42,10 +42,19 @@ class _SupportScreenState extends State<SupportScreen> {
         listen: false,
       );
 
-      await questionProvider.insert({
+      print("Submitting support question...");
+      print("Question: ${questionController.text.trim()}");
+
+      final request = {
         'question': questionController.text.trim(),
         'isQuestionForAdmin': true,
-      });
+      };
+
+      print("Request payload: $request");
+
+      final result = await questionProvider.insert(request);
+
+      print("Question submitted successfully: $result");
 
       if (!mounted) return;
 
@@ -55,14 +64,29 @@ class _SupportScreenState extends State<SupportScreen> {
           content: Text("Question submitted successfully!"),
         ),
       );
-      Navigator.pop(context);
-    } catch (e) {
+      // Navigate back to profile screen (pop twice: support screen -> profile screen)
+      Navigator.pop(context); // Pop support screen
+    } catch (e, stackTrace) {
+      print("Error submitting question: $e");
+      print("Stack trace: $stackTrace");
+
       if (!mounted) return;
+
+      String errorMessage = "Failed to submit question";
+      if (e.toString().contains("No admin user found")) {
+        errorMessage =
+            "No admin user found in the system. Please contact support.";
+      } else if (e.toString().contains("Unauthorized")) {
+        errorMessage = "You are not authorized. Please log in again.";
+      } else {
+        errorMessage = "Failed to submit question: ${e.toString()}";
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           behavior: SnackBarBehavior.floating,
-          content: Text("Failed to submit question: ${e.toString()}"),
+          content: Text(errorMessage),
+          duration: const Duration(seconds: 5),
         ),
       );
     } finally {

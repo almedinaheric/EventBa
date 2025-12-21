@@ -14,6 +14,7 @@ import 'package:eventba_mobile/providers/ticket_provider.dart';
 import 'package:eventba_mobile/providers/ticket_purchase_provider.dart';
 import 'package:eventba_mobile/providers/user_question_provider.dart';
 import 'package:eventba_mobile/models/event/event.dart';
+import 'package:eventba_mobile/models/enums/event_type.dart';
 import 'package:eventba_mobile/models/ticket/ticket.dart';
 
 class EventDetailsScreen extends StatefulWidget {
@@ -506,7 +507,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                               );
                           await questionProvider.insert({
                             'question': questionController.text.trim(),
-                            'receiverId': _event?.organizerId,
+                            'eventId': widget.eventId,
+                            'isQuestionForAdmin': false,
                           });
                           Navigator.pop(context);
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -901,7 +903,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                                 padding: const EdgeInsets.only(bottom: 8),
                                 child: TicketOption(
                                   type: ticket.ticketType,
-                                  price: "${ticket.price.toStringAsFixed(2)}KM",
+                                  price: "\$${ticket.price.toStringAsFixed(2)}",
                                   available: ticket.quantityAvailable,
                                 ),
                               ),
@@ -919,29 +921,31 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
                     const SizedBox(height: 16),
 
-                    // "Have a Question?" Button
-                    InkWell(
-                      onTap: _showQuestionDialog,
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: const Color(0xFF5B7CF6)),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Text(
-                          "Have a question?",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Color(0xFF5B7CF6),
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
+                    // "Have a Question?" Button - Only show for private events
+                    if (_event!.type == EventType.Private)
+                      InkWell(
+                        onTap: _showQuestionDialog,
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: const Color(0xFF5B7CF6)),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Text(
+                            "Have a question?",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Color(0xFF5B7CF6),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                       ),
-                    ),
 
-                    const SizedBox(height: 8),
+                    if (_event!.type == EventType.Private)
+                      const SizedBox(height: 8),
 
                     // Buy Ticket Button or Reserve Place Button
                     if (_event!.isPaid && _tickets.isNotEmpty)

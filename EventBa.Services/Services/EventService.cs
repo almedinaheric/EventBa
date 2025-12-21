@@ -424,29 +424,90 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
             .Include(x => x.Tickets)
             .ThenInclude(x => x.TicketPurchases)
             .Include(x => x.EventReviews)
+            .Include(x => x.EventStatistics)
             .FirstOrDefaultAsync(x => x.Id == eventId);
 
         if (eventEntity == null)
             return null;
 
-        var totalTickets = eventEntity.Tickets.Sum(x => x.Quantity);
-        var soldTickets = eventEntity.Tickets.Sum(x => x.TicketPurchases.Count);
-        // Use PricePaid from purchase to get accurate revenue even if ticket prices changed
-        var revenue = eventEntity.Tickets.Sum(x => x.TicketPurchases.Sum(p => p.PricePaid));
-        
-        // Calculate average rating
-        var averageRating = eventEntity.EventReviews.Any() 
-            ? eventEntity.EventReviews.Average(x => x.Rating) 
-            : 0.0;
+        // Check if event is past
+        var eventEndDateTime = new DateTime(
+            eventEntity.EndDate.Year,
+            eventEntity.EndDate.Month,
+            eventEntity.EndDate.Day,
+            eventEntity.EndTime.Hour,
+            eventEntity.EndTime.Minute,
+            eventEntity.EndTime.Second
+        );
+        var isPast = eventEndDateTime < DateTime.Now;
 
-        return new EventStatisticsResponseDto
+        // If event is past, check if statistics exist, if not generate them
+        if (isPast)
         {
-            EventId = eventId,
-            TotalTicketsSold = soldTickets,
-            TotalRevenue = revenue,
-            CurrentAttendees = soldTickets,
-            AverageRating = averageRating
-        };
+            // Check if statistics already exist in database
+            var existingStat = await _context.EventStatistics
+                .FirstOrDefaultAsync(x => x.EventId == eventId);
+
+            if (existingStat != null)
+            {
+                // Return existing statistics from database
+                return new EventStatisticsResponseDto
+                {
+                    EventId = eventId,
+                    TotalTicketsSold = existingStat.TotalTicketsSold,
+                    TotalRevenue = existingStat.TotalRevenue,
+                    CurrentAttendees = existingStat.TotalTicketsSold,
+                    AverageRating = (double)existingStat.AverageRating
+                };
+            }
+            else
+            {
+                // Generate new statistics and save to database
+                var soldTickets = eventEntity.Tickets.Sum(x => x.TicketPurchases.Count);
+                var revenue = eventEntity.Tickets.Sum(x => x.TicketPurchases.Sum(p => p.PricePaid));
+                var averageRating = eventEntity.EventReviews.Any() 
+                    ? (double)eventEntity.EventReviews.Average(x => x.Rating) 
+                    : 0.0;
+
+                // Create new statistics record
+                var newStat = new EventStatistic
+                {
+                    EventId = eventId,
+                    TotalTicketsSold = soldTickets,
+                    TotalRevenue = revenue,
+                    AverageRating = (decimal)averageRating,
+                    TotalViews = 0,
+                    TotalFavorites = 0
+                };
+                _context.EventStatistics.Add(newStat);
+                await _context.SaveChangesAsync();
+
+                return new EventStatisticsResponseDto
+                {
+                    EventId = eventId,
+                    TotalTicketsSold = soldTickets,
+                    TotalRevenue = revenue,
+                    CurrentAttendees = soldTickets,
+                    AverageRating = averageRating
+                };
+            }
+        }
+        else
+        {
+            // For upcoming events, return current data without saving to statistics table
+            var soldTickets = eventEntity.Tickets.Sum(x => x.TicketPurchases.Count);
+            var revenue = eventEntity.Tickets.Sum(x => x.TicketPurchases.Sum(p => p.PricePaid));
+            var averageRating = 0.0; // No ratings for upcoming events
+
+            return new EventStatisticsResponseDto
+            {
+                EventId = eventId,
+                TotalTicketsSold = soldTickets,
+                TotalRevenue = revenue,
+                CurrentAttendees = eventEntity.CurrentAttendees,
+                AverageRating = averageRating
+            };
+        }
     }
 
     public async Task AddGalleryImages(Guid eventId, List<Guid> imageIds)

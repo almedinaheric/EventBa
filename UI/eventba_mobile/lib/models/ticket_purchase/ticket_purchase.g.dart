@@ -24,6 +24,7 @@ TicketPurchase _$TicketPurchaseFromJson(Map<String, dynamic> json) =>
       invalidatedAt: json['invalidatedAt'] == null
           ? null
           : DateTime.parse(json['invalidatedAt'] as String),
+      pricePaid: (json['pricePaid'] as num).toDouble(),
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
     );
@@ -42,6 +43,7 @@ Map<String, dynamic> _$TicketPurchaseToJson(TicketPurchase instance) =>
       'usedAt': instance.usedAt?.toIso8601String(),
       'isValid': instance.isValid,
       'invalidatedAt': instance.invalidatedAt?.toIso8601String(),
+      'pricePaid': instance.pricePaid,
       'createdAt': instance.createdAt.toIso8601String(),
       'updatedAt': instance.updatedAt.toIso8601String(),
     };

@@ -35,7 +35,10 @@ class _EventQuestionsScreenState extends State<EventQuestionsScreen> {
         context,
         listen: false,
       );
-      final questions = await questionProvider.getQuestionsForMe();
+      // Load questions specific to this event
+      final questions = await questionProvider.getQuestionsForEvent(
+        widget.eventId,
+      );
       setState(() {
         _questions = questions;
         _isLoading = false;

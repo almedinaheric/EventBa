@@ -18,6 +18,7 @@ class TicketPurchase {
   final DateTime? usedAt;
   final bool isValid;
   final DateTime? invalidatedAt;
+  final double pricePaid;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -34,6 +35,7 @@ class TicketPurchase {
     this.usedAt,
     required this.isValid,
     this.invalidatedAt,
+    required this.pricePaid,
     required this.createdAt,
     required this.updatedAt,
   });

@@ -46,11 +46,11 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
       // Load event details
       final event = await eventProvider.getById(widget.eventId);
 
-      // Check if event is past
-      final eventStartDateTime = DateTime.parse(
-        '${event.startDate} ${event.startTime}',
+      // Check if event is past (using end date/time)
+      final eventEndDateTime = DateTime.parse(
+        '${event.endDate} ${event.endTime}',
       );
-      final isPast = eventStartDateTime.isBefore(DateTime.now());
+      final isPast = eventEndDateTime.isBefore(DateTime.now());
 
       // Load event statistics
       Map<String, dynamic>? statistics;
@@ -406,6 +406,11 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
                       ],
                     ),
                     const SizedBox(height: 16),
+                    // Show short stats for upcoming events
+                    if (!_isPast) ...[
+                      _buildShortStats(),
+                      const SizedBox(height: 16),
+                    ],
                     const Divider(),
                     const SizedBox(height: 16),
                     GridView.count(
@@ -478,26 +483,28 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
                             );
                           },
                         ),
-                        _buildActionButton(
-                          context,
-                          "Statistics",
-                          Icons.bar_chart,
-                          Colors.purple,
-                          () {
-                            Navigator.push(
-                              context,
-                              PageRouteBuilder(
-                                pageBuilder: (_, __, ___) =>
-                                    EventStatisticsScreen(
-                                      eventId: widget.eventId,
-                                      eventData: _buildEventData(),
-                                    ),
-                                transitionDuration: Duration.zero,
-                                reverseTransitionDuration: Duration.zero,
-                              ),
-                            );
-                          },
-                        ),
+                        // Only show Statistics button for past events
+                        if (_isPast)
+                          _buildActionButton(
+                            context,
+                            "Statistics",
+                            Icons.bar_chart,
+                            Colors.purple,
+                            () {
+                              Navigator.push(
+                                context,
+                                PageRouteBuilder(
+                                  pageBuilder: (_, __, ___) =>
+                                      EventStatisticsScreen(
+                                        eventId: widget.eventId,
+                                        eventData: _buildEventData(),
+                                      ),
+                                  transitionDuration: Duration.zero,
+                                  reverseTransitionDuration: Duration.zero,
+                                ),
+                              );
+                            },
+                          ),
                         if (_isPast)
                           _buildActionButton(
                             context,
@@ -582,6 +589,81 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildShortStats() {
+    final revenue =
+        _statistics?['totalRevenue'] ?? _statistics?['revenue'] ?? 0.0;
+    final ticketsSold =
+        _statistics?['totalTicketsSold'] ?? _statistics?['ticketsSold'] ?? 0;
+    final ticketsLeft = _event!.availableTicketsCount;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.blue.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "Quick Stats",
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.blue,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatItem(
+                  "Revenue",
+                  "\$${revenue.toStringAsFixed(2)}",
+                  Icons.attach_money,
+                ),
+              ),
+              Container(width: 1, height: 40, color: Colors.blue.shade200),
+              Expanded(
+                child: _buildStatItem(
+                  "Tickets Sold",
+                  ticketsSold.toString(),
+                  Icons.confirmation_number,
+                ),
+              ),
+              Container(width: 1, height: 40, color: Colors.blue.shade200),
+              Expanded(
+                child: _buildStatItem(
+                  "Tickets Left",
+                  ticketsLeft.toString(),
+                  Icons.event_available,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatItem(String label, String value, IconData icon) {
+    return Column(
+      children: [
+        Icon(icon, size: 24, color: Colors.blue),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        Text(
+          label,
+          style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+        ),
+      ],
     );
   }
 }

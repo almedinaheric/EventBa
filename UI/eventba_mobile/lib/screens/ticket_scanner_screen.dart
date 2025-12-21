@@ -109,7 +109,11 @@ class _TicketScannerScreenState extends State<TicketScannerScreen> {
       await ticketProvider.validateTicket(widget.eventId, ticketCode);
 
       if (mounted) {
-        controller?.stop();
+        try {
+          await controller?.stop();
+        } catch (e) {
+          // Ignore errors when stopping
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             behavior: SnackBarBehavior.floating,
@@ -124,7 +128,11 @@ class _TicketScannerScreenState extends State<TicketScannerScreen> {
               scannedCode = null;
               _isValidating = false;
             });
-            controller?.start();
+            try {
+              controller?.start();
+            } catch (e) {
+              // Ignore errors if already started
+            }
           }
         });
       }
@@ -141,7 +149,11 @@ class _TicketScannerScreenState extends State<TicketScannerScreen> {
           ),
         );
         // Allow scanning again after error
-        controller?.start();
+        try {
+          controller?.start();
+        } catch (startError) {
+          // Ignore errors if already started
+        }
       }
     }
   }

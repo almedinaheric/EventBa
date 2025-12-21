@@ -2,6 +2,7 @@ import 'package:eventba_mobile/widgets/master_screen.dart';
 import 'package:eventba_mobile/providers/event_provider.dart';
 import 'package:eventba_mobile/models/event/event.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 class EventStatisticsScreen extends StatefulWidget {
@@ -34,12 +35,12 @@ class _EventStatisticsScreenState extends State<EventStatisticsScreen> {
     try {
       final eventProvider = Provider.of<EventProvider>(context, listen: false);
 
-      // Load event to check if it's past
+      // Load event to check if it's past (use end date/time)
       final event = await eventProvider.getById(widget.eventId);
-      final eventStartDateTime = DateTime.parse(
-        '${event.startDate} ${event.startTime}',
+      final eventEndDateTime = DateTime.parse(
+        '${event.endDate} ${event.endTime}',
       );
-      final isPast = eventStartDateTime.isBefore(DateTime.now());
+      final isPast = eventEndDateTime.isBefore(DateTime.now());
 
       // Load event statistics
       Map<String, dynamic>? statistics;
@@ -79,12 +80,39 @@ class _EventStatisticsScreenState extends State<EventStatisticsScreen> {
     }
 
     final totalAttendees =
-        _statistics?['attendees'] ?? _event?.currentAttendees ?? 0;
-    final ticketsSold = _statistics?['ticketsSold'] ?? 0;
-    final revenue = _statistics?['revenue'] ?? 0.0;
-    final averageRating = _isPast && _statistics?['averageRating'] != null
-        ? _statistics!['averageRating'].toStringAsFixed(1)
+        _statistics?['currentAttendees'] ??
+        _statistics?['attendees'] ??
+        _event?.currentAttendees ??
+        0;
+    final ticketsSold =
+        _statistics?['totalTicketsSold'] ?? _statistics?['ticketsSold'] ?? 0;
+    final revenue =
+        _statistics?['totalRevenue'] ?? _statistics?['revenue'] ?? 0.0;
+    final averageRating = _statistics?['averageRating'] != null
+        ? (_statistics!['averageRating'] is double
+              ? _statistics!['averageRating'].toStringAsFixed(1)
+              : _statistics!['averageRating'].toString())
         : 'N/A';
+
+    // Only show statistics for past events
+    if (!_isPast) {
+      return MasterScreenWidget(
+        title: "Event Statistics",
+        initialIndex: 4,
+        appBarType: AppBarType.iconsSideTitleCenter,
+        leftIcon: Icons.arrow_back,
+        onLeftButtonPressed: () {
+          Navigator.pop(context);
+        },
+        child: const Center(
+          child: Text(
+            "Statistics are only available for past events.",
+            style: TextStyle(fontSize: 16, color: Colors.grey),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
 
     return MasterScreenWidget(
       title: "Event Statistics",
@@ -94,6 +122,8 @@ class _EventStatisticsScreenState extends State<EventStatisticsScreen> {
       onLeftButtonPressed: () {
         Navigator.pop(context);
       },
+      rightIcon: Icons.download,
+      onRightButtonPressed: () => _exportStatistics(),
       child: ListView(
         padding: const EdgeInsets.all(20),
         children: [
@@ -149,5 +179,104 @@ class _EventStatisticsScreenState extends State<EventStatisticsScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _exportStatistics() async {
+    if (_event == null || _statistics == null || !_isPast) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text("No statistics available to export"),
+        ),
+      );
+      return;
+    }
+
+    final totalAttendees =
+        _statistics?['currentAttendees'] ??
+        _statistics?['attendees'] ??
+        _event?.currentAttendees ??
+        0;
+    final ticketsSold =
+        _statistics?['totalTicketsSold'] ?? _statistics?['ticketsSold'] ?? 0;
+    final revenue =
+        _statistics?['totalRevenue'] ?? _statistics?['revenue'] ?? 0.0;
+    final averageRating = _statistics?['averageRating'] != null
+        ? (_statistics!['averageRating'] is double
+              ? _statistics!['averageRating'].toStringAsFixed(1)
+              : _statistics!['averageRating'].toString())
+        : 'N/A';
+
+    // Format date and time
+    String formatDate(String dateStr) {
+      try {
+        final date = DateTime.parse(dateStr);
+        return "${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}";
+      } catch (e) {
+        return dateStr;
+      }
+    }
+
+    String formatTime(String timeStr) {
+      try {
+        final parts = timeStr.split(':');
+        if (parts.length >= 2) {
+          return "${parts[0].padLeft(2, '0')}:${parts[1].padLeft(2, '0')}";
+        }
+        return timeStr;
+      } catch (e) {
+        return timeStr;
+      }
+    }
+
+    // Create report content
+    final report =
+        '''
+EVENT STATISTICS REPORT
+${'=' * 50}
+
+Event: ${_event!.title}
+Location: ${_event!.location}
+Date: ${formatDate(_event!.startDate)} - ${formatDate(_event!.endDate)}
+Time: ${formatTime(_event!.startTime)} - ${formatTime(_event!.endTime)}
+Status: ${_event!.status}
+
+${'=' * 50}
+
+STATISTICS:
+${'=' * 50}
+
+Total Attendees: $totalAttendees
+Tickets Sold: $ticketsSold
+Revenue: \$${revenue.toStringAsFixed(2)}
+Average Rating: $averageRating
+
+${'=' * 50}
+
+Generated: ${DateTime.now().toString().split('.')[0]}
+''';
+
+    try {
+      await Clipboard.setData(ClipboardData(text: report));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            behavior: SnackBarBehavior.floating,
+            content: Text("Statistics report copied to clipboard!"),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            behavior: SnackBarBehavior.floating,
+            content: Text("Failed to export: $e"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }

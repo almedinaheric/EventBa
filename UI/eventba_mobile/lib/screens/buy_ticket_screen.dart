@@ -373,7 +373,7 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
             ),
           ),
           Text(
-            '${ticket.price.toStringAsFixed(2)} KM',
+            '\$${ticket.price.toStringAsFixed(2)}',
             style: const TextStyle(color: Colors.blue, fontSize: 16),
           ),
           Row(
@@ -493,7 +493,7 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  '${_totalPrice.toStringAsFixed(2)} KM',
+                  '\$${_totalPrice.toStringAsFixed(2)}',
                   style: const TextStyle(
                     fontSize: 18,
                     color: Colors.blue,

@@ -23,19 +23,36 @@ class _MyEventsScreenState extends State<MyEventsScreen> {
     _loadMyEvents();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Reload data every time the screen becomes visible
+    _loadMyEvents();
+  }
+
   Future<void> _loadMyEvents() async {
+    if (!mounted) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
     try {
       final eventProvider = Provider.of<EventProvider>(context, listen: false);
       final events = await eventProvider.getMyEvents();
-      setState(() {
-        _events = events;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _events = events;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
       print("Failed to load my events: $e");
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -75,8 +92,8 @@ class _MyEventsScreenState extends State<MyEventsScreen> {
                           isMyEvent: true,
                           height: 140,
                           myEventStatus: event.status,
-                          onTap: () {
-                            Navigator.push(
+                          onTap: () async {
+                            await Navigator.push(
                               context,
                               PageRouteBuilder(
                                 pageBuilder: (_, __, ___) =>
@@ -85,6 +102,10 @@ class _MyEventsScreenState extends State<MyEventsScreen> {
                                 reverseTransitionDuration: Duration.zero,
                               ),
                             );
+                            // Reload data when returning from detail screen
+                            if (mounted) {
+                              _loadMyEvents();
+                            }
                           },
                         );
                       },
