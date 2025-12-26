@@ -1,11 +1,5 @@
 # EventBa
 
-### Event management app
-
-Seminar work - Software development 2 - Faculty of Information Technologies
-
-Made by: Almedina Herić
-
 ## Credentials:
 
 **Admin:**
