@@ -11,11 +11,18 @@ namespace EventBa.API.Auth;
 public class BasicAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 {
     private readonly IUserService _userService;
+    private readonly IRecommendedEventService _recommendedEventService;
 
-    public BasicAuthenticationHandler(IUserService userService, IOptionsMonitor<AuthenticationSchemeOptions> options,
-        ILoggerFactory logger, UrlEncoder encoder, ISystemClock clock) : base(options, logger, encoder, clock)
+    public BasicAuthenticationHandler(
+        IUserService userService, 
+        IRecommendedEventService recommendedEventService,
+        IOptionsMonitor<AuthenticationSchemeOptions> options,
+        ILoggerFactory logger, 
+        UrlEncoder encoder, 
+        ISystemClock clock) : base(options, logger, encoder, clock)
     {
         _userService = userService;
+        _recommendedEventService = recommendedEventService;
     }
 
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
@@ -43,6 +50,18 @@ public class BasicAuthenticationHandler : AuthenticationHandler<AuthenticationSc
         if (user == null)
         {
             return AuthenticateResult.Fail("Incorrect email or password");
+        }
+
+        // Delete cached recommendations for this user on login to force regeneration
+        // This ensures fresh recommendations based on latest data and model
+        try
+        {
+            await _recommendedEventService.DeleteRecommendationsForUser(user.Id);
+        }
+        catch (Exception ex)
+        {
+            // Log but don't fail authentication if recommendation deletion fails
+            Logger.LogWarning(ex, "Failed to delete recommendations for user {UserId} on login", user.Id);
         }
 
         var claims = CreateClaims(user);

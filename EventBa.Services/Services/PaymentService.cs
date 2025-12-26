@@ -30,7 +30,6 @@ public class PaymentService : BaseCRUDService<PaymentResponseDto, Payment, Payme
         entity.User = currentUser;
         entity.UserId = currentUser.Id;
         
-        // Set status to Completed if not provided (for successful payments)
         if (!insert.Status.HasValue)
         {
             entity.Status = PaymentStatus.Paid;

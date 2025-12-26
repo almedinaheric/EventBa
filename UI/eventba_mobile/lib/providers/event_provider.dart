@@ -56,10 +56,7 @@ class EventProvider extends BaseProvider<Event> {
     }
   }
 
-  Future<List<BasicEvent>> getRecommendedEvents({
-    int page = 1,
-    int pageSize = 10,
-  }) async {
+  Future<List<BasicEvent>> getRecommendedEvents() async {
     var url = "${baseUrl}Event/recommended";
     var uri = Uri.parse(url);
     var headers = createHeaders();
@@ -69,14 +66,9 @@ class EventProvider extends BaseProvider<Event> {
       var data = jsonDecode(response.body);
       List<BasicEvent> events = [];
 
-      // Calculate pagination manually since the endpoint doesn't support it
-      int startIndex = (page - 1) * pageSize;
-      int endIndex = startIndex + pageSize;
-
-      for (int i = 0; i < data.length; i++) {
-        if (i >= startIndex && i < endIndex) {
-          events.add(basicEventFromJson(data[i]));
-        }
+      // Return all recommended events (max 10 from backend)
+      for (var item in data) {
+        events.add(basicEventFromJson(item));
       }
       return events;
     } else {

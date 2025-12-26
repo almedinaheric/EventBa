@@ -5,6 +5,7 @@ import 'package:eventba_admin/screens/public_events_screen.dart';
 import 'package:eventba_admin/screens/users_screen.dart';
 import 'package:eventba_admin/screens/report_generation_screen.dart';
 import 'package:eventba_admin/screens/support_screen.dart';
+import 'package:eventba_admin/screens/recommendation_management_screen.dart';
 import 'package:eventba_admin/widgets/master_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:eventba_admin/screens/notification_creation_screen.dart';
@@ -60,6 +61,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     _buildCard('Add Event'),
                     _buildCard('Add Notification'),
                     _buildCard('Generate Report'),
+                    _buildCard('Recommendations'),
                   ],
                 ),
               ),
@@ -118,6 +120,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _buildCard('Add Event'),
         _buildCard('Add Notification'),
         _buildCard('Generate Report'),
+        _buildCard('Recommendations'),
         _buildCard('Public Events'),
         _buildCard('Private Events'),
         _buildCard('Users'),
@@ -157,6 +160,9 @@ class _HomeScreenState extends State<HomeScreen> {
       case 'Generate Report':
       case 'Reports':
         icon = Icons.assessment_outlined;
+        break;
+      case 'Recommendations':
+        icon = Icons.recommend_outlined;
         break;
       default:
         icon = Icons.help_outline;
@@ -250,6 +256,14 @@ class _HomeScreenState extends State<HomeScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const ReportGenerationScreen()),
+      );
+    }
+    if (screenName == 'Recommendations') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const RecommendationManagementScreen(),
+        ),
       );
     }
     if (screenName == 'Manage Categories') {

@@ -27,7 +27,6 @@ public class ImageService : BaseCRUDService<ImageResponseDto, Image, ImageSearch
     {
         entity.User = await _userService.GetUserEntityAsync();
         
-        // Convert base64 string to byte array
         if (!string.IsNullOrEmpty(insert.Data))
         {
             entity.ImageData = Convert.FromBase64String(insert.Data);
@@ -41,7 +40,6 @@ public class ImageService : BaseCRUDService<ImageResponseDto, Image, ImageSearch
 
     public override async Task BeforeUpdate(Image entity, ImageUpdateRequestDto update)
     {
-        // Convert base64 string to byte array
         if (!string.IsNullOrEmpty(update.Data))
         {
             entity.ImageData = Convert.FromBase64String(update.Data);

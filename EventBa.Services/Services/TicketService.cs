@@ -26,7 +26,7 @@ public class TicketService : BaseCRUDService<TicketResponseDto, Ticket, TicketSe
     public override async Task BeforeInsert(Ticket entity, TicketInsertRequestDto insert)
     {
         entity.QuantityAvailable = entity.Quantity;
-        entity.QuantitySold = 0; // Initialize sold count to 0
+        entity.QuantitySold = 0;
     }
 
     public override async Task<TicketResponseDto> Update(Guid id, TicketUpdateRequestDto update)

@@ -169,4 +169,37 @@ class EventProvider extends BaseProvider<Event> {
       throw Exception("Failed to load events for organizer");
     }
   }
+
+  Future<void> trainRecommendationModel() async {
+    var url = "${baseUrl}Event/train-recommendation-model";
+    var uri = Uri.parse(url);
+    var headers = createHeaders();
+    var response = await http.post(uri, headers: headers);
+
+    if (!isValidResponse(response)) {
+      throw Exception("Failed to train recommendation model");
+    }
+  }
+
+  Future<void> retrainRecommendationModel() async {
+    var url = "${baseUrl}Event/retrain-recommendation-model";
+    var uri = Uri.parse(url);
+    var headers = createHeaders();
+    var response = await http.post(uri, headers: headers);
+
+    if (!isValidResponse(response)) {
+      throw Exception("Failed to retrain recommendation model");
+    }
+  }
+
+  Future<void> deleteAllRecommendations() async {
+    var url = "${baseUrl}Event/delete-recommendations";
+    var uri = Uri.parse(url);
+    var headers = createHeaders();
+    var response = await http.delete(uri, headers: headers);
+
+    if (!isValidResponse(response)) {
+      throw Exception("Failed to delete recommendations");
+    }
+  }
 }

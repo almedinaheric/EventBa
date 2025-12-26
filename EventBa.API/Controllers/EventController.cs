@@ -105,8 +105,32 @@ public class EventController : BaseCRUDController<EventResponseDto, EventSearchO
     [Authorize(Roles = "Admin")]
     public IActionResult TrainRecommendationModel()
     {
-        _recommendedEventService.TrainModel();
-        return Ok(new { message = "Recommendation model trained successfully" });
+        try
+        {
+            _recommendedEventService.TrainModel();
+            return Ok(new { message = "Recommendation model trained successfully" });
+        }
+        catch (Exception ex)
+        {
+            // ErrorFilter will handle this, but we can add more context
+            return StatusCode(500, new { message = $"Failed to train model: {ex.Message}" });
+        }
+    }
+
+    [HttpPost("retrain-recommendation-model")]
+    [Authorize(Roles = "Admin")]
+    public IActionResult RetrainRecommendationModel()
+    {
+        try
+        {
+            _recommendedEventService.RetrainModel();
+            return Ok(new { message = "Recommendation model retrained successfully" });
+        }
+        catch (Exception ex)
+        {
+            // ErrorFilter will handle this, but we can add more context
+            return StatusCode(500, new { message = $"Failed to retrain model: {ex.Message}" });
+        }
     }
 
     [HttpDelete("delete-recommendations")]
