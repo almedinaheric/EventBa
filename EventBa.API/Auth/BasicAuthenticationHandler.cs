@@ -20,39 +20,66 @@ public class BasicAuthenticationHandler : AuthenticationHandler<AuthenticationSc
 
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
-        if (!Request.Headers.ContainsKey("Authorization"))
+        if (!Request.Headers.TryGetValue("Authorization", out var authHeaderValue))
         {
             return AuthenticateResult.Fail("Missing authorization header");
         }
 
-        var authHeader = AuthenticationHeaderValue.Parse(Request.Headers["Authorization"]);
-        var credentialsBytes = Convert.FromBase64String(authHeader.Parameter);
-        var credentials = Encoding.UTF8.GetString(credentialsBytes).Split(':');
+        if (!AuthenticationHeaderValue.TryParse(authHeaderValue, out var authHeader) ||
+            !authHeader.Scheme.Equals("Basic", StringComparison.OrdinalIgnoreCase))
+        {
+            return AuthenticateResult.Fail("Invalid authorization header");
+        }
 
-        var email = credentials[0];
-        var password = credentials[1];
+        var credentials = DecodeCredentials(authHeader.Parameter);
+        if (credentials == null)
+        {
+            return AuthenticateResult.Fail("Invalid authorization header");
+        }
 
+        var (email, password) = credentials.Value;
         var user = await _userService.Login(email, password);
 
         if (user == null)
         {
             return AuthenticateResult.Fail("Incorrect email or password");
         }
-        else
-        {
-            var claims = new List<Claim>()
-            {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.GivenName, user.FirstName),
-                new Claim(ClaimTypes.Surname, user.LastName),
-                new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Role, user.Role.Name)
-            };
 
-            var identity = new ClaimsIdentity(claims, Scheme.Name);
-            var principal = new ClaimsPrincipal(identity);
-            var ticket = new AuthenticationTicket(principal, Scheme.Name);
-            return AuthenticateResult.Success(ticket);
+        var claims = CreateClaims(user);
+        var identity = new ClaimsIdentity(claims, Scheme.Name);
+        var principal = new ClaimsPrincipal(identity);
+        var ticket = new AuthenticationTicket(principal, Scheme.Name);
+
+        return AuthenticateResult.Success(ticket);
+    }
+
+    private static (string email, string password)? DecodeCredentials(string? parameter)
+    {
+        if (string.IsNullOrWhiteSpace(parameter))
+            return null;
+
+        try
+        {
+            var bytes = Convert.FromBase64String(parameter);
+            var decoded = Encoding.UTF8.GetString(bytes);
+            var parts = decoded.Split(':', 2);
+            return parts.Length == 2 ? (parts[0], parts[1]) : null;
         }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static IEnumerable<Claim> CreateClaims(dynamic user)
+    {
+        return new[]
+        {
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim(ClaimTypes.GivenName, user.FirstName),
+            new Claim(ClaimTypes.Surname, user.LastName),
+            new Claim(ClaimTypes.Email, user.Email),
+            new Claim(ClaimTypes.Role, user.Role.Name)
+        };
     }
 }

@@ -33,7 +33,6 @@ public class RecommendedEventService : IRecommendedEventService
                 _mlContext = new MLContext();
                 var data = new List<EventEntry>();
 
-                // Get co-occurrences from favorite events
                 var favoriteCoOccurrences = _context.Users
                     .Include(u => u.FavoriteEvents)
                     .ToList()
@@ -55,7 +54,6 @@ public class RecommendedEventService : IRecommendedEventService
                     }
                 }
 
-                // Get co-occurrences from ticket purchases (attended events)
                 var purchaseCoOccurrences = _context.Users
                     .Include(u => u.TicketPurchases)
                     .ThenInclude(tp => tp.Event)
@@ -79,7 +77,6 @@ public class RecommendedEventService : IRecommendedEventService
                     }
                 }
 
-                // Add category-based co-occurrences (events in same category)
                 var eventsByCategory = _context.Events
                     .Include(e => e.Category)
                     .Where(e => e.IsPublished)
@@ -108,7 +105,6 @@ public class RecommendedEventService : IRecommendedEventService
 
                 if (data.Count == 0)
                 {
-                    // If no training data, skip training
                     return;
                 }
 
@@ -143,7 +139,6 @@ public class RecommendedEventService : IRecommendedEventService
         if (user == null)
             return new List<EventResponseDto>();
 
-        // Check if we have cached recommendations
         var cachedRecommendations = await _context.RecommendedEvents
             .Where(re => re.UserId == userId)
             .Include(re => re.Event)
@@ -165,10 +160,8 @@ public class RecommendedEventService : IRecommendedEventService
             return _mapper.Map<List<EventResponseDto>>(cachedEvents);
         }
 
-        // Generate new recommendations
         var recommendedEvents = new List<Event>();
 
-        // 1. Content-based filtering: Get events from user's interest categories
         if (user.Categories.Any())
         {
             var categoryIds = user.Categories.Select(c => c.Id).ToList();
@@ -187,7 +180,6 @@ public class RecommendedEventService : IRecommendedEventService
             recommendedEvents.AddRange(categoryBasedEvents);
         }
 
-        // 2. Collaborative filtering using ML (if model is trained)
         if (modeltr != null && _mlContext != null)
         {
             var userInteractedEvents = user.FavoriteEvents
@@ -236,7 +228,6 @@ public class RecommendedEventService : IRecommendedEventService
                         }
                         catch
                         {
-                            // Skip if prediction fails
                             continue;
                         }
                     }
@@ -252,7 +243,6 @@ public class RecommendedEventService : IRecommendedEventService
             }
         }
 
-        // 3. If still no recommendations, get popular events from user's interest categories
         if (!recommendedEvents.Any() && user.Categories.Any())
         {
             var categoryIds = user.Categories.Select(c => c.Id).ToList();
@@ -270,7 +260,6 @@ public class RecommendedEventService : IRecommendedEventService
             recommendedEvents.AddRange(popularEvents);
         }
 
-        // 4. If still no recommendations, get featured events
         if (!recommendedEvents.Any())
         {
             var featuredEvents = await _context.Events
@@ -285,13 +274,11 @@ public class RecommendedEventService : IRecommendedEventService
             recommendedEvents.AddRange(featuredEvents);
         }
 
-        // Remove duplicates and take final set
         var finalRecommendations = recommendedEvents
             .DistinctBy(e => e.Id)
             .Take(10)
             .ToList();
 
-        // Cache recommendations
         foreach (var recommendedEvent in finalRecommendations)
         {
             var existingRecommendation = await _context.RecommendedEvents

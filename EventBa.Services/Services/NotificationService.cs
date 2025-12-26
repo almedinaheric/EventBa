@@ -17,30 +17,28 @@ public class NotificationService : BaseCRUDService<NotificationResponseDto, Noti
     private readonly EventBaDbContext _context;
     public IMapper _mapper { get; set; }
     private readonly IUserService _userService;
+    private readonly IRabbitMQProducer _rabbitMQProducer;
 
-    public NotificationService(EventBaDbContext context, IMapper mapper, IUserService userService) : base(context, mapper)
+    public NotificationService(EventBaDbContext context, IMapper mapper, IUserService userService, IRabbitMQProducer rabbitMQProducer) : base(context, mapper)
     {
         _context = context;
         _mapper = mapper;
         _userService = userService;
+        _rabbitMQProducer = rabbitMQProducer;
     }
 
     public override async Task<NotificationResponseDto> Insert(NotificationInsertRequestDto insert)
     {
-        // Create the notification first
         var result = await base.Insert(insert);
         
-        // Get the created notification entity
         var notification = await _context.Notifications.FindAsync(Guid.Parse(result.Id.ToString()));
         if (notification == null)
         {
             throw new UserException("Failed to create notification");
         }
 
-        // Create UserNotification entries for all users if system notification, or specific user(s)
         if (insert.IsSystemNotification)
         {
-            // For system notifications, create entries for all users
             var allUsers = await _context.Users.Select(u => u.Id).ToListAsync();
             foreach (var userId in allUsers)
             {
@@ -55,17 +53,14 @@ public class NotificationService : BaseCRUDService<NotificationResponseDto, Noti
         }
         else
         {
-            // For regular notifications, create entry for specific user(s)
             var targetUserIds = new List<Guid>();
             
-            // If UserId is specified in the request, use it
             if (insert.UserId.HasValue)
             {
                 targetUserIds.Add(insert.UserId.Value);
             }
             else
             {
-                // Otherwise, use current user
                 var currentUser = await _userService.GetUserEntityAsync();
                 targetUserIds.Add(currentUser.Id);
             }
@@ -83,6 +78,40 @@ public class NotificationService : BaseCRUDService<NotificationResponseDto, Noti
         }
 
         await _context.SaveChangesAsync();
+        var recipientUserIds = insert.IsSystemNotification 
+            ? await _context.Users.Select(u => u.Id).ToListAsync()
+            : insert.UserId.HasValue 
+                ? new List<Guid> { insert.UserId.Value }
+                : new List<Guid> { (await _userService.GetUserEntityAsync()).Id };
+
+        var recipientUsers = await _context.Users
+            .Where(u => recipientUserIds.Contains(u.Id))
+            .ToListAsync();
+
+        foreach (var recipient in recipientUsers)
+        {
+            var emailModel = new EmailModel
+            {
+                Sender = Environment.GetEnvironmentVariable("SMTP_USERNAME") ?? "noreply@eventba.com",
+                Recipient = recipient.Email,
+                Subject = insert.IsImportant ? $"🔔 Important: {insert.Title}" : insert.Title,
+                Content = $@"
+Hello {recipient.FirstName} {recipient.LastName},
+
+{insert.Content}
+
+{(insert.IsImportant ? "\n⚠️ This is an important notification." : "")}
+
+You can also view this notification in the EventBa app.
+
+Best regards,
+EventBa Team
+"
+            };
+
+            _rabbitMQProducer.SendMessage(emailModel);
+        }
+
         return result;
     }
 
@@ -161,7 +190,6 @@ public class NotificationService : BaseCRUDService<NotificationResponseDto, Noti
             .OrderByDescending(x => x.CreatedAt)
             .ToListAsync();
 
-        // Map notifications with a default status (for admin view, status is not relevant)
         return notifications.Select(n => new NotificationResponseDto
         {
             Id = n.Id,
@@ -172,7 +200,7 @@ public class NotificationService : BaseCRUDService<NotificationResponseDto, Noti
             Title = n.Title,
             Content = n.Content,
             IsImportant = n.IsImportant,
-            Status = NotificationStatus.Sent // Default status for admin view
+            Status = NotificationStatus.Sent
         }).ToList();
     }
 
@@ -180,7 +208,6 @@ public class NotificationService : BaseCRUDService<NotificationResponseDto, Noti
     {
         var currentUser = await _userService.GetUserEntityAsync();
         
-        // For user notifications, only delete the UserNotification entry (not the notification itself)
         var userNotification = await _context.UserNotifications
             .Include(un => un.Notification)
             .FirstOrDefaultAsync(un => un.NotificationId == id && un.UserId == currentUser.Id);
@@ -191,7 +218,6 @@ public class NotificationService : BaseCRUDService<NotificationResponseDto, Noti
             _context.UserNotifications.Remove(userNotification);
             await _context.SaveChangesAsync();
             
-            // Return the notification with the user's status (which was just deleted)
             return new NotificationResponseDto
             {
                 Id = notification.Id,

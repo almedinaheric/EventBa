@@ -4,6 +4,18 @@
     build:
       context: .
       dockerfile: EventBa.API/Dockerfile
+    environment:
+      - RABBITMQ_HOST=${RABBITMQ_HOST:-rabbitmq}
+      - RABBITMQ_PORT=${RABBITMQ_PORT:-5672}
+      - RABBITMQ_USERNAME=${RABBITMQ_USERNAME:-guest}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
+      - SMTP_SERVER=${SMTP_SERVER:-smtp.gmail.com}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USERNAME=${SMTP_USERNAME:-eventba2025@gmail.com}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-tddm zstf uyzh bhnr}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
+    depends_on:
+      - rabbitmq
 
   eventba.model:
     image: eventba.model
@@ -16,3 +28,40 @@
     build:
       context: .
       dockerfile: EventBa.Services/Dockerfile
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    restart: unless-stopped
+    hostname: ${RABBITMQ_HOST:-rabbitmq}
+    environment:
+      - RABBITMQ_USERNAME=${RABBITMQ_USERNAME:-guest}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - eventba-network
+
+  rabbitmq-service:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: EventBa.Subscriber/Dockerfile
+    environment:
+      - RABBITMQ_HOST=${RABBITMQ_HOST:-rabbitmq}
+      - RABBITMQ_PORT=${RABBITMQ_PORT:-5672}
+      - RABBITMQ_USERNAME=${RABBITMQ_USERNAME:-guest}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
+      - SMTP_SERVER=${SMTP_SERVER:-smtp.gmail.com}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USERNAME=${SMTP_USERNAME:-eventba2025@gmail.com}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-tddm zstf uyzh bhnr}
+    depends_on:
+      - rabbitmq
+      - eventba.api
+    networks:
+      - eventba-network
+
+networks:
+  eventba-network:
+    driver: bridge

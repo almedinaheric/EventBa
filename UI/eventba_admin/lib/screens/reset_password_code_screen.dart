@@ -1,5 +1,4 @@
-import 'package:eventba_admin/screens/login_screen.dart';
-import 'package:eventba_admin/screens/reset_password_code_screen.dart';
+import 'package:eventba_admin/screens/reset_password_screen.dart';
 import 'package:eventba_admin/widgets/text_link_button.dart';
 import 'package:flutter/material.dart';
 import '../widgets/custom_text_field.dart';
@@ -7,22 +6,31 @@ import '../widgets/primary_button.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 
-class ForgotPasswordScreen extends StatefulWidget {
-  const ForgotPasswordScreen({super.key});
+class ResetPasswordCodeScreen extends StatefulWidget {
+  final String email;
+
+  const ResetPasswordCodeScreen({super.key, required this.email});
 
   @override
-  State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
+  State<ResetPasswordCodeScreen> createState() =>
+      _ResetPasswordCodeScreenState();
 }
 
-class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
-  final _emailController = TextEditingController();
-  bool _isEmailValid = false;
+class _ResetPasswordCodeScreenState extends State<ResetPasswordCodeScreen> {
+  final _codeController = TextEditingController();
+  bool _isCodeValid = false;
   bool _isLoading = false;
-  String? _emailErrorMessage;
+  String? _codeErrorMessage;
+
+  @override
+  void dispose() {
+    _codeController.dispose();
+    super.dispose();
+  }
 
   void _onSubmitPressed() async {
-    if (_emailController.text.isEmpty || !_isEmailValid) {
-      _showError('Please enter a valid email.');
+    if (_codeController.text.isEmpty || !_isCodeValid) {
+      _showError('Please enter a valid 6-digit code.');
       return;
     }
 
@@ -32,27 +40,29 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
     try {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
-      await userProvider.forgotPassword(_emailController.text.trim());
+      final isValid = await userProvider.validateResetCode(
+        widget.email,
+        _codeController.text.trim(),
+      );
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          behavior: SnackBarBehavior.floating,
-          content: Text('Reset code has been sent to your email'),
-        ),
-      );
-
-      // Navigate to code entry screen
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) =>
-              ResetPasswordCodeScreen(email: _emailController.text.trim()),
-        ),
-      );
+      if (isValid) {
+        // Navigate to reset password screen
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ResetPasswordScreen(
+              email: widget.email,
+              code: _codeController.text.trim(),
+            ),
+          ),
+        );
+      } else {
+        _showError('Invalid or expired code. Please try again.');
+      }
     } catch (e) {
-      _showError('Failed to send reset code. Please try again.');
+      _showError('Failed to validate code. Please try again.');
     } finally {
       if (mounted) {
         setState(() {
@@ -91,35 +101,45 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   ),
                   const SizedBox(height: 20),
                   const Text(
-                    'Forgot Password',
+                    'Enter Reset Code',
                     style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF343A40),
                     ),
                   ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'We sent a 6-digit code to ${widget.email}',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF6C757D),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
                   const SizedBox(height: 164),
                   CustomTextField(
-                    controller: _emailController,
-                    label: 'Email',
-                    hint: 'Enter your email',
-                    isValid: _isEmailValid,
-                    errorMessage: _emailErrorMessage,
+                    controller: _codeController,
+                    label: 'Reset Code',
+                    hint: 'Enter 6-digit code',
+                    isValid: _isCodeValid,
+                    errorMessage: _codeErrorMessage,
                     width: size.width * 0.4,
+                    keyboardType: TextInputType.number,
                     onChanged: (text) {
                       setState(() {
-                        _isEmailValid = RegExp(
-                          r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$',
-                        ).hasMatch(text);
-                        _emailErrorMessage = _isEmailValid
+                        _isCodeValid =
+                            text.length == 6 &&
+                            RegExp(r'^\d{6}$').hasMatch(text);
+                        _codeErrorMessage = _isCodeValid
                             ? null
-                            : 'Please enter a valid email address.';
+                            : 'Please enter a valid 6-digit code.';
                       });
                     },
                   ),
                   const SizedBox(height: 16),
                   PrimaryButton(
-                    text: _isLoading ? "Sending..." : "Send Code",
+                    text: _isLoading ? "Validating..." : "Continue",
                     onPressed: _isLoading ? () {} : _onSubmitPressed,
                     width: size.width * 0.4,
                   ),
@@ -132,12 +152,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   child: TextLinkButton(
                     linkText: "Back to login.",
                     onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const LoginScreen(),
-                        ),
-                      );
+                      Navigator.popUntil(context, (route) => route.isFirst);
                     },
                   ),
                 ),

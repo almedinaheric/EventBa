@@ -29,37 +29,30 @@ public class UserQuestionService : BaseCRUDService<UserQuestionResponseDto, User
     {
         entity.User = await _userService.GetUserEntityAsync();
         
-        // If EventId is provided, set it and find the event organizer as receiver
         if (insert.EventId.HasValue)
         {
             entity.EventId = insert.EventId.Value;
             
-            // Get the event to find the organizer
             var eventEntity = await _context.Events
                 .FirstOrDefaultAsync(e => e.Id == insert.EventId.Value);
             
             if (eventEntity == null)
                 throw new UserException("Event not found.");
             
-            // Set receiver to the event organizer
             entity.ReceiverId = eventEntity.OrganizerId;
-            entity.IsQuestionForAdmin = false; // Event questions are for organizer, not admin
+            entity.IsQuestionForAdmin = false;
         }
-        // If this is a question for admin (support question), find an admin user to set as receiver
         else if (insert.IsQuestionForAdmin)
         {
-            // Load all roles and filter in memory to avoid EF Core enum translation issues
             var allRoles = await _context.Roles.ToListAsync();
             var adminRole = allRoles.FirstOrDefault(r => r.Name == RoleName.Admin);
             
             if (adminRole == null)
             {
-                // Debug: List all roles to help diagnose
                 var roleInfo = string.Join(", ", allRoles.Select(r => $"{r.Name} ({r.Id})"));
                 throw new UserException($"Admin role not found. Available roles: {roleInfo}");
             }
             
-            // Then, find a user with that role
             var adminUser = await _context.Users
                 .FirstOrDefaultAsync(u => u.RoleId == adminRole.Id);
             
@@ -67,10 +60,9 @@ public class UserQuestionService : BaseCRUDService<UserQuestionResponseDto, User
                 throw new UserException($"No user found with Admin role (RoleId: {adminRole.Id}).");
             
             entity.ReceiverId = adminUser.Id;
-            entity.EventId = null; // Support questions are not event-related
-            entity.IsQuestionForAdmin = true; // Ensure this is set correctly
+            entity.EventId = null;
+            entity.IsQuestionForAdmin = true;
         }
-        // If receiverId is explicitly provided, use it
         else if (insert.ReceiverId.HasValue && insert.ReceiverId.Value != Guid.Empty)
         {
             entity.ReceiverId = insert.ReceiverId.Value;
@@ -89,7 +81,6 @@ public class UserQuestionService : BaseCRUDService<UserQuestionResponseDto, User
         await BeforeInsert(entity, insert);
         await _context.SaveChangesAsync();
         
-        // Reload entity with related data for notification and response
         var loadedEntity = await _context.UserQuestions
             .Include(x => x.User)
             .Include(x => x.Receiver)
@@ -98,17 +89,14 @@ public class UserQuestionService : BaseCRUDService<UserQuestionResponseDto, User
         if (loadedEntity != null)
         {
             await AfterInsert(loadedEntity, insert);
-            // Return the loaded entity with all related data
             return _mapper.Map<UserQuestionResponseDto>(loadedEntity);
         }
         
-        // Fallback to entity without related data if reload fails
         return _mapper.Map<UserQuestionResponseDto>(entity);
     }
 
     public async Task AfterInsert(UserQuestion entity, UserQuestionInsertRequestDto insert)
     {
-        // Create notification for the receiver (event organizer or admin)
         var notification = new Notification
         {
             Title = "New Question Received",
@@ -121,7 +109,6 @@ public class UserQuestionService : BaseCRUDService<UserQuestionResponseDto, User
         _context.Notifications.Add(notification);
         await _context.SaveChangesAsync();
 
-        // Create UserNotification entry for the receiver
         var userNotification = new UserNotification
         {
             NotificationId = notification.Id,
@@ -199,13 +186,10 @@ public class UserQuestionService : BaseCRUDService<UserQuestionResponseDto, User
         if (entity == null)
             throw new UserException("Question not found");
         
-        // Store old values to check if question was just answered
         var wasAlreadyAnswered = entity.IsAnswered;
         
-        // Map the update to the entity
         _mapper.Map(update, entity);
         
-        // If the question was just answered (wasn't answered before but is now), create notification
         if (!wasAlreadyAnswered && update.IsAnswered && !string.IsNullOrEmpty(update.Answer))
         {
             var notification = new Notification
@@ -224,7 +208,6 @@ public class UserQuestionService : BaseCRUDService<UserQuestionResponseDto, User
             _context.Notifications.Add(notification);
             await _context.SaveChangesAsync();
 
-            // Create UserNotification entry for the question sender
             var userNotification = new UserNotification
             {
                 NotificationId = notification.Id,

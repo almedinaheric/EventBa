@@ -45,42 +45,25 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
         if (entity == null)
             throw new UserException("Event not found");
         
-        // Store old cover image ID before mapping (since mapper will overwrite it)
         var oldCoverImageId = entity.CoverImageId;
         
-        Console.WriteLine($"Updating event {id}: Old cover image ID = {oldCoverImageId}, New cover image ID = {update.CoverImageId}");
-        
-        // Map the update to the entity
         _mapper.Map(update, entity);
         
-        // Handle cover image replacement - only delete old cover image if it's being replaced with a different one
         if (update.CoverImageId.HasValue && oldCoverImageId.HasValue && 
             update.CoverImageId.Value != oldCoverImageId.Value)
         {
-            // Old cover image is being replaced with a new one, delete the old one
-            Console.WriteLine($"Replacing cover image: deleting old image {oldCoverImageId.Value}");
             var oldCoverImage = await _context.Images.FindAsync(oldCoverImageId.Value);
             if (oldCoverImage != null)
             {
                 _context.Images.Remove(oldCoverImage);
             }
         }
-        else if (update.CoverImageId.HasValue && update.CoverImageId.Value == oldCoverImageId)
-        {
-            // Same cover image ID - no change needed, just keep it
-            Console.WriteLine($"Cover image unchanged: keeping image {update.CoverImageId.Value}");
-        }
         else if (!update.CoverImageId.HasValue && oldCoverImageId.HasValue)
         {
-            // No cover image ID in update but one exists - preserve the existing one
-            Console.WriteLine($"Preserving existing cover image: {oldCoverImageId.Value}");
             entity.CoverImageId = oldCoverImageId;
         }
-        // If update.CoverImageId is null or same as old, we keep the existing cover image (don't delete it)
         
         await _context.SaveChangesAsync();
-        
-        // Reload the entity with all includes to ensure related entities are populated
         var entityWithIncludes = await AddInclude(_context.Set<Event>().Where(e => e.Id == id))
             .FirstOrDefaultAsync();
         
@@ -94,10 +77,8 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
 
     public override async Task<EventResponseDto> Insert(EventInsertRequestDto insert)
     {
-        // Create the event first
         var result = await base.Insert(insert);
         
-        // Reload the entity with all includes to ensure related entities are populated
         var entityWithIncludes = await AddInclude(_context.Set<Event>().Where(e => e.Id == Guid.Parse(result.Id.ToString())))
             .FirstOrDefaultAsync();
         
@@ -109,7 +90,6 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
         return result;
     }
 
-    // Soft delete: Set IsPublished to false instead of actually deleting
     public override async Task<EventResponseDto> Delete(Guid id)
     {
         var entity = await _context.Events.FindAsync(id);
@@ -138,13 +118,11 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
 
     public override IQueryable<Event> AddFilter(IQueryable<Event> query, EventSearchObject? search = null)
     {
-        // Filter by type if specified
         if (search?.Type.HasValue == true)
         {
             query = query.Where(x => x.Type == search.Type.Value);
         }
         
-        // Filter by search term if specified
         if (!string.IsNullOrWhiteSpace(search?.SearchTerm))
         {
             var searchTerm = search.SearchTerm.ToLower();
@@ -154,10 +132,8 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
             );
         }
         
-        // Only return published events (matching behavior of GetPublicEvents and GetPrivateEvents)
         query = query.Where(x => x.IsPublished);
 
-        // Exclude current user's own events from search results
         try
         {
             var userEmail = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.Email)?.Value;
@@ -172,56 +148,10 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
         }
         catch
         {
-            // If user is not authenticated or can't be retrieved, continue without filtering
         }
 
         return query;
     }
-
-    /*public override IQueryable<Event> AddFilter(IQueryable<Event> query, EventSearchObject? search = null)
-    {
-        if (search?.CategoryId.HasValue == true)
-        {
-            query = query.Where(x => x.CategoryId == search.CategoryId.Value);
-        }
-
-        if (search?.OrganizerId.HasValue == true)
-        {
-            query = query.Where(x => x.OrganizerId == search.OrganizerId.Value);
-        }
-
-        if (search?.EventStatus.HasValue == true)
-        {
-            query = query.Where(x => x.EventStatus == search.EventStatus.Value);
-        }
-
-        if (search?.EventType.HasValue == true)
-        {
-            query = query.Where(x => x.EventType == search.EventType.Value);
-        }
-
-        if (!string.IsNullOrEmpty(search?.Title))
-        {
-            query = query.Where(x => x.Title.Contains(search.Title));
-        }
-
-        if (search?.DateFrom.HasValue == true)
-        {
-            query = query.Where(x => x.EventDate >= search.DateFrom.Value);
-        }
-
-        if (search?.DateTo.HasValue == true)
-        {
-            query = query.Where(x => x.EventDate <= search.DateTo.Value);
-        }
-
-        if (search?.IsActive.HasValue == true)
-        {
-            query = query.Where(x => x.IsActive == search.IsActive.Value);
-        }
-
-        return query;
-    }*/
 
     public async Task<List<EventResponseDto>> GetMyEvents()
     {
@@ -274,7 +204,6 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
     
     public async Task<List<EventResponseDto>> GetPublicEvents()
     {
-        // Get current user to exclude their own events
         User? currentUser = null;
         try
         {
@@ -282,13 +211,11 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
         }
         catch
         {
-            // If user is not authenticated, continue without filtering
         }
 
         var query = _context.Events
             .Where(e => e.Type == EventType.Public && e.IsPublished);
         
-        // Exclude current user's own events
         if (currentUser != null)
         {
             query = query.Where(e => e.OrganizerId != currentUser.Id);
@@ -305,7 +232,6 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
 
     public async Task<List<EventResponseDto>> GetPrivateEvents()
     {
-        // Get current user to exclude their own events
         User? currentUser = null;
         try
         {
@@ -313,13 +239,11 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
         }
         catch
         {
-            // If user is not authenticated, continue without filtering
         }
 
         var query = _context.Events
             .Where(e => e.Type == EventType.Private && e.IsPublished);
         
-        // Exclude current user's own events
         if (currentUser != null)
         {
             query = query.Where(e => e.OrganizerId != currentUser.Id);
@@ -336,7 +260,6 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
 
     public async Task<List<EventResponseDto>> GetEventsByCategoryId(Guid categoryId)
     {
-        // Get current user to exclude their own events
         User? currentUser = null;
         try
         {
@@ -344,13 +267,11 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
         }
         catch
         {
-            // If user is not authenticated, continue without filtering
         }
 
         var query = _context.Events
             .Where(e => e.Category.Id == categoryId && e.IsPublished);
         
-        // Exclude current user's own events
         if (currentUser != null)
         {
             query = query.Where(e => e.OrganizerId != currentUser.Id);
@@ -430,10 +351,8 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
         if (eventEntity == null)
             return null;
 
-        // Check if current user is the organizer or an admin
         var currentUser = await _userService.GetUserEntityAsync();
         
-        // Load role if not already loaded
         if (currentUser.Role == null)
         {
             currentUser = await _context.Users
@@ -449,7 +368,6 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
             throw new UserException("You do not have permission to view statistics for this event.");
         }
 
-        // Check if event is past
         var eventEndDateTime = new DateTime(
             eventEntity.EndDate.Year,
             eventEntity.EndDate.Month,
@@ -460,16 +378,13 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
         );
         var isPast = eventEndDateTime < DateTime.Now;
 
-        // If event is past, check if statistics exist, if not generate them
         if (isPast)
         {
-            // Check if statistics already exist in database
             var existingStat = await _context.EventStatistics
                 .FirstOrDefaultAsync(x => x.EventId == eventId);
 
             if (existingStat != null)
             {
-                // Return existing statistics from database
                 return new EventStatisticsResponseDto
                 {
                     EventId = eventId,
@@ -481,14 +396,12 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
             }
             else
             {
-                // Generate new statistics and save to database
                 var soldTickets = eventEntity.Tickets.Sum(x => x.TicketPurchases.Count);
                 var revenue = eventEntity.Tickets.Sum(x => x.TicketPurchases.Sum(p => p.PricePaid));
                 var averageRating = eventEntity.EventReviews.Any() 
                     ? (double)eventEntity.EventReviews.Average(x => x.Rating) 
                     : 0.0;
 
-                // Create new statistics record
                 var newStat = new EventStatistic
                 {
                     EventId = eventId,
@@ -513,10 +426,9 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
         }
         else
         {
-            // For upcoming events, return current data without saving to statistics table
             var soldTickets = eventEntity.Tickets.Sum(x => x.TicketPurchases.Count);
             var revenue = eventEntity.Tickets.Sum(x => x.TicketPurchases.Sum(p => p.PricePaid));
-            var averageRating = 0.0; // No ratings for upcoming events
+            var averageRating = 0.0;
 
             return new EventStatisticsResponseDto
             {
@@ -531,29 +443,21 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
 
     public async Task AddGalleryImages(Guid eventId, List<Guid> imageIds)
     {
-        Console.WriteLine($"AddGalleryImages called for event {eventId} with {imageIds.Count} images");
-        
         var eventEntity = await _context.Events.FindAsync(eventId);
         if (eventEntity == null)
         {
-            Console.WriteLine($"Event {eventId} not found!");
             throw new UserException("Event not found");
         }
-
-        Console.WriteLine($"Event {eventId} found, processing images...");
         
         int order = 0;
         foreach (var imageId in imageIds)
         {
-            Console.WriteLine($"Processing image {imageId}...");
             var image = await _context.Images.FindAsync(imageId);
             if (image != null)
             {
-                Console.WriteLine($"Image {imageId} found, setting type to EventGallery");
                 image.ImageType = ImageType.EventGallery;
                 image.EventId = eventId;
                 
-                // Check if gallery image link already exists
                 var existingLink = await _context.EventGalleryImages
                     .FirstOrDefaultAsync(x => x.EventId == eventId && x.ImageId == imageId);
                 
@@ -569,27 +473,15 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
                         UpdatedAt = now
                     };
                     _context.EventGalleryImages.Add(galleryImage);
-                    Console.WriteLine($"Created EventGalleryImage link for image {imageId} with order {order - 1}");
                 }
-                else
-                {
-                    Console.WriteLine($"EventGalleryImage link already exists for image {imageId}");
-                }
-            }
-            else
-            {
-                Console.WriteLine($"Image {imageId} not found in database!");
             }
         }
 
         await _context.SaveChangesAsync();
-        Console.WriteLine($"Gallery images saved successfully for event {eventId}");
     }
 
     public async Task ReplaceGalleryImages(Guid eventId, List<Guid> imageIds)
     {
-        Console.WriteLine($"ReplaceGalleryImages called for event {eventId} with {imageIds.Count} images");
-        
         var eventEntity = await _context.Events
             .Include(e => e.EventGalleryImages)
             .FirstOrDefaultAsync(e => e.Id == eventId);
@@ -599,16 +491,13 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
             throw new UserException("Event not found");
         }
 
-        // Get existing gallery images
         var existingGalleryImages = eventEntity.EventGalleryImages.ToList();
         
-        // Find images that are being removed (not in the new list)
         var imagesToKeep = imageIds.ToHashSet();
         var imagesToRemove = existingGalleryImages
             .Where(egi => !imagesToKeep.Contains(egi.ImageId))
             .ToList();
         
-        // Delete only the gallery images and Image records that are being removed
         foreach (var galleryImage in imagesToRemove)
         {
             var image = await _context.Images.FindAsync(galleryImage.ImageId);
@@ -619,7 +508,6 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
             _context.EventGalleryImages.Remove(galleryImage);
         }
 
-        // Remove existing links for images that are being kept (we'll re-add them with correct order)
         var imagesToReAdd = existingGalleryImages
             .Where(egi => imagesToKeep.Contains(egi.ImageId))
             .ToList();
@@ -628,7 +516,6 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
             _context.EventGalleryImages.Remove(galleryImage);
         }
 
-        // Add all gallery images (both new and existing) with correct order
         int order = 0;
         foreach (var imageId in imageIds)
         {
@@ -648,17 +535,9 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
                     UpdatedAt = now
                 };
                 _context.EventGalleryImages.Add(galleryImage);
-                Console.WriteLine($"Added gallery image {imageId} at order {order - 1}");
-            }
-            else
-            {
-                Console.WriteLine($"Warning: Image with ID {imageId} not found in database, skipping");
             }
         }
-        
-        Console.WriteLine($"Total gallery images after update: {order}");
 
         await _context.SaveChangesAsync();
-        Console.WriteLine($"Gallery images replaced successfully for event {eventId}");
     }
 }

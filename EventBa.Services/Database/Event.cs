@@ -24,7 +24,7 @@ public partial class Event
     public bool IsFeatured { get; set; }
     public EventType Type { get; set; }
     public bool IsPublished { get; set; }
-    public bool IsPaid { get; set; } // Explicit flag for paid vs free events
+    public bool IsPaid { get; set; }
     public Guid OrganizerId { get; set; }
     public virtual Category Category { get; set; } = null!;
     public virtual Image? CoverImage { get; set; }

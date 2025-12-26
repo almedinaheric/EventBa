@@ -3,6 +3,7 @@ using System;
 using EventBa.Services.Database.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EventBa.Services.Migrations
 {
     [DbContext(typeof(EventBaDbContext))]
-    partial class EventBaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251225224330_AddPasswordResetCodeToUser")]
+    partial class AddPasswordResetCodeToUser
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -784,7 +787,10 @@ namespace EventBa.Services.Migrations
                     b.Property<string>("PasswordResetCode")
                         .HasColumnType("text");
 
-                    b.Property<DateTime?>("PasswordResetCodeExpiry")
+                    b.Property<string>("PasswordResetToken")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("PasswordResetTokenExpiry")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("PasswordSalt")

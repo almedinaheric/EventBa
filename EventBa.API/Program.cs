@@ -16,7 +16,6 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<EventBaDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Configure Stripe
 StripeConfiguration.ApiKey = builder.Configuration["Stripe:SecretKey"];
 
 builder.Services.AddTransient<ICategoryService, CategoryService>();
@@ -31,6 +30,7 @@ builder.Services.AddTransient<ITicketPurchaseService, TicketPurchaseService>();
 builder.Services.AddTransient<ITicketService, TicketService>();
 builder.Services.AddTransient<IUserQuestionService, UserQuestionService>();
 builder.Services.AddTransient<IUserService, UserService>();
+builder.Services.AddTransient<IRabbitMQProducer, RabbitMQProducer>();
 
 builder.Services.AddHttpContextAccessor();
 
@@ -75,7 +75,6 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -84,7 +83,6 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// ✅ This order matters
 app.UseAuthentication();
 app.UseAuthorization();
 

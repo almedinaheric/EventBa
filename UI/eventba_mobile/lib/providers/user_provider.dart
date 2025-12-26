@@ -14,7 +14,7 @@ class UserProvider extends BaseProvider<User> {
   Future<bool> forgotPassword(String email) async {
     var url = "${baseUrl}User/forgot-password";
     var uri = Uri.parse(url);
-    var headers = createHeaders();
+    var headers = {"Content-Type": "application/json"};
 
     var requestBody = {"email": email};
 
@@ -105,6 +105,49 @@ class UserProvider extends BaseProvider<User> {
       return true;
     } else {
       throw Exception("Password change failed");
+    }
+  }
+
+  Future<bool> validateResetCode(String email, String code) async {
+    var url = "${baseUrl}User/validate-reset-code";
+    var uri = Uri.parse(url);
+    var headers = {"Content-Type": "application/json"};
+
+    var requestBody = {"email": email, "code": code};
+
+    var jsonRequest = jsonEncode(requestBody);
+    var response = await http.post(uri, headers: headers, body: jsonRequest);
+
+    if (isValidResponse(response)) {
+      var data = jsonDecode(response.body);
+      return data['valid'] == true;
+    } else {
+      return false;
+    }
+  }
+
+  Future<bool> resetPassword(
+    String email,
+    String code,
+    String newPassword,
+  ) async {
+    var url = "${baseUrl}User/reset-password";
+    var uri = Uri.parse(url);
+    var headers = {"Content-Type": "application/json"};
+
+    var requestBody = {
+      "email": email,
+      "code": code,
+      "newPassword": newPassword,
+    };
+
+    var jsonRequest = jsonEncode(requestBody);
+    var response = await http.post(uri, headers: headers, body: jsonRequest);
+
+    if (isValidResponse(response)) {
+      return true;
+    } else {
+      throw Exception("Password reset failed");
     }
   }
 

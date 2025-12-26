@@ -14,5 +14,8 @@ public interface IUserService : ICRUDService<UserResponseDto, UserSearchObject, 
     public Task<UserResponseDto> FollowUser(Guid userId);
     public Task<UserResponseDto> UnfollowUser(Guid userId);
     public Task ChangePasswordAsync(ChangePasswordRequestDto request);
+    public Task ForgotPasswordAsync(string email);
+    public Task<bool> ValidateResetCodeAsync(string email, string code);
+    public Task ResetPasswordAsync(string email, string code, string newPassword);
 
 }

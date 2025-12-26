@@ -21,12 +21,14 @@ public class UserService :
     public IMapper _mapper { get; set; }
     
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IRabbitMQProducer _rabbitMQProducer;
 
-    public UserService(EventBaDbContext context, IMapper mapper, IHttpContextAccessor httpContextAccessor) : base(context, mapper)
+    public UserService(EventBaDbContext context, IMapper mapper, IHttpContextAccessor httpContextAccessor, IRabbitMQProducer rabbitMQProducer) : base(context, mapper)
     {
         _context = context;
         _mapper = mapper;
         _httpContextAccessor = httpContextAccessor;
+        _rabbitMQProducer = rabbitMQProducer;
     }
     
     public override IQueryable<User> AddInclude(IQueryable<User> query, UserSearchObject? search = null)
@@ -43,7 +45,6 @@ public class UserService :
     
     public override IQueryable<User> AddFilter(IQueryable<User> query, UserSearchObject? search = null)
     {
-        // Only exclude Admin users if explicitly requested
         if (search?.ExcludeAdmins == true)
         {
             query = query.Where(u => u.Role.Name != Model.Enums.RoleName.Admin);
@@ -79,30 +80,20 @@ public class UserService :
     
     public override async Task BeforeInsert(User entity, UserInsertRequestDto insert)
     {
-        Console.WriteLine($"BeforeInsert called for user: {insert.Email}");
-        
         entity.PasswordSalt = GenerateSalt();
         entity.PasswordHash = GenerateHash(entity.PasswordSalt, insert.Password);
         
-        Console.WriteLine($"Password hashed successfully for: {insert.Email}");
-        
-        // Handle category relationships
         if (insert.InterestCategoryIds != null && insert.InterestCategoryIds.Any())
         {
-            Console.WriteLine($"Processing {insert.InterestCategoryIds.Count} categories for user: {insert.Email}");
             var categories = await _context.Categories
                 .Where(c => insert.InterestCategoryIds.Contains(c.Id))
                 .ToListAsync();
-            
-            Console.WriteLine($"Found {categories.Count} categories in database");
             
             foreach (var category in categories)
             {
                 entity.Categories.Add(category);
             }
         }
-        
-        Console.WriteLine($"BeforeInsert completed for user: {insert.Email}");
     }
 
     public override async Task<UserResponseDto> Update(Guid id, UserUpdateRequestDto update)
@@ -115,34 +106,24 @@ public class UserService :
         if (entity == null)
             throw new UserException("User not found");
         
-        // Store old profile image ID before mapping (since mapper will overwrite it)
         var oldProfileImageId = entity.ProfileImageId;
         
-        // Map the update to the entity
         _mapper.Map(update, entity);
         
-        // Handle profile image replacement - only delete old profile image if it's being replaced with a different one
         if (update.ProfileImageId.HasValue && oldProfileImageId.HasValue && 
             update.ProfileImageId.Value != oldProfileImageId.Value)
         {
-            // Old profile image is being replaced with a new one, delete the old one
             var oldProfileImage = await _context.Images.FindAsync(oldProfileImageId.Value);
             if (oldProfileImage != null)
             {
                 _context.Images.Remove(oldProfileImage);
             }
         }
-        else if (update.ProfileImageId.HasValue && update.ProfileImageId.Value == oldProfileImageId)
-        {
-            // Same profile image ID - no change needed, just keep it
-        }
         else if (!update.ProfileImageId.HasValue && oldProfileImageId.HasValue)
         {
-            // No profile image ID in update but one exists - preserve the existing one
             entity.ProfileImageId = oldProfileImageId;
         }
         
-        // Handle category interests
         await BeforeUpdate(entity, update);
         
         await _context.SaveChangesAsync();
@@ -181,8 +162,6 @@ public class UserService :
 
     public override async Task<UserResponseDto> Insert(UserInsertRequestDto insert)
     {
-        Console.WriteLine($"UserService.Insert called for: {insert.Email}");
-    
         try
         {
             var result = await base.Insert(insert);
@@ -194,12 +173,10 @@ public class UserService :
                 result = _mapper.Map<UserResponseDto>(entityWithIncludes);
             }
         
-            Console.WriteLine($"UserService.Insert completed successfully for: {insert.Email}");
             return result;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"UserService.Insert failed for {insert.Email}: {ex.Message}");
             throw;
         }
     }
@@ -259,8 +236,6 @@ public class UserService :
     
     public async Task<UserResponseDto> GetUserAsync()
     {
-        Console.WriteLine("GetUserAsync method called");
-
         var userIdClaim = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.Email)?.Value;
 
         if (userIdClaim == null)
@@ -363,5 +338,117 @@ public class UserService :
         user.PasswordHash = GenerateHash(user.PasswordSalt, request.NewPassword);
 
         await _context.SaveChangesAsync();
+    }
+
+    public async Task ForgotPasswordAsync(string email)
+    {
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+
+        if (user == null)
+        {
+            return;
+        }
+
+        var random = new Random();
+        var code = random.Next(100000, 999999).ToString();
+        user.PasswordResetCode = code;
+        
+        user.PasswordResetCodeExpiry = DateTime.UtcNow.AddHours(24);
+
+        await _context.SaveChangesAsync();
+
+        try
+        {
+            var emailModel = new Model.Helpers.EmailModel
+            {
+                Sender = Environment.GetEnvironmentVariable("SMTP_USERNAME") ?? "noreply@eventba.com",
+                Recipient = user.Email,
+                Subject = "Password Reset Code",
+                Content = $@"
+Hello {user.FirstName} {user.LastName},
+
+You requested to reset your password. Please use the following code to reset your password:
+
+{code}
+
+This code will expire in 24 hours.
+
+If you did not request this password reset, please ignore this email.
+
+Best regards,
+EventBa Team
+"
+            };
+
+            _rabbitMQProducer.SendMessage(emailModel);
+        }
+        catch (Exception ex)
+        {
+        }
+    }
+
+    public async Task<bool> ValidateResetCodeAsync(string email, string code)
+    {
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+
+        if (user == null)
+            return false;
+
+        if (user.PasswordResetCodeExpiry == null || user.PasswordResetCodeExpiry < DateTime.UtcNow)
+            return false;
+
+        if (user.PasswordResetCode != null && user.PasswordResetCode == code)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    public async Task ResetPasswordAsync(string email, string code, string newPassword)
+    {
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+
+        if (user == null)
+            throw new UserException("Invalid reset code.");
+
+        if (user.PasswordResetCodeExpiry == null || user.PasswordResetCodeExpiry < DateTime.UtcNow)
+            throw new UserException("Reset code has expired. Please request a new one.");
+
+        if (string.IsNullOrWhiteSpace(code) || user.PasswordResetCode == null || user.PasswordResetCode != code)
+            throw new UserException("Invalid reset code.");
+
+        user.PasswordSalt = GenerateSalt();
+        user.PasswordHash = GenerateHash(user.PasswordSalt, newPassword);
+        user.PasswordResetCode = null;
+        user.PasswordResetCodeExpiry = null;
+
+        await _context.SaveChangesAsync();
+
+        try
+        {
+            var emailModel = new Model.Helpers.EmailModel
+            {
+                Sender = Environment.GetEnvironmentVariable("SMTP_USERNAME") ?? "noreply@eventba.com",
+                Recipient = user.Email,
+                Subject = "Password Reset Successful",
+                Content = $@"
+Hello {user.FirstName} {user.LastName},
+
+Your password has been successfully reset.
+
+If you did not perform this action, please contact support immediately.
+
+Best regards,
+EventBa Team
+"
+            };
+
+            _rabbitMQProducer.SendMessage(emailModel);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to send confirmation email via RabbitMQ: {ex.Message}");
+        }
     }
 }

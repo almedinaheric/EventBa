@@ -13,6 +13,8 @@ public partial class User
     public Guid? ProfileImageId { get; set; }
     public string PasswordHash { get; set; } = null!;
     public string PasswordSalt { get; set; } = null!;
+    public string? PasswordResetCode { get; set; }
+    public DateTime? PasswordResetCodeExpiry { get; set; }
     public Guid RoleId { get; set; }
     public string? FullName { get; set; }
     public virtual ICollection<EventReview> EventReviews { get; set; } = new List<EventReview>();
