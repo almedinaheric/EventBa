@@ -77,139 +77,152 @@ class _NotificationCreationScreenState
     return MasterScreen(
       title: 'Add Notification',
       showBackButton: true,
-      body: Center(
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 600),
-          margin: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            border: Border.all(color: const Color(0xFF4776E6), width: 2),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(40),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Notification title label
-                  const Text(
-                    'Notification title',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black,
+      body: SingleChildScrollView(
+        child: Center(
+          child: Container(
+            constraints: BoxConstraints(
+              maxWidth: 600,
+              minHeight: MediaQuery.of(context).size.height - 200,
+            ),
+            margin: EdgeInsets.all(
+              MediaQuery.of(context).size.width < 600 ? 16 : 24,
+            ),
+            decoration: BoxDecoration(
+              border: Border.all(color: const Color(0xFF4776E6), width: 2),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Padding(
+              padding: EdgeInsets.all(
+                MediaQuery.of(context).size.width < 600 ? 20 : 40,
+              ),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Notification title label
+                    const Text(
+                      'Notification title',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
+                    const SizedBox(height: 12),
 
-                  // Title input field
-                  TextFormField(
-                    controller: _titleController,
-                    decoration: InputDecoration(
-                      hintText: 'Enter notification title',
-                      hintStyle: TextStyle(
-                        color: Colors.grey.shade400,
-                        fontSize: 14,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: Color(0xFF4776E6)),
-                      ),
-                      contentPadding: const EdgeInsets.all(16),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter a notification title';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Notification content label
-                  const Text(
-                    'Notification content',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Content input field
-                  TextFormField(
-                    controller: _contentController,
-                    maxLines: 6,
-                    decoration: InputDecoration(
-                      hintText: 'Add notification content',
-                      hintStyle: TextStyle(
-                        color: Colors.grey.shade400,
-                        fontSize: 14,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: Color(0xFF4776E6)),
-                      ),
-                      contentPadding: const EdgeInsets.all(16),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter notification content';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Is Important checkbox
-                  Row(
-                    children: [
-                      Checkbox(
-                        value: _isImportant,
-                        onChanged: (value) {
-                          setState(() {
-                            _isImportant = value ?? false;
-                          });
-                        },
-                        activeColor: const Color(0xFF4776E6),
-                      ),
-                      const Text(
-                        'Mark as important',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.black,
+                    // Title input field
+                    TextFormField(
+                      controller: _titleController,
+                      decoration: InputDecoration(
+                        hintText: 'Enter notification title',
+                        hintStyle: TextStyle(
+                          color: Colors.grey.shade400,
+                          fontSize: 14,
                         ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(
+                            color: Color(0xFF4776E6),
+                          ),
+                        ),
+                        contentPadding: const EdgeInsets.all(16),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 32),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter a notification title';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 24),
 
-                  // Add Notification button
-                  PrimaryButton(
-                    text: _isSending ? 'Creating...' : 'Add Notification',
-                    onPressed: _isSending ? () {} : _addNotification,
-                  ),
-                ],
+                    // Notification content label
+                    const Text(
+                      'Notification content',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Content input field
+                    TextFormField(
+                      controller: _contentController,
+                      maxLines: 6,
+                      decoration: InputDecoration(
+                        hintText: 'Add notification content',
+                        hintStyle: TextStyle(
+                          color: Colors.grey.shade400,
+                          fontSize: 14,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(
+                            color: Color(0xFF4776E6),
+                          ),
+                        ),
+                        contentPadding: const EdgeInsets.all(16),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter notification content';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Is Important checkbox
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: _isImportant,
+                          onChanged: (value) {
+                            setState(() {
+                              _isImportant = value ?? false;
+                            });
+                          },
+                          activeColor: const Color(0xFF4776E6),
+                        ),
+                        const Text(
+                          'Mark as important',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Add Notification button
+                    PrimaryButton(
+                      text: _isSending ? 'Creating...' : 'Add Notification',
+                      onPressed: _isSending ? () {} : _addNotification,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

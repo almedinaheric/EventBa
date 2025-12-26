@@ -80,6 +80,10 @@ class MasterScreen extends StatelessWidget {
   }
 
   Widget _buildAdminDropdown(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context, listen: true);
+    final user = userProvider.user;
+    final displayName = user?.fullName ?? 'Admin';
+
     return PopupMenuButton<String>(
       onSelected: (String value) {
         _handleMenuSelection(context, value);
@@ -100,24 +104,11 @@ class MasterScreen extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            'Admin Admin',
+            displayName,
             style: TextStyle(
               color: Colors.grey[800],
               fontSize: 14,
               fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.grey[400]!, width: 1.5),
-            ),
-            child: Icon(
-              Icons.person_2_outlined,
-              size: 20,
-              color: Colors.grey[600],
             ),
           ),
           const SizedBox(width: 4),

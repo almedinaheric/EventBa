@@ -22,147 +22,25 @@ class _RecommendationManagementScreenState
     return MasterScreen(
       title: 'Recommendation Management',
       showBackButton: true,
-      body: Container(
-        margin: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildInfoSection(),
-            const SizedBox(height: 32),
-            _buildActionsSection(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInfoSection() {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFF4776E6), width: 2),
-        borderRadius: BorderRadius.circular(16),
-        color: const Color(0xFF4776E6).withOpacity(0.05),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.info_outline,
-                color: const Color(0xFF4776E6),
-                size: 24,
-              ),
-              const SizedBox(width: 12),
-              const Text(
-                'About Recommendation System',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'The recommendation system uses machine learning to provide personalized event recommendations to users based on:',
-            style: TextStyle(fontSize: 14, color: Colors.black87),
-          ),
-          const SizedBox(height: 12),
-          _buildInfoItem(
-            'Collaborative Filtering',
-            'Events favorited or attended together by users',
-            Icons.people_outline,
-            Colors.blue,
-          ),
-          const SizedBox(height: 8),
-          _buildInfoItem(
-            'Content-Based Filtering',
-            'Events in categories matching user interests',
-            Icons.category_outlined,
-            Colors.orange,
-          ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.blue.withOpacity(0.3)),
+      body: Align(
+        alignment: Alignment.topLeft,
+        child: SingleChildScrollView(
+          child: Container(
+            margin: EdgeInsets.all(
+              MediaQuery.of(context).size.width < 600 ? 16 : 24,
             ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.lightbulb_outline,
-                  color: Colors.blue[700],
-                  size: 20,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'The model trains automatically on application startup. Use these controls to manually retrain or manage recommendations.',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.blue[900],
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+            child: _buildActionsSection(),
           ),
-        ],
+        ),
       ),
-    );
-  }
-
-  Widget _buildInfoItem(
-    String title,
-    String description,
-    IconData icon,
-    Color color,
-  ) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(icon, color: color, size: 20),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: color,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                description,
-                style: const TextStyle(fontSize: 13, color: Colors.grey),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 
   Widget _buildActionsSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
         const Text(
           'Management Actions',
@@ -236,32 +114,53 @@ class _RecommendationManagementScreenState
         borderRadius: BorderRadius.circular(12),
         onTap: isLoading ? null : onTap,
         child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Row(
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: color, size: 24),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
+          padding: EdgeInsets.all(
+            MediaQuery.of(context).size.width < 600 ? 16 : 20,
+          ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isSmallScreen = constraints.maxWidth < 500;
+              if (isSmallScreen) {
+                return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: isDestructive ? Colors.red : Colors.black,
-                      ),
+                    Row(
+                      children: [
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: color.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(icon, color: color, size: 24),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            title,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: isDestructive ? Colors.red : Colors.black,
+                            ),
+                          ),
+                        ),
+                        if (isLoading)
+                          const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        else
+                          Icon(
+                            Icons.arrow_forward_ios,
+                            size: 16,
+                            color: Colors.grey.shade400,
+                          ),
+                      ],
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 12),
                     Text(
                       description,
                       style: const TextStyle(
@@ -271,21 +170,59 @@ class _RecommendationManagementScreenState
                       ),
                     ),
                   ],
-                ),
-              ),
-              if (isLoading)
-                const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              else
-                Icon(
-                  Icons.arrow_forward_ios,
-                  size: 16,
-                  color: Colors.grey.shade400,
-                ),
-            ],
+                );
+              }
+              return Row(
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(icon, color: color, size: 24),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: isDestructive ? Colors.red : Colors.black,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          description,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey,
+                            height: 1.3,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (isLoading)
+                    const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  else
+                    Icon(
+                      Icons.arrow_forward_ios,
+                      size: 16,
+                      color: Colors.grey.shade400,
+                    ),
+                ],
+              );
+            },
           ),
         ),
       ),

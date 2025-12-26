@@ -150,29 +150,34 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
     return MasterScreen(
       title: 'User Details',
       showBackButton: true,
-      body: Container(
-        margin: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            // User Profile Section
-            _buildUserProfile(),
-
-            const SizedBox(height: 32),
-
-            // User Events Section
-            _buildEventsSection(),
-
-            const SizedBox(height: 16),
-
-            // Toggle buttons
-            _buildToggleButtons(),
-
-            const SizedBox(height: 16),
-
-            // Events List
-            Expanded(child: _buildEventsList()),
-          ],
-        ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: IntrinsicHeight(
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 16 : 24),
+                      child: Column(
+                        children: [
+                          _buildUserProfile(),
+                          const SizedBox(height: 32),
+                          _buildEventsSection(),
+                          const SizedBox(height: 16),
+                          _buildToggleButtons(),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Expanded(child: _buildEventsList()),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -241,25 +246,46 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
 
           const SizedBox(height: 24),
 
-          // User Details
-          Row(
-            children: [
-              Expanded(
-                child: _buildUserDetailItem(
-                  icon: Icons.email,
-                  label: 'Email',
-                  value: _user!.email,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildUserDetailItem(
-                  icon: Icons.phone,
-                  label: 'Phone',
-                  value: _user!.phoneNumber ?? 'N/A',
-                ),
-              ),
-            ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isSmallScreen = constraints.maxWidth < 600;
+              if (isSmallScreen) {
+                return Column(
+                  children: [
+                    _buildUserDetailItem(
+                      icon: Icons.email,
+                      label: 'Email',
+                      value: _user!.email,
+                    ),
+                    const SizedBox(height: 12),
+                    _buildUserDetailItem(
+                      icon: Icons.phone,
+                      label: 'Phone',
+                      value: _user!.phoneNumber ?? 'N/A',
+                    ),
+                  ],
+                );
+              }
+              return Row(
+                children: [
+                  Expanded(
+                    child: _buildUserDetailItem(
+                      icon: Icons.email,
+                      label: 'Email',
+                      value: _user!.email,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _buildUserDetailItem(
+                      icon: Icons.phone,
+                      label: 'Phone',
+                      value: _user!.phoneNumber ?? 'N/A',
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ],
       ),
@@ -310,26 +336,55 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
   }
 
   Widget _buildEventsSection() {
-    return Row(
-      children: [
-        const Text(
-          "User Events",
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
-          ),
-        ),
-        const Spacer(),
-        Text(
-          "Total: ${_upcomingEvents.length + _pastEvents.length}",
-          style: const TextStyle(
-            fontSize: 14,
-            color: Colors.grey,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isSmallScreen = constraints.maxWidth < 600;
+        if (isSmallScreen) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "User Events",
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                "Total: ${_upcomingEvents.length + _pastEvents.length}",
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          );
+        }
+        return Row(
+          children: [
+            const Text(
+              "User Events",
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
+            ),
+            const Spacer(),
+            Text(
+              "Total: ${_upcomingEvents.length + _pastEvents.length}",
+              style: const TextStyle(
+                fontSize: 14,
+                color: Colors.grey,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -410,30 +465,37 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
     final currentEvents = selectedIndex == 0 ? _upcomingEvents : _pastEvents;
 
     if (currentEvents.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.event_busy,
-              size: 64,
-              color: Colors.grey.withOpacity(0.5),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              selectedIndex == 0 ? "No upcoming events" : "No past events",
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey.withOpacity(0.7),
-                fontWeight: FontWeight.w500,
+      return Container(
+        padding: const EdgeInsets.all(24),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.event_busy,
+                size: 64,
+                color: Colors.grey.withOpacity(0.5),
               ),
-            ),
-          ],
+              const SizedBox(height: 16),
+              Text(
+                selectedIndex == 0 ? "No upcoming events" : "No past events",
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey.withOpacity(0.7),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
 
     return ListView.separated(
+      padding: EdgeInsets.symmetric(
+        horizontal: MediaQuery.of(context).size.width < 600 ? 16 : 24,
+        vertical: 16,
+      ),
       itemCount: currentEvents.length,
       separatorBuilder: (context, index) => const SizedBox(height: 16),
       itemBuilder: (context, index) {
