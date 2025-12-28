@@ -603,13 +603,15 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
   }
 
   Future<void> _pickDate() async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
     DateTimeRange? picked = await showDateRangePicker(
       context: context,
       initialDateRange: DateTimeRange(
-        start: DateTime.now(),
-        end: DateTime.now().add(const Duration(days: 1)),
+        start: today,
+        end: today.add(const Duration(days: 1)),
       ),
-      firstDate: DateTime(2000),
+      firstDate: today,
       lastDate: DateTime(2100),
     );
     if (picked != null) {

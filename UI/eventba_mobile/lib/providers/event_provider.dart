@@ -18,7 +18,15 @@ class EventProvider extends BaseProvider<Event> {
 
   Future<List<Event>> getMyEvents({dynamic filter}) async {
     var url = "${baseUrl}Event/my-events";
-    var uri = Uri.parse(url);
+    final queryParams = <String, String>{};
+    if (filter != null && filter is Map) {
+      filter.forEach((key, value) {
+        queryParams[key.toString()] = value.toString();
+      });
+    }
+    var uri = queryParams.isEmpty
+        ? Uri.parse(url)
+        : Uri.parse(url).replace(queryParameters: queryParams);
     var headers = createHeaders();
     var response = await http.get(uri, headers: headers);
     if (isValidResponse(response)) {
@@ -41,7 +49,7 @@ class EventProvider extends BaseProvider<Event> {
 
   Future<List<BasicEvent>> getEventsByOrganizer(String organizerId) async {
     var url = "${baseUrl}Event/organizer/$organizerId";
-    var uri = Uri.parse(url);
+    var uri = Uri.parse(url).replace(queryParameters: {'isPublished': 'true'});
     var headers = createHeaders();
     var response = await http.get(uri, headers: headers);
     if (isValidResponse(response)) {
@@ -58,7 +66,7 @@ class EventProvider extends BaseProvider<Event> {
 
   Future<List<BasicEvent>> getRecommendedEvents() async {
     var url = "${baseUrl}Event/recommended";
-    var uri = Uri.parse(url);
+    var uri = Uri.parse(url).replace(queryParameters: {'isPublished': 'true'});
     var headers = createHeaders();
     var response = await http.get(uri, headers: headers);
 
@@ -66,7 +74,6 @@ class EventProvider extends BaseProvider<Event> {
       var data = jsonDecode(response.body);
       List<BasicEvent> events = [];
 
-      
       for (var item in data) {
         events.add(basicEventFromJson(item));
       }
@@ -81,21 +88,22 @@ class EventProvider extends BaseProvider<Event> {
     int pageSize = 10,
   }) async {
     var url = "${baseUrl}Event/public";
-    var uri = Uri.parse(url);
+    var uri = Uri.parse(url).replace(
+      queryParameters: {
+        'isPublished': 'true',
+        'status': 'Upcoming',
+        'page': page.toString(),
+        'pageSize': pageSize.toString(),
+      },
+    );
     var headers = createHeaders();
     var response = await http.get(uri, headers: headers);
     if (isValidResponse(response)) {
       var data = jsonDecode(response.body);
       List<BasicEvent> events = [];
 
-      
-      int startIndex = (page - 1) * pageSize;
-      int endIndex = startIndex + pageSize;
-
-      for (int i = 0; i < data.length; i++) {
-        if (i >= startIndex && i < endIndex) {
-          events.add(basicEventFromJson(data[i]));
-        }
+      for (var item in data) {
+        events.add(basicEventFromJson(item));
       }
       return events;
     } else {
@@ -108,21 +116,22 @@ class EventProvider extends BaseProvider<Event> {
     int pageSize = 10,
   }) async {
     var url = "${baseUrl}Event/private";
-    var uri = Uri.parse(url);
+    var uri = Uri.parse(url).replace(
+      queryParameters: {
+        'isPublished': 'true',
+        'status': 'Upcoming',
+        'page': page.toString(),
+        'pageSize': pageSize.toString(),
+      },
+    );
     var headers = createHeaders();
     var response = await http.get(uri, headers: headers);
     if (isValidResponse(response)) {
       var data = jsonDecode(response.body);
       List<BasicEvent> events = [];
 
-      
-      int startIndex = (page - 1) * pageSize;
-      int endIndex = startIndex + pageSize;
-
-      for (int i = 0; i < data.length; i++) {
-        if (i >= startIndex && i < endIndex) {
-          events.add(basicEventFromJson(data[i]));
-        }
+      for (var item in data) {
+        events.add(basicEventFromJson(item));
       }
       return events;
     } else {
@@ -135,7 +144,16 @@ class EventProvider extends BaseProvider<Event> {
     dynamic filter,
   }) async {
     var url = "${baseUrl}Event/category/$categoryId";
-    var uri = Uri.parse(url);
+    final queryParams = <String, String>{
+      'isPublished': 'true',
+      'status': 'Upcoming',
+    };
+    if (filter != null && filter is Map) {
+      filter.forEach((key, value) {
+        queryParams[key.toString()] = value.toString();
+      });
+    }
+    var uri = Uri.parse(url).replace(queryParameters: queryParams);
     var headers = createHeaders();
     var response = await http.get(uri, headers: headers);
     if (isValidResponse(response)) {
@@ -152,7 +170,7 @@ class EventProvider extends BaseProvider<Event> {
 
   Future<List<BasicEvent>> getUserFavoriteEvents({dynamic filter}) async {
     var url = "${baseUrl}Event/favorites";
-    var uri = Uri.parse(url);
+    var uri = Uri.parse(url).replace(queryParameters: {'isPublished': 'true'});
     var headers = createHeaders();
     var response = await http.get(uri, headers: headers);
     if (isValidResponse(response)) {
@@ -195,11 +213,25 @@ class EventProvider extends BaseProvider<Event> {
 
   Future<List<BasicEvent>> searchEvents(String searchTerm) async {
     try {
-      final result = await get(filter: {'SearchTerm': searchTerm});
+      final result = await get(
+        filter: {'SearchTerm': searchTerm, 'isPublished': true},
+      );
       return result.result.map((e) => BasicEvent.fromJson(e.toJson())).toList();
     } catch (e) {
       print('Error searching events: $e');
       return [];
+    }
+  }
+
+  Future<void> deleteEvent(String id) async {
+    var url = "${baseUrl}Event/$id";
+    var uri = Uri.parse(url);
+    var headers = createHeaders();
+
+    var response = await http.delete(uri, headers: headers);
+
+    if (!isValidResponse(response)) {
+      throw Exception("Unknown error in a DELETE request");
     }
   }
 }

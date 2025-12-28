@@ -16,7 +16,7 @@ class TicketsScreen extends StatefulWidget {
 }
 
 class _TicketsScreenState extends State<TicketsScreen> {
-  int selectedIndex = 0; 
+  int selectedIndex = 0;
   Map<String, List<TicketPurchase>> _upcomingTicketsByEvent = {};
   Map<String, List<TicketPurchase>> _pastTicketsByEvent = {};
   Map<String, Event> _events = {};
@@ -36,13 +36,10 @@ class _TicketsScreenState extends State<TicketsScreen> {
       );
       final eventProvider = Provider.of<EventProvider>(context, listen: false);
 
-      
       final allPurchases = await ticketPurchaseProvider.getMyPurchases();
 
-      
       final eventIds = allPurchases.map((p) => p.eventId).toSet();
 
-      
       final events = <String, Event>{};
       for (final eventId in eventIds) {
         try {
@@ -53,8 +50,6 @@ class _TicketsScreenState extends State<TicketsScreen> {
         }
       }
 
-      
-      final now = DateTime.now();
       final upcomingTicketsByEvent = <String, List<TicketPurchase>>{};
       final pastTicketsByEvent = <String, List<TicketPurchase>>{};
 
@@ -62,17 +57,11 @@ class _TicketsScreenState extends State<TicketsScreen> {
         final event = events[purchase.eventId];
         if (event == null) continue;
 
-        
-        final eventStartDateTime = DateTime.parse(
-          '${event.startDate} ${event.startTime}',
-        );
-        final isUpcoming = eventStartDateTime.isAfter(now);
-
-        if (isUpcoming) {
+        if (event.status.name == 'Upcoming') {
           upcomingTicketsByEvent
               .putIfAbsent(purchase.eventId, () => [])
               .add(purchase);
-        } else {
+        } else if (event.status.name == 'Past') {
           pastTicketsByEvent
               .putIfAbsent(purchase.eventId, () => [])
               .add(purchase);
@@ -98,13 +87,11 @@ class _TicketsScreenState extends State<TicketsScreen> {
     return Scaffold(
       body: Column(
         children: [
-          
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                
                 Expanded(
                   child: GestureDetector(
                     onTap: () {
@@ -138,7 +125,6 @@ class _TicketsScreenState extends State<TicketsScreen> {
                   ),
                 ),
 
-                
                 Expanded(
                   child: GestureDetector(
                     onTap: () {
@@ -175,7 +161,6 @@ class _TicketsScreenState extends State<TicketsScreen> {
             ),
           ),
 
-          
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -220,20 +205,17 @@ class _TicketsScreenState extends State<TicketsScreen> {
         return const SizedBox.shrink();
       }
 
-      
       final eventStartDateTime = DateTime.parse(
         '${event.startDate} ${event.startTime}',
       );
       final date = _formatDate(eventStartDateTime);
       final time = _formatTime(eventStartDateTime);
 
-      
       double totalPrice = 0.0;
       for (final purchase in purchases) {
         totalPrice += purchase.pricePaid;
       }
 
-      
       final formattedPrice = totalPrice > 0
           ? "\$${totalPrice.toStringAsFixed(2)}"
           : "Free";

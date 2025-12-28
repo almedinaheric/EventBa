@@ -45,23 +45,20 @@ class _LoginScreenState extends State<LoginScreen> {
       final user = await userProvider.getProfile();
       if (!mounted) return;
 
-      
       final isAdmin = user.role.name.toLowerCase() == 'admin';
 
       if (isAdmin) {
-        
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (context) => MasterScreenWidget(
               initialIndex: 4,
-              showBottomNavBar: false, 
+              showBottomNavBar: false,
               child: const ProfileScreen(),
             ),
           ),
         );
       } else {
-        
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -71,11 +68,9 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     } catch (e) {
-      
       Authorization.email = null;
       Authorization.password = null;
 
-      
       String errorMessage = "Login failed. Please check your credentials.";
       if (e.toString().contains("Unauthorized") ||
           e.toString().contains("403")) {
@@ -179,10 +174,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     onToggleVisibility: _togglePasswordVisibility,
                     onChanged: (text) {
                       setState(() {
-                        _isPasswordValid =
-                            text.trim().isNotEmpty &&
-                            
-                            RegExp(r'/*').hasMatch(text);
+                        _isPasswordValid = RegExp(
+                          r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$',
+                        ).hasMatch(text);
                         _passwordErrorMessage = _isPasswordValid
                             ? null
                             : 'Password must be at least 8 characters long and include an uppercase letter, a lowercase letter, and a number.';

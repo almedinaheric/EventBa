@@ -26,10 +26,8 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
 
   List<Map<String, dynamic>> _categories = [];
 
-  
   final TextEditingController _nameController = TextEditingController();
   String? _selectedCategoryId;
-  String? _selectedCategoryName;
   final TextEditingController _venueController = TextEditingController();
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _startTimeController = TextEditingController();
@@ -41,14 +39,12 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
   final TextEditingController _ecoPriceController = TextEditingController();
   final TextEditingController _ecoCountController = TextEditingController();
 
-  
   XFile? _mainImage;
   List<XFile> _additionalImages = [];
 
   bool _isPaid = false;
   bool _isLoading = false;
 
-  
   bool _isNameValid = true;
   bool _isCategoryValid = true;
   bool _isVenueValid = true;
@@ -87,7 +83,9 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
         context,
         listen: false,
       );
-      final categories = await categoryProvider.get();
+      final categories = await categoryProvider.get(
+        filter: {'page': 1, 'pageSize': 1000},
+      );
 
       setState(() {
         _categories = categories.result
@@ -176,9 +174,6 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
                     onChanged: (newValue) {
                       setState(() {
                         _selectedCategoryId = newValue;
-                        _selectedCategoryName = _categories.firstWhere(
-                          (c) => c['id'] == newValue,
-                        )['name'];
                         _isCategoryValid = newValue != null;
                         _categoryErrorMessage = _isCategoryValid
                             ? null
@@ -455,7 +450,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
                   onPressed: _isLoading ? () {} : _onSubmitPressed,
                 ),
               ),
-              const SizedBox(height: 60), 
+              const SizedBox(height: 24),
             ],
           ),
         ),
@@ -530,23 +525,18 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
     if (!mounted) return;
 
     try {
-      
       await Future.delayed(const Duration(milliseconds: 200));
 
       if (!mounted) return;
 
-      
       final bool isIOS = !kIsWeb && Platform.isIOS;
 
       final XFile? image = await _picker.pickImage(
         source: ImageSource.gallery,
-        imageQuality: isIOS
-            ? 60
-            : 70, 
-        maxWidth: isIOS ? 1000 : 1200, 
+        imageQuality: isIOS ? 60 : 70,
+        maxWidth: isIOS ? 1000 : 1200,
         maxHeight: isIOS ? 1000 : 1200,
-        requestFullMetadata:
-            false, 
+        requestFullMetadata: false,
       );
 
       if (image != null && mounted) {
@@ -570,23 +560,18 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
     if (!mounted) return;
 
     try {
-      
       await Future.delayed(const Duration(milliseconds: 200));
 
       if (!mounted) return;
 
-      
       final bool isIOS = !kIsWeb && Platform.isIOS;
 
       final XFile? image = await _picker.pickImage(
         source: ImageSource.gallery,
-        imageQuality: isIOS
-            ? 60
-            : 70, 
-        maxWidth: isIOS ? 1000 : 1200, 
+        imageQuality: isIOS ? 60 : 70,
+        maxWidth: isIOS ? 1000 : 1200,
         maxHeight: isIOS ? 1000 : 1200,
-        requestFullMetadata:
-            false, 
+        requestFullMetadata: false,
       );
 
       if (image != null && mounted) {
@@ -643,13 +628,15 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
   }
 
   Future<void> _pickDate() async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
     DateTimeRange? picked = await showDateRangePicker(
       context: context,
       initialDateRange: DateTimeRange(
-        start: DateTime.now(),
-        end: DateTime.now().add(const Duration(days: 1)),
+        start: today,
+        end: today.add(const Duration(days: 1)),
       ),
-      firstDate: DateTime(2000),
+      firstDate: today,
       lastDate: DateTime(2100),
     );
     if (picked != null) {
@@ -690,6 +677,39 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
     }
   }
 
+  int _parseTimeToMinutes(String timeStr) {
+    try {
+      if (timeStr.contains('AM') || timeStr.contains('PM')) {
+        final parts = timeStr
+            .replaceAll(' AM', '')
+            .replaceAll(' PM', '')
+            .split(':');
+        if (parts.length >= 2) {
+          int hour = int.parse(parts[0]);
+          int minute = int.parse(parts[1]);
+
+          if (timeStr.contains('PM') && hour != 12) {
+            hour += 12;
+          } else if (timeStr.contains('AM') && hour == 12) {
+            hour = 0;
+          }
+
+          return hour * 60 + minute;
+        }
+      } else {
+        final parts = timeStr.split(':');
+        if (parts.length >= 2) {
+          int hour = int.parse(parts[0]);
+          int minute = int.parse(parts[1]);
+          return hour * 60 + minute;
+        }
+      }
+    } catch (e) {
+      return -1;
+    }
+    return -1;
+  }
+
   void _validateForm() {
     setState(() {
       _isNameValid = _nameController.text.trim().isNotEmpty;
@@ -711,6 +731,34 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
 
       _isEndTimeValid = _endTimeController.text.trim().isNotEmpty;
       _endTimeErrorMessage = _isEndTimeValid ? null : 'End time is required';
+
+      if (_isDateValid && _isStartTimeValid && _isEndTimeValid) {
+        final dateRangeParts = _dateController.text.split(' - ');
+        if (dateRangeParts.length == 2) {
+          final startDateStr = dateRangeParts[0].trim();
+          final endDateStr = dateRangeParts[1].trim();
+
+          if (startDateStr == endDateStr) {
+            final startTimeMinutes = _parseTimeToMinutes(
+              _startTimeController.text.trim(),
+            );
+            final endTimeMinutes = _parseTimeToMinutes(
+              _endTimeController.text.trim(),
+            );
+
+            if (startTimeMinutes >= 0 && endTimeMinutes >= 0) {
+              if (startTimeMinutes >= endTimeMinutes) {
+                _isStartTimeValid = false;
+                _isEndTimeValid = false;
+                _startTimeErrorMessage =
+                    'Start time must be before end time when dates are the same';
+                _endTimeErrorMessage =
+                    'End time must be after start time when dates are the same';
+              }
+            }
+          }
+        }
+      }
 
       _isDescriptionValid = _descriptionController.text.trim().isNotEmpty;
       _descriptionErrorMessage = _isDescriptionValid
@@ -803,7 +851,6 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
         listen: false,
       );
 
-      
       final dateRangeParts = _dateController.text.split(' - ');
       if (dateRangeParts.length != 2) {
         throw FormatException(
@@ -818,15 +865,11 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
         throw FormatException('Invalid date format. Use YYYY-MM-DD');
       }
 
-      
-      
       final startDateFormatted = dateRangeParts[0].trim();
       final endDateFormatted = dateRangeParts[1].trim();
 
-      
       String formatTime(String timeStr) {
         try {
-          
           if (timeStr.contains('AM') || timeStr.contains('PM')) {
             final parts = timeStr
                 .replaceAll(' AM', '')
@@ -836,7 +879,6 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
               int hour = int.parse(parts[0]);
               int minute = int.parse(parts[1]);
 
-              
               if (timeStr.contains('PM') && hour != 12) {
                 hour += 12;
               } else if (timeStr.contains('AM') && hour == 12) {
@@ -846,7 +888,6 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
               return '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}:00';
             }
           } else {
-            
             final parts = timeStr.split(':');
             if (parts.length >= 2) {
               final hour = parts[0].padLeft(2, '0');
@@ -863,7 +904,6 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
       final startTimeFormatted = formatTime(_startTimeController.text);
       final endTimeFormatted = formatTime(_endTimeController.text);
 
-      
       String? coverImageId;
       if (_mainImage != null) {
         final bytes = await File(_mainImage!.path).readAsBytes();
@@ -877,7 +917,6 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
         coverImageId = mainImageResponse.id;
       }
 
-      
       int totalCapacity;
       if (_isPaid) {
         totalCapacity =
@@ -887,7 +926,6 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
         totalCapacity = int.parse(_capacityController.text.trim());
       }
 
-      
       final request = {
         'title': _nameController.text.trim(),
         'description': _descriptionController.text.trim(),
@@ -898,12 +936,11 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
         'endTime': endTimeFormatted,
         'capacity': totalCapacity,
         'availableTicketsCount': totalCapacity,
-        'status':
-            0, 
+        'status': 0,
         'isFeatured': true,
-        'type': 1, 
+        'type': 1,
         'isPublished': true,
-        'isPaid': _isPaid, 
+        'isPaid': _isPaid,
         'categoryId': _selectedCategoryId,
         'coverImageId': coverImageId,
       };
@@ -915,7 +952,6 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
 
       print('Event created with ID: $eventId');
 
-      
       if (_additionalImages.isNotEmpty) {
         List<String> galleryImageIds = [];
 
@@ -934,13 +970,11 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
           }
         }
 
-        
         if (galleryImageIds.isNotEmpty) {
           await _linkGalleryImages(eventId, galleryImageIds);
         }
       }
 
-      
       await _createTickets(eventId);
 
       if (!mounted) return;
@@ -952,7 +986,6 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
         ),
       );
 
-      
       Navigator.pushReplacement(
         context,
         PageRouteBuilder(
@@ -1003,7 +1036,6 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
       print('Gallery images linked successfully');
     } catch (e) {
       print('Error linking gallery images: $e');
-      
     }
   }
 
@@ -1018,7 +1050,6 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
       ).createHeaders();
 
       if (_isPaid) {
-        
         if (int.parse(_vipCountController.text.trim()) > 0) {
           final vipTicketRequest = {
             'eventId': eventId,
@@ -1045,7 +1076,6 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
           print('VIP ticket created');
         }
 
-        
         if (int.parse(_ecoCountController.text.trim()) > 0) {
           final ecoTicketRequest = {
             'eventId': eventId,
@@ -1072,7 +1102,6 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
           print('Economy ticket created');
         }
       } else {
-        
         final freeTicketRequest = {
           'eventId': eventId,
           'ticketType': 'Free',
@@ -1099,7 +1128,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
       }
     } catch (e) {
       print('Error creating tickets: $e');
-      throw e; 
+      throw e;
     }
   }
 

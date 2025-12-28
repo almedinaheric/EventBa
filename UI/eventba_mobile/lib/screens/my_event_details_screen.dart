@@ -8,6 +8,7 @@ import 'package:eventba_mobile/widgets/master_screen.dart';
 import 'package:eventba_mobile/providers/event_provider.dart';
 import 'package:eventba_mobile/providers/event_review_provider.dart';
 import 'package:eventba_mobile/providers/user_provider.dart';
+import 'package:eventba_mobile/providers/ticket_provider.dart';
 import 'package:eventba_mobile/models/event/event.dart';
 import 'package:eventba_mobile/models/event_review/event_review.dart';
 import 'package:eventba_mobile/utils/image_helpers.dart';
@@ -58,16 +59,13 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
         listen: false,
       );
 
-      
       final event = await eventProvider.getById(widget.eventId);
 
-      
       final eventEndDateTime = DateTime.parse(
         '${event.endDate} ${event.endTime}',
       );
       final isPast = eventEndDateTime.isBefore(DateTime.now());
 
-      
       Map<String, dynamic>? statistics;
       try {
         statistics = await eventProvider.getEventStatistics(widget.eventId);
@@ -76,7 +74,6 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
         print("Failed to load statistics: $e");
       }
 
-      
       List<EventReview> reviews = [];
       if (isPast) {
         try {
@@ -98,6 +95,99 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
       setState(() {
         _isLoading = false;
       });
+    }
+  }
+
+  Future<bool> _hasPurchasedTickets() async {
+    try {
+      if (_event == null) return false;
+
+      if (!_event!.isPaid) {
+        return _event!.currentAttendees > 0;
+      }
+
+      final ticketProvider = Provider.of<TicketProvider>(
+        context,
+        listen: false,
+      );
+      final tickets = await ticketProvider.getTicketsForEvent(widget.eventId);
+
+      for (var ticket in tickets) {
+        if (ticket.quantitySold > 0) {
+          return true;
+        }
+      }
+      return false;
+    } catch (e) {
+      print("Error checking purchased tickets: $e");
+      return true;
+    }
+  }
+
+  Future<void> _deleteEvent() async {
+    final hasPurchases = await _hasPurchasedTickets();
+    if (hasPurchases) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            behavior: SnackBarBehavior.floating,
+            content: Text(
+              'Cannot delete event. There are purchased tickets for this event.',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Event'),
+        content: const Text(
+          'Are you sure you want to delete this event? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    try {
+      final eventProvider = Provider.of<EventProvider>(context, listen: false);
+      await eventProvider.deleteEvent(widget.eventId);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            behavior: SnackBarBehavior.floating,
+            content: Text('Event deleted successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            behavior: SnackBarBehavior.floating,
+            content: Text('Failed to delete event: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -125,7 +215,6 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
   void _showImageDialog(int initialIndex) {
     if (_event == null) return;
 
-    
     List<String> allImages = [];
 
     if (_event!.coverImage?.data != null) {
@@ -303,11 +392,10 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
       );
     }
 
-    
     if (_isAdmin) {
       return MasterScreenWidget(
         initialIndex: 4,
-        showBottomNavBar: false, 
+        showBottomNavBar: false,
         appBarType: AppBarType.iconsSideTitleCenter,
         title: _event!.title,
         leftIcon: Icons.arrow_back,
@@ -325,6 +413,45 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
                 Icons.qr_code_scanner,
                 Colors.green,
                 () {
+                  if (_event == null) return;
+
+                  try {
+                    final eventStartDateTime = DateTime.parse(
+                      '${_event!.startDate} ${_event!.startTime}',
+                    );
+                    final now = DateTime.now();
+                    final today = DateTime(now.year, now.month, now.day);
+                    final eventStartDate = DateTime(
+                      eventStartDateTime.year,
+                      eventStartDateTime.month,
+                      eventStartDateTime.day,
+                    );
+
+                    if (eventStartDate.isAfter(today)) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          behavior: SnackBarBehavior.floating,
+                          content: Text(
+                            'Cannot scan tickets. Event has not started yet.',
+                          ),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        behavior: SnackBarBehavior.floating,
+                        content: Text(
+                          'Error validating event date. Please try again.',
+                        ),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+
                   Navigator.push(
                     context,
                     PageRouteBuilder(
@@ -344,7 +471,6 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
       );
     }
 
-    
     final totalAttendees =
         _statistics?['attendees'] ?? _event!.currentAttendees;
 
@@ -367,7 +493,7 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 16),
-                    
+
                     GestureDetector(
                       onTap: () => _showImageDialog(0),
                       child: ClipRRect(
@@ -464,7 +590,7 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    
+
                     if (!_isPast) ...[
                       _buildShortStats(),
                       const SizedBox(height: 16),
@@ -486,6 +612,49 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
                             Icons.qr_code_scanner,
                             Colors.green,
                             () {
+                              if (_event == null) return;
+
+                              try {
+                                final eventStartDateTime = DateTime.parse(
+                                  '${_event!.startDate} ${_event!.startTime}',
+                                );
+                                final now = DateTime.now();
+                                final today = DateTime(
+                                  now.year,
+                                  now.month,
+                                  now.day,
+                                );
+                                final eventStartDate = DateTime(
+                                  eventStartDateTime.year,
+                                  eventStartDateTime.month,
+                                  eventStartDateTime.day,
+                                );
+
+                                if (eventStartDate.isAfter(today)) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      behavior: SnackBarBehavior.floating,
+                                      content: Text(
+                                        'Cannot scan tickets. Event has not started yet.',
+                                      ),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                  return;
+                                }
+                              } catch (e) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    behavior: SnackBarBehavior.floating,
+                                    content: Text(
+                                      'Error validating event date. Please try again.',
+                                    ),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                                return;
+                              }
+
                               Navigator.push(
                                 context,
                                 PageRouteBuilder(
@@ -521,6 +690,14 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
                               }
                             },
                           ),
+                        if (!_isPast)
+                          _buildActionButton(
+                            context,
+                            "Delete Event",
+                            Icons.delete,
+                            Colors.red,
+                            _deleteEvent,
+                          ),
                         _buildActionButton(
                           context,
                           "Questions",
@@ -541,7 +718,7 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
                             );
                           },
                         ),
-                        
+
                         if (_isPast)
                           _buildActionButton(
                             context,
@@ -586,7 +763,7 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
                           ),
                       ],
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 32),
                   ],
                 ),
               ),
@@ -651,10 +828,6 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
   }
 
   Widget _buildShortStats() {
-    
-    
-    
-    
     final revenue =
         (_statistics?['totalRevenue'] ??
                 _statistics?['TotalRevenue'] ??

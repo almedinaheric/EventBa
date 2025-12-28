@@ -19,18 +19,40 @@ class _FollowersScreenState extends State<FollowersScreen> {
   final UserProvider _userProvider = UserProvider();
   final Map<String, bool> _isFollowingMap = {};
   final Map<String, String?> _profileImages = {};
+  bool _isLoadingFollowingStatus = true;
 
   @override
   void initState() {
     super.initState();
     followers = widget.followers;
+    _loadFollowingStatus();
     for (var user in followers) {
-      _isFollowingMap[user.id] = false;
       if (user.profileImage?.data != null) {
         _profileImages[user.id] = user.profileImage!.data;
       } else {
         _loadUserProfileImage(user.id);
       }
+    }
+  }
+
+  Future<void> _loadFollowingStatus() async {
+    try {
+      final currentUser = await _userProvider.getProfile();
+      final followingIds = currentUser.following.map((user) => user.id).toSet();
+
+      setState(() {
+        for (var follower in followers) {
+          _isFollowingMap[follower.id] = followingIds.contains(follower.id);
+        }
+        _isLoadingFollowingStatus = false;
+      });
+    } catch (e) {
+      setState(() {
+        for (var user in followers) {
+          _isFollowingMap[user.id] = false;
+        }
+        _isLoadingFollowingStatus = false;
+      });
     }
   }
 
@@ -76,7 +98,9 @@ class _FollowersScreenState extends State<FollowersScreen> {
       title: "Followers",
       leftIcon: Icons.arrow_back,
       onLeftButtonPressed: () => Navigator.pop(context),
-      child: followers.isEmpty
+      child: _isLoadingFollowingStatus
+          ? const Center(child: CircularProgressIndicator())
+          : followers.isEmpty
           ? Center(
               child: Text(
                 "👀 No followers yet.",

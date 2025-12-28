@@ -30,11 +30,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
   User? _user;
   bool _isLoading = true;
   int _eventsCount = 0;
+  bool _hasLoadedOnce = false;
 
   @override
   void initState() {
     super.initState();
     _loadUserProfile();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_hasLoadedOnce && _user != null && !_isLoading) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _loadUserProfile();
+        }
+      });
+    }
   }
 
   Future<Map<String, dynamic>> _fetchEventsCount() async {
@@ -57,7 +70,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final user = await userProvider.getProfile();
 
-      
       print("=== PROFILE IMAGE DEBUG ===");
       print("Profile image: ${user.profileImage != null ? 'exists' : 'null'}");
       if (user.profileImage != null) {
@@ -69,7 +81,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
       print("=== END DEBUG ===");
 
-      
       int eventsCount = 0;
       try {
         final response = await _fetchEventsCount();
@@ -84,6 +95,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _user = user;
         _eventsCount = eventsCount;
         _isLoading = false;
+        _hasLoadedOnce = true;
       });
     } catch (e) {
       print("Failed to load user profile: $e");
@@ -97,23 +109,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (!mounted) return;
 
     try {
-      
       await Future.delayed(const Duration(milliseconds: 200));
 
       if (!mounted) return;
 
-      
       final bool isIOS = !kIsWeb && Platform.isIOS;
 
       final pickedFile = await ImagePicker().pickImage(
         source: ImageSource.gallery,
-        imageQuality: isIOS
-            ? 60
-            : 70, 
-        maxWidth: isIOS ? 1000 : 1200, 
+        imageQuality: isIOS ? 60 : 70,
+        maxWidth: isIOS ? 1000 : 1200,
         maxHeight: isIOS ? 1000 : 1200,
-        requestFullMetadata:
-            false, 
+        requestFullMetadata: false,
       );
 
       if (pickedFile != null && mounted) {
@@ -121,7 +128,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _image = File(pickedFile.path);
         });
 
-        
         await _uploadProfileImage(_image!);
       }
     } catch (e) {
@@ -144,11 +150,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
       final userProvider = Provider.of<UserProvider>(context, listen: false);
 
-      
       final base64Image = await ImageHelpers.fileToBase64(imageFile);
       final contentType = ImageHelpers.getContentType(imageFile.path);
 
-      
       final imageRequest = {
         'Data': base64Image,
         'ContentType': contentType,
@@ -157,7 +161,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       final imageResponse = await imageProvider.insert(imageRequest);
 
-      
       if (imageResponse.id == null || imageResponse.id!.isEmpty) {
         print("Image response: ${imageResponse.toString()}");
         print("Image response ID: ${imageResponse.id}");
@@ -169,7 +172,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final imageId = imageResponse.id!;
       print("Image uploaded successfully with ID: $imageId");
 
-      
       final updateUrl = "${userProvider.baseUrl}User/${_user!.id}";
       final updateUri = Uri.parse(updateUrl);
       final headers = userProvider.createHeaders();
@@ -191,10 +193,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
 
       if (updateResponse.statusCode >= 200 && updateResponse.statusCode < 300) {
-        
         await _loadUserProfile();
 
-        
         if (mounted) {
           setState(() {
             _image = null;
@@ -222,7 +222,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         );
       }
-      
+
       setState(() {
         _image = null;
       });
@@ -261,10 +261,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     outlined: true,
                     small: true,
                     onPressed: () async {
-                      
                       Navigator.pop(context);
 
-                      
                       try {
                         final userProvider = Provider.of<UserProvider>(
                           context,
@@ -275,11 +273,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         print('Error calling logout endpoint: $e');
                       }
 
-                      
                       Authorization.email = null;
                       Authorization.password = null;
 
-                      
                       try {
                         Provider.of<UserProvider>(
                           context,
@@ -289,7 +285,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         print('Error clearing user provider: $e');
                       }
 
-                      
                       if (context.mounted) {
                         Navigator.pushAndRemoveUntil(
                           context,
@@ -326,7 +321,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final followingCount = _user?.following.length ?? 0;
     final eventsCount = _eventsCount;
 
-    
     if (_isAdmin) {
       return Scaffold(
         backgroundColor: const Color(0xFFF7F8FA),
@@ -334,10 +328,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-              
               _buildSectionCard(context, "Account", [
-                _buildListTile(context, "My Events", Icons.event, () {
-                  Navigator.push(
+                _buildListTile(context, "My Events", Icons.event, () async {
+                  await Navigator.push(
                     context,
                     PageRouteBuilder(
                       pageBuilder: (_, __, ___) => const MyEventsScreen(),
@@ -345,11 +338,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       reverseTransitionDuration: Duration.zero,
                     ),
                   );
+
+                  if (mounted) {
+                    await _loadUserProfile();
+                  }
                 }),
               ]),
               const SizedBox(height: 16),
 
-              
               _buildSectionCard(context, "Logout", [
                 _buildListTile(context, "Log Out", Icons.logout, _logout),
               ]),
@@ -360,14 +356,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
     }
 
-    
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FA),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            
             GestureDetector(
               onTap: _pickImage,
               child: Stack(
@@ -422,7 +416,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 24),
 
-            
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -440,7 +433,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         reverseTransitionDuration: Duration.zero,
                       ),
                     );
-                    
+
                     if (mounted) {
                       await _loadUserProfile();
                     }
@@ -460,27 +453,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         reverseTransitionDuration: Duration.zero,
                       ),
                     );
-                    
+
                     if (mounted) {
                       await _loadUserProfile();
                     }
                   },
                 ),
-                _buildStatColumn(context, eventsCount.toString(), "Events", () {
-                  Navigator.push(
-                    context,
-                    PageRouteBuilder(
-                      pageBuilder: (_, __, ___) => const MyEventsScreen(),
-                      transitionDuration: Duration.zero,
-                      reverseTransitionDuration: Duration.zero,
-                    ),
-                  );
-                }),
+                _buildStatColumn(
+                  context,
+                  eventsCount.toString(),
+                  "Events",
+                  () async {
+                    await Navigator.push(
+                      context,
+                      PageRouteBuilder(
+                        pageBuilder: (_, __, ___) => const MyEventsScreen(),
+                        transitionDuration: Duration.zero,
+                        reverseTransitionDuration: Duration.zero,
+                      ),
+                    );
+
+                    if (mounted) {
+                      await _loadUserProfile();
+                    }
+                  },
+                ),
               ],
             ),
             const SizedBox(height: 32),
 
-            
             _buildSectionCard(context, "Account", [
               _buildListTile(
                 context,
@@ -495,14 +496,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       reverseTransitionDuration: Duration.zero,
                     ),
                   );
-                  
+
                   if (mounted) {
                     await _loadUserProfile();
                   }
                 },
               ),
-              _buildListTile(context, "My Events", Icons.event, () {
-                Navigator.push(
+              _buildListTile(context, "My Events", Icons.event, () async {
+                await Navigator.push(
                   context,
                   PageRouteBuilder(
                     pageBuilder: (_, __, ___) => const MyEventsScreen(),
@@ -510,6 +511,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     reverseTransitionDuration: Duration.zero,
                   ),
                 );
+
+                if (mounted) {
+                  await _loadUserProfile();
+                }
               }),
             ]),
             const SizedBox(height: 16),
@@ -528,7 +533,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ]),
             const SizedBox(height: 16),
 
-            
             _buildSectionCard(context, "Logout", [
               _buildListTile(context, "Log Out", Icons.logout, _logout),
             ]),

@@ -68,7 +68,7 @@ class CustomTextField extends StatelessWidget {
             decoration: InputDecoration(
               hintText: hint,
               errorText: isValid ? null : errorMessage,
-              errorMaxLines: 2,
+              errorMaxLines: 3,
               errorStyle: const TextStyle(fontSize: 12, height: 1.2),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),

@@ -162,6 +162,7 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
             .Include(x => x.EventGalleryImages)
             .ThenInclude(egi => egi.Image)
             .Where(x => x.OrganizerId == currentUser.Id)
+            .Where(x => x.IsPublished)
             .ToListAsync();
 
         return _mapper.Map<List<EventResponseDto>>(events);

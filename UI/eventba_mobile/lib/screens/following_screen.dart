@@ -18,16 +18,32 @@ class _FollowingScreenState extends State<FollowingScreen> {
   late List<BasicUser> following;
   final UserProvider userProvider = UserProvider();
   final Map<String, String?> _profileImages = {};
+  bool _isLoadingImages = false;
+  int _loadingImagesCount = 0;
 
   @override
   void initState() {
     super.initState();
     following = List.from(widget.following);
+    int imagesToLoad = 0;
     for (var user in following) {
       if (user.profileImage?.data != null) {
         _profileImages[user.id] = user.profileImage!.data;
       } else {
-        _loadUserProfileImage(user.id);
+        imagesToLoad++;
+      }
+    }
+
+    if (imagesToLoad > 0) {
+      setState(() {
+        _isLoadingImages = true;
+        _loadingImagesCount = imagesToLoad;
+      });
+
+      for (var user in following) {
+        if (user.profileImage?.data == null) {
+          _loadUserProfileImage(user.id);
+        }
       }
     }
   }
@@ -38,9 +54,27 @@ class _FollowingScreenState extends State<FollowingScreen> {
       if (user.profileImage?.data != null) {
         setState(() {
           _profileImages[userId] = user.profileImage!.data;
+          _loadingImagesCount--;
+          if (_loadingImagesCount <= 0) {
+            _isLoadingImages = false;
+          }
+        });
+      } else {
+        setState(() {
+          _loadingImagesCount--;
+          if (_loadingImagesCount <= 0) {
+            _isLoadingImages = false;
+          }
         });
       }
-    } catch (e) {}
+    } catch (e) {
+      setState(() {
+        _loadingImagesCount--;
+        if (_loadingImagesCount <= 0) {
+          _isLoadingImages = false;
+        }
+      });
+    }
   }
 
   Future<void> _handleUnfollow(String userId) async {
@@ -69,7 +103,9 @@ class _FollowingScreenState extends State<FollowingScreen> {
       title: "Following",
       leftIcon: Icons.arrow_back,
       onLeftButtonPressed: () => Navigator.pop(context),
-      child: following.isEmpty
+      child: _isLoadingImages
+          ? const Center(child: CircularProgressIndicator())
+          : following.isEmpty
           ? Center(
               child: Text(
                 "👀 No followings yet.",

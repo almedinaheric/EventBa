@@ -50,6 +50,8 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
   List<CategoryModel> _categories = [];
   List<String> _selectedCategoryIds = [];
   bool _isLoadingCategories = true;
+  bool _isCategoriesValid = true;
+  String? _categoriesErrorMessage;
 
   final double fieldWidth = double.infinity;
 
@@ -193,11 +195,11 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
                       _phoneErrorMessage = null;
                     } else {
                       _isPhoneValid = RegExp(
-                        r'^[+]*[(]{0,1}[0-9]{1,4}[)]{0,1}[-\s\./0-9]*$',
-                      ).hasMatch(text);
+                        r'^(\+?\d{1,3}[-.\s]?)?\(?\d{1,4}\)?[-.\s]?\d{1,4}[-.\s]?\d{1,9}$',
+                      ).hasMatch(text.trim());
                       _phoneErrorMessage = _isPhoneValid
                           ? null
-                          : 'Enter a valid phone number';
+                          : 'Enter a valid phone number (e.g., +381 11 1234567 or 011-123-4567)';
                     }
                   });
                 },
@@ -206,15 +208,37 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
               if (_isLoadingCategories)
                 const Center(child: CircularProgressIndicator())
               else
-                CategorySelectionWidget(
-                  categories: _categories,
-                  selectedCategoryIds: _selectedCategoryIds,
-                  onCategoriesChanged: (selectedIds) {
-                    setState(() {
-                      _selectedCategoryIds = selectedIds;
-                    });
-                  },
-                  subtitle: "Select categories you're interested in",
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    CategorySelectionWidget(
+                      categories: _categories,
+                      selectedCategoryIds: _selectedCategoryIds,
+                      onCategoriesChanged: (selectedIds) {
+                        setState(() {
+                          _selectedCategoryIds = selectedIds;
+                          _isCategoriesValid = selectedIds.isNotEmpty;
+                          _categoriesErrorMessage = _isCategoriesValid
+                              ? null
+                              : 'Please select at least one category';
+                        });
+                      },
+                      subtitle: "Select categories you're interested in",
+                    ),
+                    if (!_isCategoriesValid && _categoriesErrorMessage != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0, left: 4.0),
+                        child: Text(
+                          _categoriesErrorMessage!,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.red,
+                            height: 1.2,
+                          ),
+                          maxLines: 2,
+                        ),
+                      ),
+                  ],
                 ),
               const SizedBox(height: 20),
               PrimaryButton(text: "Save Changes", onPressed: _saveProfile),
@@ -335,18 +359,24 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
         _phoneErrorMessage = null;
       } else {
         _isPhoneValid = RegExp(
-          r'^[+]*[(]{0,1}[0-9]{1,4}[)]{0,1}[-\s\./0-9]*$',
-        ).hasMatch(phoneController.text);
+          r'^(\+?\d{1,3}[-.\s]?)?\(?\d{1,4}\)?[-.\s]?\d{1,4}[-.\s]?\d{1,9}$',
+        ).hasMatch(phoneController.text.trim());
         _phoneErrorMessage = _isPhoneValid
             ? null
-            : 'Enter a valid phone number';
+            : 'Enter a valid phone number (e.g., +381 11 1234567 or 011-123-4567)';
       }
+
+      _isCategoriesValid = _selectedCategoryIds.isNotEmpty;
+      _categoriesErrorMessage = _isCategoriesValid
+          ? null
+          : 'Please select at least one category';
     });
 
     if (_isFirstNameValid &&
         _isLastNameValid &&
         _isEmailValid &&
-        _isPhoneValid) {
+        _isPhoneValid &&
+        _isCategoriesValid) {
       try {
         final request = {
           'firstName': firstNameController.text.trim(),
