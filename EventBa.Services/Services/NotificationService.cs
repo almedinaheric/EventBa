@@ -90,12 +90,14 @@ public class NotificationService : BaseCRUDService<NotificationResponseDto, Noti
 
         foreach (var recipient in recipientUsers)
         {
-            var emailModel = new EmailModel
+            try
             {
-                Sender = Environment.GetEnvironmentVariable("SMTP_USERNAME") ?? "noreply@eventba.com",
-                Recipient = recipient.Email,
-                Subject = insert.IsImportant ? $"🔔 Important: {insert.Title}" : insert.Title,
-                Content = $@"
+                var emailModel = new EmailModel
+                {
+                    Sender = Environment.GetEnvironmentVariable("SMTP_USERNAME") ?? "noreply@eventba.com",
+                    Recipient = recipient.Email,
+                    Subject = insert.IsImportant ? $"🔔 Important: {insert.Title}" : insert.Title,
+                    Content = $@"
 Hello {recipient.FirstName} {recipient.LastName},
 
 {insert.Content}
@@ -107,9 +109,14 @@ You can also view this notification in the EventBa app.
 Best regards,
 EventBa Team
 "
-            };
+                };
 
-            _rabbitMQProducer.SendMessage(emailModel);
+                _rabbitMQProducer.SendMessage(emailModel);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to send email notification to {recipient.Email}: {ex.Message}");
+            }
         }
 
         return result;

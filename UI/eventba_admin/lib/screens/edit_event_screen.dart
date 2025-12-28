@@ -697,8 +697,12 @@ class _EditEventScreenState extends State<EditEventScreen> {
       final isNowPaid = _isPaid;
 
       if (!wasPaid && isNowPaid) {
-        // Event changed from FREE to PAID - create tickets
-        await _createTicketsForPaidEvent(eventId, eventDate, ticketProvider);
+        // Event changed from FREE to PAID - validate and delete free tickets, then create paid tickets
+        await _validateAndDeleteTicketsForPaidEvent(
+          eventId,
+          eventDate,
+          ticketProvider,
+        );
       } else if (wasPaid && !isNowPaid) {
         // Event changed from PAID to FREE - validate and delete tickets, then create free ticket
         await _validateAndDeleteTicketsForFreeEvent(
@@ -768,6 +772,35 @@ class _EditEventScreenState extends State<EditEventScreen> {
       await ticketProvider.createTicket(freeTicketData);
       print('Free ticket created for free event');
     }
+  }
+
+  Future<void> _validateAndDeleteTicketsForPaidEvent(
+    String eventId,
+    String eventDate,
+    TicketProvider ticketProvider,
+  ) async {
+    // Check if any free tickets have been sold
+    for (var ticket in _existingTickets) {
+      if (ticket.ticketType == 'Free' && ticket.quantitySold > 0) {
+        throw Exception(
+          'Cannot change event to paid. ${ticket.quantitySold} free ticket(s) have already been purchased.',
+        );
+      }
+    }
+
+    // Delete all free tickets if they exist
+    final freeTickets = _existingTickets
+        .where((t) => t.ticketType == 'Free')
+        .toList();
+    if (freeTickets.isNotEmpty) {
+      for (var ticket in freeTickets) {
+        await ticketProvider.deleteTicket(ticket.id);
+      }
+      print('Deleted ${freeTickets.length} free ticket(s)');
+    }
+
+    // Create paid tickets
+    await _createTicketsForPaidEvent(eventId, eventDate, ticketProvider);
   }
 
   Future<void> _createTicketsForPaidEvent(
@@ -1084,6 +1117,63 @@ class _EditEventScreenState extends State<EditEventScreen> {
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) {
       return;
+    }
+
+    // Validate start time is before end time if dates are the same
+    if (_dateController.text.isNotEmpty &&
+        _startTimeController.text.isNotEmpty &&
+        _endTimeController.text.isNotEmpty) {
+      try {
+        final dateRangeParts = _dateController.text.split(' - ');
+        if (dateRangeParts.length == 2) {
+          final startDateStr = dateRangeParts[0].trim();
+          final endDateStr = dateRangeParts[1].trim();
+
+          // If start and end dates are the same, validate times
+          if (startDateStr == endDateStr) {
+            // Parse times (handle AM/PM format)
+            int formatTimeToMinutes(String timeStr) {
+              final parts = timeStr.split(' ');
+              final timePart = parts[0];
+              final timeParts = timePart.split(':');
+              int hour = int.parse(timeParts[0]);
+              final minute = int.parse(timeParts[1]);
+
+              if (parts.length > 1) {
+                final period = parts[1].toUpperCase();
+                if (period == 'PM' && hour != 12) {
+                  hour += 12;
+                } else if (period == 'AM' && hour == 12) {
+                  hour = 0;
+                }
+              }
+
+              return hour * 60 + minute; // Convert to minutes for comparison
+            }
+
+            final startTimeMinutes = formatTimeToMinutes(
+              _startTimeController.text,
+            );
+            final endTimeMinutes = formatTimeToMinutes(_endTimeController.text);
+
+            if (startTimeMinutes >= endTimeMinutes) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Start time must be before end time when dates are the same',
+                    ),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+              return;
+            }
+          }
+        }
+      } catch (e) {
+        print("Error validating time: $e");
+      }
     }
 
     setState(() {

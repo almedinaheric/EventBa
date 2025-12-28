@@ -52,7 +52,7 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
   void _confirmPayment() async {
     if (_isProcessing) return;
 
-    // Check if any tickets are selected
+    
     if (_ticketCounts.values.every((count) => count == 0)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -68,7 +68,7 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
     });
 
     try {
-      // Check if all selected tickets are free
+      
       bool allFree = true;
       for (var entry in _ticketCounts.entries) {
         if (entry.value > 0 && _ticketMap[entry.key]!.price > 0) {
@@ -78,10 +78,10 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
       }
 
       if (allFree) {
-        // Free tickets - no payment needed
+        
         await _processFreeTickets();
       } else {
-        // Paid tickets - process with Stripe
+        
         await _processStripePayment();
       }
     } catch (e) {
@@ -114,7 +114,7 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
       );
     } catch (e) {
       print('Error creating payment record: $e');
-      // Don't throw - payment was successful, this is just for record keeping
+      
     }
   }
 
@@ -124,7 +124,7 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
       listen: false,
     );
 
-    // Create ticket purchases for each selected ticket
+    
     for (var entry in _ticketCounts.entries) {
       if (entry.value > 0) {
         final ticket = _ticketMap[entry.key];
@@ -172,7 +172,7 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
       listen: false,
     );
 
-    // Get the first paid ticket for payment intent metadata
+    
     String ticketId = '';
     int totalQuantity = 0;
 
@@ -190,7 +190,7 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
         'Creating payment intent: amount=${_totalPrice}, ticketId=$ticketId, eventId=${widget.eventId}, quantity=$totalQuantity',
       );
 
-      // Create payment intent
+      
       final paymentIntentData = await paymentProvider.createPaymentIntent(
         amount: _totalPrice,
         currency: 'usd',
@@ -201,14 +201,14 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
 
       print('Payment intent created: ${paymentIntentData.toString()}');
 
-      // Validate response
+      
       if (paymentIntentData['clientSecret'] == null) {
         throw Exception(
           'Invalid payment intent response: missing clientSecret',
         );
       }
 
-      // Update Stripe publishable key if provided by backend (optional, but ensures consistency)
+      
       if (paymentIntentData['publishableKey'] != null) {
         final backendPublishableKey =
             paymentIntentData['publishableKey'] as String;
@@ -219,7 +219,7 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
         }
       }
 
-      // Initialize payment sheet
+      
       print('Initializing payment sheet...');
       print(
         'Using Stripe publishable key: ${stripe.Stripe.publishableKey.substring(0, 20)}...',
@@ -234,15 +234,15 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
       );
 
       print('Presenting payment sheet...');
-      // Present payment sheet
+      
       await stripe.Stripe.instance.presentPaymentSheet();
 
       print('Payment successful! Creating payment record...');
-      // Create payment record
+      
       await _createPaymentRecord();
 
       print('Creating ticket purchases...');
-      // Payment successful - create ticket purchases
+      
       await _processTicketPurchases();
 
       setState(() {
@@ -498,7 +498,7 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
                     ],
                   ),
                 ),
-                // Total and button at bottom above bottom nav
+                
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -525,7 +525,7 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
                   onPressed: _isProcessing ? () {} : _confirmPayment,
                   width: double.infinity,
                 ),
-                const SizedBox(height: 24), // Space above bottom nav
+                const SizedBox(height: 24), 
               ],
             ),
           );

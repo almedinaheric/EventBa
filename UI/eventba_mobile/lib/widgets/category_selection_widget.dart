@@ -32,8 +32,8 @@ class _CategorySelectionWidgetState extends State<CategorySelectionWidget> {
   @override
   void didUpdateWidget(CategorySelectionWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Update selected category IDs when parent widget updates them
-    // Compare lists by length and content
+    
+    
     if (oldWidget.selectedCategoryIds.length !=
             widget.selectedCategoryIds.length ||
         !oldWidget.selectedCategoryIds.every(

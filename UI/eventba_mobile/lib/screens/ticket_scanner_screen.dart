@@ -43,14 +43,14 @@ class _TicketScannerScreenState extends State<TicketScannerScreen> {
       _isSimulator = true;
     } else {
       try {
-        // Check if running on iOS simulator or Android emulator
+        
         if (Platform.isIOS) {
-          // On iOS simulator, camera might not be available
-          // We'll show manual input as fallback
+          
+          
           _isSimulator =
-              false; // Try to use camera, fallback to manual if needed
+              false; 
         } else if (Platform.isAndroid) {
-          // On Android, check build fingerprint for emulator indicators
+          
           final model = Platform.environment['ANDROID_MODEL'] ?? '';
           _isSimulator =
               model.toLowerCase().contains('sdk') ||
@@ -60,7 +60,7 @@ class _TicketScannerScreenState extends State<TicketScannerScreen> {
           _isSimulator = false;
         }
       } catch (e) {
-        // If we can't determine, assume it's a real device
+        
         _isSimulator = false;
       }
     }
@@ -77,7 +77,7 @@ class _TicketScannerScreenState extends State<TicketScannerScreen> {
     final List<Barcode> barcodes = capture.barcodes;
     for (final barcode in barcodes) {
       if (barcode.rawValue != null && !_isValidating) {
-        // Extract ticket code from QR data format: "EVENT:...|TICKET:CODE|USER:..."
+        
         String ticketCode = barcode.rawValue!;
         if (ticketCode.contains('|TICKET:')) {
           final parts = ticketCode.split('|TICKET:');
@@ -112,7 +112,7 @@ class _TicketScannerScreenState extends State<TicketScannerScreen> {
         try {
           await controller?.stop();
         } catch (e) {
-          // Ignore errors when stopping
+          
         }
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -121,7 +121,7 @@ class _TicketScannerScreenState extends State<TicketScannerScreen> {
             backgroundColor: Colors.green,
           ),
         );
-        // Reset after a delay to allow scanning again
+        
         Future.delayed(const Duration(seconds: 2), () {
           if (mounted) {
             setState(() {
@@ -131,7 +131,7 @@ class _TicketScannerScreenState extends State<TicketScannerScreen> {
             try {
               controller?.start();
             } catch (e) {
-              // Ignore errors if already started
+              
             }
           }
         });
@@ -148,11 +148,11 @@ class _TicketScannerScreenState extends State<TicketScannerScreen> {
             backgroundColor: Colors.red,
           ),
         );
-        // Allow scanning again after error
+        
         try {
           controller?.start();
         } catch (startError) {
-          // Ignore errors if already started
+          
         }
       }
     }

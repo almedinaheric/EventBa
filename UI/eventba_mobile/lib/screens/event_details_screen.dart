@@ -52,7 +52,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       );
       final userProvider = Provider.of<UserProvider>(context, listen: false);
 
-      // Load event details
+      
       final event = await eventProvider.getById(widget.eventId);
 
       print('=== EVENT LOADED DEBUG ===');
@@ -74,7 +74,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
         _event = event;
       });
 
-      // Get current user profile first to check favorites and following status
+      
       try {
         final currentUser = await userProvider.getProfile();
 
@@ -87,7 +87,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           "User favorite events IDs: ${currentUser.favoriteEvents.map((e) => e.id).toList()}",
         );
 
-        // Check if event is favorited
+        
         final isEventFavorited = currentUser.favoriteEvents.any(
           (favEvent) => favEvent.id == event.id,
         );
@@ -99,44 +99,44 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           isFavorited = isEventFavorited;
         });
 
-        // Fetch organizer based on organizerId
+        
         try {
           final organizer = await userProvider.getById(event.organizerId);
           setState(() {
             _organizer = organizer;
           });
 
-          // Check if current user is following the organizer
+          
           setState(() {
             isFollowing = currentUser.following.any(
               (u) => u.id == organizer.id,
             );
           });
         } catch (e) {
-          // Handle organizer loading error silently
+          
         }
       } catch (e) {
-        // Handle user profile loading error silently
+        
       }
 
-      // Load tickets for all events (free events may have free tickets)
+      
       final tickets = await ticketProvider.getTicketsForEvent(widget.eventId);
       setState(() {
         _tickets = tickets;
 
         if (event.isPaid) {
-          // For paid events, show sum of available tickets
+          
           _totalTicketsLeft = tickets.fold(
             0,
             (sum, ticket) => sum + ticket.quantityAvailable,
           );
         } else {
-          // For free events, show available capacity
+          
           _totalTicketsLeft = event.capacity - event.currentAttendees;
         }
       });
     } catch (e) {
-      // Handle general error silently
+      
     } finally {
       setState(() {
         _isLoading = false;
@@ -155,10 +155,10 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
       await eventProvider.toggleFavoriteEvent(widget.eventId);
 
-      // Add a small delay to ensure backend has processed the change
+      
       await Future.delayed(const Duration(milliseconds: 500));
 
-      // Refresh user profile to get updated favorites list
+      
       final updatedUser = await userProvider.getProfile();
       print(
         "After toggle - User favorite events count: ${updatedUser.favoriteEvents.length}",
@@ -218,7 +218,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   void _showImageDialog(int initialIndex) {
     if (_event == null) return;
 
-    // Build list of images: cover image first, then gallery images
+    
     List<String> allImages = [];
     print('=== IMAGE DIALOG DEBUG ===');
     print(
@@ -282,7 +282,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                           minScale: 0.5,
                           maxScale: 4.0,
                           panEnabled:
-                              false, // Disable pan to allow PageView swiping
+                              false, 
                           scaleEnabled: true,
                           child: Center(
                             child: Image.memory(
@@ -395,12 +395,12 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     onPressed: () async {
                       try {
                         if (_event!.isPaid && _tickets.isNotEmpty) {
-                          // For paid events with free tickets
+                          
                           final freeTicket = _tickets.firstWhere(
                             (t) => t.price == 0,
                           );
 
-                          // Create ticket purchase
+                          
                           final ticketPurchaseProvider =
                               Provider.of<TicketPurchaseProvider>(
                                 context,
@@ -412,8 +412,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                             'eventId': widget.eventId,
                           });
                         } else {
-                          // For free events, we might need a different endpoint
-                          // For now, show a message that this feature needs backend support
+                          
+                          
                           Navigator.pop(context);
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
@@ -427,7 +427,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                         }
 
                         Navigator.pop(context);
-                        // Reload event data to update ticket counts
+                        
                         _loadEventData();
 
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -570,10 +570,10 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   children: [
                     const SizedBox(height: 16),
 
-                    // Event Image Carousel
+                    
                     Builder(
                       builder: (context) {
-                        // Build list of images: cover first, then gallery
+                        
                         List<String> allImages = [];
                         if (_event!.coverImage?.data != null) {
                           allImages.add(_event!.coverImage!.data!);
@@ -673,7 +673,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
                     const SizedBox(height: 16),
 
-                    // Details Section
+                    
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -787,7 +787,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
                     const SizedBox(height: 24),
 
-                    // Organizer Section with Follow Button
+                    
                     const Text(
                       "Organized by",
                       style: TextStyle(
@@ -918,7 +918,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
                     const SizedBox(height: 24),
 
-                    // Show tickets section only for paid events
+                    
                     if (_event!.isPaid) ...[
                       const Text(
                         "Tickets",
@@ -954,7 +954,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
                     const SizedBox(height: 16),
 
-                    // "Have a Question?" Button - Only show for private events
+                    
                     if (_event!.type == EventType.Private)
                       InkWell(
                         onTap: _showQuestionDialog,
@@ -980,13 +980,13 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     if (_event!.type == EventType.Private)
                       const SizedBox(height: 8),
 
-                    // Buy Ticket Button or Reserve Place Button
+                    
                     if (_event!.isPaid && _tickets.isNotEmpty)
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
                           onPressed: () {
-                            // Check if any ticket is free
+                            
                             final hasFreeTickets = _tickets.any(
                               (t) => t.price == 0,
                             );
@@ -995,10 +995,10 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                             );
 
                             if (hasFreeTickets && !hasPaidTickets) {
-                              // All tickets are free - show reserve dialog
+                              
                               _showReserveDialog();
                             } else {
-                              // Has paid tickets or mix - navigate to buy ticket screen
+                              
                               Navigator.push(
                                 context,
                                 PageRouteBuilder(
@@ -1047,7 +1047,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                                 reverseTransitionDuration: Duration.zero,
                               ),
                             ).then((_) {
-                              // Reload event data when returning from reserve screen
+                              
                               _loadEventData();
                             });
                           },

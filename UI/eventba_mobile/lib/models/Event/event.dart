@@ -135,11 +135,11 @@ class Event {
     'organizerId': organizerId,
   };
 
-  // Custom converter: handle string (data URI) format from backend
+  
   static ImageModel? _coverImageFromJson(dynamic json) {
     if (json == null) return null;
     if (json is String) {
-      // Backend returns string as data URI, convert to ImageModel
+      
       return ImageModel(
         id: '',
         data: json,
@@ -149,20 +149,20 @@ class Event {
       );
     }
     if (json is Map<String, dynamic>) {
-      // If it's already an object, parse it normally
+      
       return ImageModel.fromJson(json);
     }
     return null;
   }
 
-  // Custom converter: handle list of strings (data URIs) from backend
+  
   static List<ImageModel>? _galleryImagesFromJson(dynamic json) {
     if (json == null) return null;
     if (json is List) {
       return json
           .map((item) {
             if (item is String) {
-              // Backend returns string as data URI, convert to ImageModel
+              
               return ImageModel(
                 id: '',
                 data: item,
@@ -172,7 +172,7 @@ class Event {
               );
             }
             if (item is Map<String, dynamic>) {
-              // If it's already an object, parse it normally
+              
               return ImageModel.fromJson(item);
             }
             return null;

@@ -28,6 +28,12 @@ class _ReportGenerationScreenState extends State<ReportGenerationScreen> {
 
   final List<Map<String, dynamic>> reportOptions = [
     {
+      'title': 'Complete Report',
+      'description': 'Comprehensive report with all metrics and analytics',
+      'icon': Icons.assessment,
+      'color': Colors.red,
+    },
+    {
       'title': 'Events Overview',
       'description':
           'Number of private events, public events, and total attendees',
@@ -52,12 +58,6 @@ class _ReportGenerationScreenState extends State<ReportGenerationScreen> {
       'description': 'User with most events and user engagement metrics',
       'icon': Icons.person_outline,
       'color': Colors.purple,
-    },
-    {
-      'title': 'Complete Report',
-      'description': 'Comprehensive report with all metrics and analytics',
-      'icon': Icons.assessment,
-      'color': Colors.red,
     },
   ];
 
@@ -433,46 +433,13 @@ class _ReportGenerationScreenState extends State<ReportGenerationScreen> {
         data['sortedEvents'] = sortedByAttendance;
         break;
       case 'User Activity':
-        // Get all unique organizer IDs from events
-        final organizerIds = filteredEvents
-            .map((e) => e.organizerId)
-            .toSet()
-            .toList();
-
-        // Fetch user details for all organizers (including admins)
+        // Fetch all users (including admins)
         final allUsers = await userProvider.get(
           filter: {'page': 1, 'pageSize': 1000, 'excludeAdmins': false},
         );
 
-        // Also fetch individual users if needed (for organizers not in the list)
-        final organizerUsers = <User>[];
-        for (var organizerId in organizerIds) {
-          try {
-            User? foundUser;
-            try {
-              foundUser = allUsers.result.firstWhere(
-                (u) => u.id == organizerId,
-              );
-            } catch (e) {
-              // User not found in list, try to fetch individually
-              try {
-                foundUser = await userProvider.getUserById(organizerId);
-              } catch (fetchError) {
-                print("Could not fetch user $organizerId: $fetchError");
-              }
-            }
-
-            if (foundUser != null) {
-              organizerUsers.add(foundUser);
-            }
-          } catch (e) {
-            print("Error processing organizer $organizerId: $e");
-          }
-        }
-
-        data['users'] = organizerUsers.isNotEmpty
-            ? organizerUsers
-            : allUsers.result;
+        // Use all users, not just organizers
+        data['users'] = allUsers.result;
         break;
       case 'Complete Report':
         // Prepare all data structures for complete report
@@ -498,42 +465,12 @@ class _ReportGenerationScreenState extends State<ReportGenerationScreen> {
           ..sort((a, b) => b.currentAttendees.compareTo(a.currentAttendees));
         data['sortedEvents'] = sortedByAttendance;
 
-        // User Activity data - fetch all organizers
-        final organizerIds = filteredEvents
-            .map((e) => e.organizerId)
-            .toSet()
-            .toList();
+        // User Activity data - fetch all users (not just organizers)
         final allUsers = await userProvider.get(
           filter: {'page': 1, 'pageSize': 1000, 'excludeAdmins': false},
         );
 
-        final organizerUsers = <User>[];
-        for (var organizerId in organizerIds) {
-          try {
-            User? foundUser;
-            try {
-              foundUser = allUsers.result.firstWhere(
-                (u) => u.id == organizerId,
-              );
-            } catch (e) {
-              try {
-                foundUser = await userProvider.getUserById(organizerId);
-              } catch (fetchError) {
-                print("Could not fetch user $organizerId: $fetchError");
-              }
-            }
-
-            if (foundUser != null) {
-              organizerUsers.add(foundUser);
-            }
-          } catch (e) {
-            print("Error processing organizer $organizerId: $e");
-          }
-        }
-
-        data['users'] = organizerUsers.isNotEmpty
-            ? organizerUsers
-            : allUsers.result;
+        data['users'] = allUsers.result;
         break;
     }
 
@@ -937,21 +874,10 @@ class _ReportGenerationScreenState extends State<ReportGenerationScreen> {
 
     final mostAttended = sortedEvents.first;
     final leastAttended = sortedEvents.last;
-    final avgAttendance = sortedEvents.isEmpty
-        ? 0
-        : (sortedEvents.fold<int>(0, (sum, e) => sum + e.currentAttendees) /
-                  sortedEvents.length)
-              .round();
 
     return [
       _buildSectionTitle('Attendance Statistics'),
       pw.SizedBox(height: 15),
-      _buildStatCard(
-        'Average Attendance',
-        avgAttendance.toString(),
-        PdfColors.teal,
-      ),
-      pw.SizedBox(height: 20),
       pw.Container(
         padding: const pw.EdgeInsets.all(12),
         decoration: pw.BoxDecoration(

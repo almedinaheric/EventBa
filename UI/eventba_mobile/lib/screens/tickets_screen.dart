@@ -16,7 +16,7 @@ class TicketsScreen extends StatefulWidget {
 }
 
 class _TicketsScreenState extends State<TicketsScreen> {
-  int selectedIndex = 0; // 0 = Upcoming, 1 = Past
+  int selectedIndex = 0; 
   Map<String, List<TicketPurchase>> _upcomingTicketsByEvent = {};
   Map<String, List<TicketPurchase>> _pastTicketsByEvent = {};
   Map<String, Event> _events = {};
@@ -36,13 +36,13 @@ class _TicketsScreenState extends State<TicketsScreen> {
       );
       final eventProvider = Provider.of<EventProvider>(context, listen: false);
 
-      // Get all ticket purchases
+      
       final allPurchases = await ticketPurchaseProvider.getMyPurchases();
 
-      // Get unique event IDs
+      
       final eventIds = allPurchases.map((p) => p.eventId).toSet();
 
-      // Load all events
+      
       final events = <String, Event>{};
       for (final eventId in eventIds) {
         try {
@@ -53,7 +53,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
         }
       }
 
-      // Group purchases by event and filter by upcoming/past
+      
       final now = DateTime.now();
       final upcomingTicketsByEvent = <String, List<TicketPurchase>>{};
       final pastTicketsByEvent = <String, List<TicketPurchase>>{};
@@ -62,7 +62,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
         final event = events[purchase.eventId];
         if (event == null) continue;
 
-        // Check if event is upcoming or past based on start date/time
+        
         final eventStartDateTime = DateTime.parse(
           '${event.startDate} ${event.startTime}',
         );
@@ -98,13 +98,13 @@ class _TicketsScreenState extends State<TicketsScreen> {
     return Scaffold(
       body: Column(
         children: [
-          // Custom toggle buttons instead of TabBar
+          
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Upcoming button
+                
                 Expanded(
                   child: GestureDetector(
                     onTap: () {
@@ -138,7 +138,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
                   ),
                 ),
 
-                // Past button
+                
                 Expanded(
                   child: GestureDetector(
                     onTap: () {
@@ -175,7 +175,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
             ),
           ),
 
-          // Tab content
+          
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -220,20 +220,20 @@ class _TicketsScreenState extends State<TicketsScreen> {
         return const SizedBox.shrink();
       }
 
-      // Format event date and time
+      
       final eventStartDateTime = DateTime.parse(
         '${event.startDate} ${event.startTime}',
       );
       final date = _formatDate(eventStartDateTime);
       final time = _formatTime(eventStartDateTime);
 
-      // Calculate total price for paid tickets
+      
       double totalPrice = 0.0;
       for (final purchase in purchases) {
         totalPrice += purchase.pricePaid;
       }
 
-      // Format total price
+      
       final formattedPrice = totalPrice > 0
           ? "\$${totalPrice.toStringAsFixed(2)}"
           : "Free";

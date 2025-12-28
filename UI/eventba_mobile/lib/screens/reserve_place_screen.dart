@@ -29,7 +29,7 @@ class _ReservePlaceScreenState extends State<ReservePlaceScreen> {
   @override
   void initState() {
     super.initState();
-    // Initialize quantity to 1, but ensure it doesn't exceed available places
+    
     _quantity = widget.availablePlaces > 0 ? 1 : 0;
     _loadFreeTicket();
   }
@@ -42,7 +42,7 @@ class _ReservePlaceScreenState extends State<ReservePlaceScreen> {
       );
       final tickets = await ticketProvider.getTicketsForEvent(widget.eventId);
 
-      // Find the free ticket (price = 0)
+      
       final freeTicket = tickets.firstWhere(
         (ticket) => ticket.price == 0,
         orElse: () => throw Exception("No free ticket found for this event"),
@@ -108,7 +108,7 @@ class _ReservePlaceScreenState extends State<ReservePlaceScreen> {
         listen: false,
       );
 
-      // Create ticket purchases for the selected quantity
+      
       for (int i = 0; i < _quantity; i++) {
         try {
           print(
@@ -172,9 +172,9 @@ class _ReservePlaceScreenState extends State<ReservePlaceScreen> {
             PrimaryButton(
               text: 'Ok',
               onPressed: () {
-                Navigator.pop(context); // Close dialog
-                Navigator.pop(context); // Go back to event details
-                // Navigate to tickets screen
+                Navigator.pop(context); 
+                Navigator.pop(context); 
+                
                 Navigator.push(
                   context,
                   PageRouteBuilder(
@@ -326,7 +326,7 @@ class _ReservePlaceScreenState extends State<ReservePlaceScreen> {
                     ],
                   ),
                 ),
-                const Spacer(), // Push total and button to bottom
+                const Spacer(), 
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -353,7 +353,7 @@ class _ReservePlaceScreenState extends State<ReservePlaceScreen> {
                   onPressed: _isProcessing ? () {} : _reservePlaces,
                   width: double.infinity,
                 ),
-                const SizedBox(height: 24), // Space above bottom nav
+                const SizedBox(height: 24), 
               ],
             ),
           );

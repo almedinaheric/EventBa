@@ -197,9 +197,7 @@ public class UserQuestionService : BaseCRUDService<UserQuestionResponseDto, User
                 Title = entity.EventId.HasValue 
                     ? "Your question about an event was answered" 
                     : "Your support question was answered",
-                Content = entity.EventId.HasValue
-                    ? $"{entity.Receiver.FullName} answered your question: {entity.Question}"
-                    : $"{entity.Answer}",
+                Content = $"your question: {entity.Question} answer: {entity.Answer}",
                 IsImportant = false,
                 IsSystemNotification = false,
                 EventId = entity.EventId

@@ -43,7 +43,7 @@ class _EventReviewsScreenState extends State<EventReviewsScreen> {
 
       final reviews = await reviewProvider.getReviewsForEvent(widget.eventId!);
 
-      // Load user details for each review
+      
       final usersMap = <String, User>{};
       for (final review in reviews) {
         try {

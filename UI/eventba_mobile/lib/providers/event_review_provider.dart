@@ -82,7 +82,7 @@ class EventReviewProvider extends BaseProvider<EventReview> {
         );
         return userReview;
       } catch (e) {
-        // No review found for this user
+        
         return null;
       }
     } catch (e) {

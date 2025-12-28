@@ -35,14 +35,14 @@ class _EventStatisticsScreenState extends State<EventStatisticsScreen> {
     try {
       final eventProvider = Provider.of<EventProvider>(context, listen: false);
 
-      // Load event to check if it's past (use end date/time)
+      
       final event = await eventProvider.getById(widget.eventId);
       final eventEndDateTime = DateTime.parse(
         '${event.endDate} ${event.endTime}',
       );
       final isPast = eventEndDateTime.isBefore(DateTime.now());
 
-      // Load event statistics
+      
       Map<String, dynamic>? statistics;
       try {
         statistics = await eventProvider.getEventStatistics(widget.eventId);
@@ -94,7 +94,7 @@ class _EventStatisticsScreenState extends State<EventStatisticsScreen> {
               : _statistics!['averageRating'].toString())
         : 'N/A';
 
-    // Only show statistics for past events
+    
     if (!_isPast) {
       return MasterScreenWidget(
         title: "Event Statistics",
@@ -207,7 +207,7 @@ class _EventStatisticsScreenState extends State<EventStatisticsScreen> {
               : _statistics!['averageRating'].toString())
         : 'N/A';
 
-    // Format date and time
+    
     String formatDate(String dateStr) {
       try {
         final date = DateTime.parse(dateStr);
@@ -229,7 +229,7 @@ class _EventStatisticsScreenState extends State<EventStatisticsScreen> {
       }
     }
 
-    // Create report content
+    
     final report =
         '''
 EVENT STATISTICS REPORT

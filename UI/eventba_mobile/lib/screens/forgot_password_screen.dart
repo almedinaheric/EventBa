@@ -43,7 +43,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         ),
       );
 
-      // Navigate to code entry screen
+      
       Navigator.push(
         context,
         MaterialPageRoute(

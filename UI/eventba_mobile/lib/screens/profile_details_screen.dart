@@ -89,7 +89,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
         lastNameController.text = user.lastName;
         emailController.text = user.email;
         phoneController.text = user.phoneNumber ?? '';
-        // Load selected category IDs from user interests
+        
         _selectedCategoryIds = user.interests.isNotEmpty
             ? user.interests.map((interest) => interest.id).toList()
             : [];
@@ -97,7 +97,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
         print("Selected category IDs: $_selectedCategoryIds");
       });
     } catch (e) {
-      // Handle error silently for now
+      
     }
   }
 
@@ -364,7 +364,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
               content: Text('Profile saved successfully!'),
             ),
           );
-          // Navigate back to profile screen
+          
           Navigator.pop(context);
         }
       } catch (e) {
@@ -423,7 +423,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
               content: Text('Password changed successfully!'),
             ),
           );
-          // Navigate back to profile screen
+          
           Navigator.pop(context);
         }
       } catch (e) {

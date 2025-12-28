@@ -45,23 +45,23 @@ class _LoginScreenState extends State<LoginScreen> {
       final user = await userProvider.getProfile();
       if (!mounted) return;
 
-      // Check user role and navigate accordingly
+      
       final isAdmin = user.role.name.toLowerCase() == 'admin';
 
       if (isAdmin) {
-        // Admin users go directly to profile screen (simplified view)
+        
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (context) => MasterScreenWidget(
               initialIndex: 4,
-              showBottomNavBar: false, // Hide bottom nav for admin
+              showBottomNavBar: false, 
               child: const ProfileScreen(),
             ),
           ),
         );
       } else {
-        // Customer users go to home screen with full navigation
+        
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -71,11 +71,11 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     } catch (e) {
-      // Clear credentials on failed login
+      
       Authorization.email = null;
       Authorization.password = null;
 
-      // Show appropriate error message
+      
       String errorMessage = "Login failed. Please check your credentials.";
       if (e.toString().contains("Unauthorized") ||
           e.toString().contains("403")) {
@@ -181,7 +181,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       setState(() {
                         _isPasswordValid =
                             text.trim().isNotEmpty &&
-                            //RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$')
+                            
                             RegExp(r'/*').hasMatch(text);
                         _passwordErrorMessage = _isPasswordValid
                             ? null

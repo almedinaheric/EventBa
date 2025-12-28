@@ -17,7 +17,6 @@ abstract class BaseProvider<T> with ChangeNotifier {
   BaseProvider(String endpoint) {
     _endpoint = endpoint;
 
-    // Get base URL from environment variable if provided, otherwise use platform-specific default
     final envBaseUrl = const String.fromEnvironment(
       "baseUrl",
       defaultValue: "",
@@ -26,22 +25,13 @@ abstract class BaseProvider<T> with ChangeNotifier {
     if (envBaseUrl.isNotEmpty) {
       _baseUrl = envBaseUrl;
     } else {
-      // Platform-specific defaults:
-      // - Android emulator: use 10.0.2.2 to access host machine's localhost
-      // - iOS simulator: use localhost (works fine)
-      // - Web: use localhost
-      // - Physical devices: use your local network IP (e.g., 192.168.0.34)
       if (kIsWeb) {
         _baseUrl = "http://localhost:5187/";
       } else if (Platform.isAndroid) {
-        // For Android emulator, use 10.0.2.2 to access host machine
-        // For physical Android device, you may need to use your local network IP
         _baseUrl = "http://10.0.2.2:5187/";
       } else if (Platform.isIOS) {
-        // iOS simulator can use localhost
         _baseUrl = "http://localhost:5187/";
       } else {
-        // Default fallback
         _baseUrl = "http://localhost:5187/";
       }
     }
@@ -160,11 +150,9 @@ abstract class BaseProvider<T> with ChangeNotifier {
       print("Error response status: ${response.statusCode}");
       print("Error response body: ${response.body}");
 
-      // Try to extract error message from response
       try {
         final errorData = jsonDecode(response.body);
         if (errorData is Map) {
-          // Check for errors object (ASP.NET Core validation errors)
           if (errorData.containsKey('errors')) {
             final errors = errorData['errors'];
             if (errors is Map) {
@@ -179,7 +167,7 @@ abstract class BaseProvider<T> with ChangeNotifier {
               throw Exception(errorMessages.join(', '));
             }
           }
-          // Check for error message
+
           if (errorData.containsKey('error')) {
             throw Exception(errorData['error'].toString());
           }
@@ -188,7 +176,6 @@ abstract class BaseProvider<T> with ChangeNotifier {
           }
         }
       } catch (e) {
-        // If parsing fails, use the original error
         if (e is Exception) rethrow;
       }
 

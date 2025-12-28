@@ -31,7 +31,7 @@ class TicketTypeBadge extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // First item takes 2/3
+          
           Expanded(
             flex: 2,
             child: Text(
@@ -40,7 +40,7 @@ class TicketTypeBadge extends StatelessWidget {
             ),
           ),
 
-          // Second item (price) takes 1/6
+          
           Expanded(
             flex: 1,
             child: Text(
@@ -53,7 +53,7 @@ class TicketTypeBadge extends StatelessWidget {
             ),
           ),
 
-          // Third item (QR button) takes 1/6
+          
           Expanded(
             flex: 1,
             child: Align(

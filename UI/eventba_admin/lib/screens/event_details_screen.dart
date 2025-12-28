@@ -112,7 +112,14 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   }
 
   Future<void> _loadTickets() async {
-    if (_currentEventData['id'] == null) return;
+    if (_currentEventData['id'] == null) {
+      print("Cannot load tickets: event ID is null");
+      return;
+    }
+
+    print(
+      "Loading tickets for event: ${_currentEventData['id']}, isPaid: ${_currentEventData['isPaid']}",
+    );
 
     setState(() {
       _ticketsLoading = true;
@@ -125,6 +132,9 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       );
       final tickets = await ticketProvider.getTicketsForEvent(
         _currentEventData['id'],
+      );
+      print(
+        "Loaded ${tickets.length} tickets for event ${_currentEventData['id']}",
       );
       setState(() {
         _tickets = tickets;
@@ -498,8 +508,36 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     }
   }
 
+  bool _hasTicketPurchases() {
+    // Check if any ticket has been sold
+    if (_tickets.isEmpty) return false;
+
+    final totalSold = _tickets.fold<int>(
+      0,
+      (sum, ticket) => sum + ticket.quantitySold,
+    );
+
+    return totalSold > 0;
+  }
+
   Future<void> _deleteEvent() async {
     if (_currentEventData['id'] == null) return;
+
+    // Check if event has ticket purchases
+    if (_hasTicketPurchases()) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Cannot remove event: Some users have already purchased tickets for this event.',
+          ),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 4),
+        ),
+      );
+      return;
+    }
 
     try {
       final eventProvider = Provider.of<EventProvider>(context, listen: false);
@@ -529,6 +567,20 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   }
 
   void _showRemoveEventDialog() {
+    // Check if event has ticket purchases before showing dialog
+    if (_hasTicketPurchases()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Cannot remove event: Some users have already purchased tickets for this event.',
+          ),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 4),
+        ),
+      );
+      return;
+    }
+
     showDialog(
       context: context,
       builder: (BuildContext context) {

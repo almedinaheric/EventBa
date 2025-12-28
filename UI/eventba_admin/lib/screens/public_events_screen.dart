@@ -50,39 +50,56 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
     try {
       final eventProvider = Provider.of<EventProvider>(context, listen: false);
 
-      // Fetch both public events and my events to include all events including those created by current user
-      final publicEvents = await eventProvider.getPublicEvents(
-        searchTerm: _searchTerm.isNotEmpty ? _searchTerm : null,
-      );
+      // If searching, only use getPublicEvents (which includes search)
+      // Otherwise, combine public events and my events
+      if (_searchTerm.isNotEmpty) {
+        final publicEvents = await eventProvider.getPublicEvents(
+          searchTerm: _searchTerm,
+        );
 
-      final myEvents = await eventProvider.getMyEvents();
+        if (!mounted) return;
 
-      if (!mounted) return;
+        // Filter only published events
+        final publishedEvents = publicEvents
+            .where((event) => event.isPublished)
+            .toList();
 
-      // Combine both lists and remove duplicates (by ID)
-      final allEventsMap = <String, Event>{};
+        setState(() {
+          _allEvents = publishedEvents;
+          _isLoading = false;
+        });
+      } else {
+        // Fetch both public events and my events to include all events including those created by current user
+        final publicEvents = await eventProvider.getPublicEvents();
+        final myEvents = await eventProvider.getMyEvents();
 
-      // Add public events
-      for (var event in publicEvents) {
-        if (event.isPublished) {
-          allEventsMap[event.id] = event;
+        if (!mounted) return;
+
+        // Combine both lists and remove duplicates (by ID)
+        final allEventsMap = <String, Event>{};
+
+        // Add public events
+        for (var event in publicEvents) {
+          if (event.isPublished) {
+            allEventsMap[event.id] = event;
+          }
         }
-      }
 
-      // Add my events (these are public events created by current user)
-      for (var event in myEvents) {
-        if (event.isPublished && event.type.name == 'Public') {
-          allEventsMap[event.id] = event;
+        // Add my events (these are public events created by current user)
+        for (var event in myEvents) {
+          if (event.isPublished && event.type.name == 'Public') {
+            allEventsMap[event.id] = event;
+          }
         }
+
+        // Filter only published events and convert to list
+        final publishedEvents = allEventsMap.values.toList();
+
+        setState(() {
+          _allEvents = publishedEvents;
+          _isLoading = false;
+        });
       }
-
-      // Filter only published events and convert to list
-      final publishedEvents = allEventsMap.values.toList();
-
-      setState(() {
-        _allEvents = publishedEvents;
-        _isLoading = false;
-      });
     } catch (e) {
       if (!mounted) return;
       setState(() {

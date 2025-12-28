@@ -170,6 +170,6 @@ class UserProvider extends BaseProvider<User> {
   }
 
   void clearUser() {
-    // Clear any cached user data if needed
+    
   }
 }

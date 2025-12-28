@@ -3,7 +3,7 @@ import 'package:eventba_mobile/widgets/master_screen.dart';
 import 'package:eventba_mobile/widgets/primary_button.dart';
 import 'package:eventba_mobile/widgets/user_card.dart';
 import 'package:flutter/material.dart';
-import 'package:eventba_mobile/providers/user_provider.dart'; // Import your provider
+import 'package:eventba_mobile/providers/user_provider.dart';
 
 class FollowersScreen extends StatefulWidget {
   final List<BasicUser> followers;
@@ -17,15 +17,12 @@ class FollowersScreen extends StatefulWidget {
 class _FollowersScreenState extends State<FollowersScreen> {
   late List<BasicUser> followers;
   final UserProvider _userProvider = UserProvider();
-  // To keep track of which user is followed/unfollowed
   final Map<String, bool> _isFollowingMap = {};
 
   @override
   void initState() {
     super.initState();
     followers = widget.followers;
-    // TODO: handle this !!!
-    // For now i will assume no followers are followed
     for (var user in followers) {
       _isFollowingMap[user.id] = false;
     }

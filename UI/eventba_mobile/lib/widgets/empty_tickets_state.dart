@@ -11,7 +11,7 @@ class EmptyTicketsState extends StatelessWidget {
 
     return Center(
       child: SizedBox(
-        width: screenWidth * 0.8, // 90% of screen width
+        width: screenWidth * 0.8, 
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [

@@ -54,11 +54,11 @@ class BasicEvent {
     'isPaid': isPaid,
   };
 
-  // Custom converter: handle both string (data URI) and object formats
+  
   static ImageModel? _coverImageFromJson(dynamic json) {
     if (json == null) return null;
     if (json is String) {
-      // Backend returns string as data URI, convert to ImageModel
+      
       return ImageModel(
         id: '',
         data: json,
@@ -68,7 +68,7 @@ class BasicEvent {
       );
     }
     if (json is Map<String, dynamic>) {
-      // If it's already an object, parse it normally
+      
       return ImageModel.fromJson(json);
     }
     return null;
@@ -76,6 +76,6 @@ class BasicEvent {
 
   static dynamic _coverImageToJson(ImageModel? image) {
     if (image == null) return null;
-    return image.data; // Return the data string
+    return image.data; 
   }
 }

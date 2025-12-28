@@ -38,10 +38,10 @@ class _PastEventDetailsScreenState extends State<PastEventDetailsScreen> {
         listen: false,
       );
 
-      // Load event details
+      
       final event = await eventProvider.getById(widget.eventId);
 
-      // Load event statistics
+      
       Map<String, dynamic>? statistics;
       try {
         statistics = await eventProvider.getEventStatistics(widget.eventId);
@@ -49,7 +49,7 @@ class _PastEventDetailsScreenState extends State<PastEventDetailsScreen> {
         print("Failed to load statistics: $e");
       }
 
-      // Load event reviews
+      
       List<EventReview> reviews = [];
       try {
         reviews = await reviewProvider.getReviewsForEvent(widget.eventId);
@@ -141,7 +141,7 @@ class _PastEventDetailsScreenState extends State<PastEventDetailsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 16),
-                    // Event cover image
+                    
                     GestureDetector(
                       onTap: () => _showImageDialog(0),
                       child: ClipRRect(
@@ -334,7 +334,7 @@ class _PastEventDetailsScreenState extends State<PastEventDetailsScreen> {
   void _showImageDialog(int initialIndex) {
     if (_event == null) return;
 
-    // Build list of images: cover image first, then gallery images
+    
     List<String> allImages = [];
 
     if (_event!.coverImage?.data != null) {

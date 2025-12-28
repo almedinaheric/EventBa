@@ -58,7 +58,7 @@ class PaymentProvider extends BaseProvider<Payment> {
     if (isValidResponse(response)) {
       return jsonDecode(response.body);
     } else {
-      // Try to extract error message from response
+      
       try {
         final errorData = jsonDecode(response.body);
         final errorMessage =

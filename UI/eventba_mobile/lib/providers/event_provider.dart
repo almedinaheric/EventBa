@@ -66,7 +66,7 @@ class EventProvider extends BaseProvider<Event> {
       var data = jsonDecode(response.body);
       List<BasicEvent> events = [];
 
-      // Return all recommended events (max 10 from backend)
+      
       for (var item in data) {
         events.add(basicEventFromJson(item));
       }
@@ -88,7 +88,7 @@ class EventProvider extends BaseProvider<Event> {
       var data = jsonDecode(response.body);
       List<BasicEvent> events = [];
 
-      // Calculate pagination manually since the endpoint doesn't support it
+      
       int startIndex = (page - 1) * pageSize;
       int endIndex = startIndex + pageSize;
 
@@ -115,7 +115,7 @@ class EventProvider extends BaseProvider<Event> {
       var data = jsonDecode(response.body);
       List<BasicEvent> events = [];
 
-      // Calculate pagination manually since the endpoint doesn't support it
+      
       int startIndex = (page - 1) * pageSize;
       int endIndex = startIndex + pageSize;
 

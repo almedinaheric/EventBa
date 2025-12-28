@@ -41,16 +41,16 @@ class ImageModel {
 
   Map<String, dynamic> toJson() => _$ImageModelToJson(this);
 
-  // Helper to convert Data (byte[] from backend) to base64 string
-  // Handles both 'Data' (PascalCase) and 'data' (camelCase) field names
+  
+  
   static String? _dataFromJson(dynamic value) {
     if (value == null) return null;
     if (value is String) {
-      // Already a string (base64), return as is
+      
       return value;
     }
     if (value is List) {
-      // If it's a List (byte array), convert to base64
+      
       try {
         final bytes = List<int>.from(value);
         return base64Encode(bytes);

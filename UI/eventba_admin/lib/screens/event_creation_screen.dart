@@ -740,6 +740,57 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
   void _onSubmitPressed() {
     _validateForm();
 
+    // Validate start time is before end time if dates are the same
+    bool timeValid = true;
+    String? timeErrorMessage;
+    if (_dateController.text.isNotEmpty &&
+        _startTimeController.text.isNotEmpty &&
+        _endTimeController.text.isNotEmpty) {
+      try {
+        final dateRangeParts = _dateController.text.split(' - ');
+        if (dateRangeParts.length == 2) {
+          final startDateStr = dateRangeParts[0].trim();
+          final endDateStr = dateRangeParts[1].trim();
+
+          // If start and end dates are the same, validate times
+          if (startDateStr == endDateStr) {
+            // Parse times (handle AM/PM format)
+            int formatTimeToMinutes(String timeStr) {
+              final parts = timeStr.split(' ');
+              final timePart = parts[0];
+              final timeParts = timePart.split(':');
+              int hour = int.parse(timeParts[0]);
+              final minute = int.parse(timeParts[1]);
+
+              if (parts.length > 1) {
+                final period = parts[1].toUpperCase();
+                if (period == 'PM' && hour != 12) {
+                  hour += 12;
+                } else if (period == 'AM' && hour == 12) {
+                  hour = 0;
+                }
+              }
+
+              return hour * 60 + minute; // Convert to minutes for comparison
+            }
+
+            final startTimeMinutes = formatTimeToMinutes(
+              _startTimeController.text,
+            );
+            final endTimeMinutes = formatTimeToMinutes(_endTimeController.text);
+
+            if (startTimeMinutes >= endTimeMinutes) {
+              timeValid = false;
+              timeErrorMessage =
+                  'Start time must be before end time when dates are the same';
+            }
+          }
+        }
+      } catch (e) {
+        print("Error validating time: $e");
+      }
+    }
+
     bool allValid =
         _isNameValid &&
         _isCategoryValid &&
@@ -748,6 +799,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
         _isStartTimeValid &&
         _isEndTimeValid &&
         _isDescriptionValid &&
+        timeValid &&
         (!_isPaid
             ? _isCapacityValid
             : (_isVipPriceValid &&
@@ -759,9 +811,11 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
       _createEvent();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           behavior: SnackBarBehavior.floating,
-          content: Text('Please fix errors before submitting'),
+          content: Text(
+            timeErrorMessage ?? 'Please fix errors before submitting',
+          ),
         ),
       );
     }
@@ -897,7 +951,14 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
       }
 
       // Create tickets based on event type (free/paid)
-      await _createTickets(eventId, startDateFormatted);
+      try {
+        await _createTickets(eventId, startDateFormatted);
+        print('Tickets creation completed for event $eventId');
+      } catch (e) {
+        print('Error creating tickets: $e');
+        // Still show success message but log the error
+        // Tickets can be added later via edit
+      }
 
       if (!mounted) return;
 
@@ -961,86 +1022,129 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
   }
 
   Future<void> _createTickets(String eventId, String eventDate) async {
-    try {
-      final url =
-          "${Provider.of<EventProvider>(context, listen: false).baseUrl}Ticket";
-      final uri = Uri.parse(url);
-      final headers = Provider.of<EventProvider>(
-        context,
-        listen: false,
-      ).createHeaders();
+    final url =
+        "${Provider.of<EventProvider>(context, listen: false).baseUrl}Ticket";
+    final uri = Uri.parse(url);
+    final headers = Provider.of<EventProvider>(
+      context,
+      listen: false,
+    ).createHeaders();
 
-      DateTime saleStartDate = DateTime.now();
-      DateTime saleEndDate = DateTime.parse(eventDate);
+    DateTime saleStartDate = DateTime.now();
+    DateTime eventDateParsed = DateTime.parse(eventDate);
 
-      if (_isPaid) {
-        // Create VIP ticket if count > 0
-        final vipCount = int.tryParse(_vipCountController.text.trim()) ?? 0;
-        final vipPrice =
-            double.tryParse(_vipPriceController.text.trim()) ?? 0.0;
+    // Parse date string to DateTime at end of day for comparison
+    // If eventDate is just a date string (YYYY-MM-DD), set to end of day
+    DateTime eventDateEndOfDay = DateTime(
+      eventDateParsed.year,
+      eventDateParsed.month,
+      eventDateParsed.day,
+      23,
+      59,
+      59,
+    );
 
-        if (vipCount > 0 && vipPrice > 0) {
-          final vipTicketRequest = {
-            'eventId': eventId,
-            'ticketType': 'Vip',
-            'price': vipPrice,
-            'quantity': vipCount,
-            'saleStartDate': saleStartDate.toIso8601String(),
-            'saleEndDate': saleEndDate.toIso8601String(),
-          };
+    // Ensure saleEndDate is always after saleStartDate
+    // If event date is in the past or same as now, set it to saleStartDate + 1 day
+    // Otherwise use the event date (end of day)
+    DateTime saleEndDate =
+        eventDateEndOfDay.isBefore(saleStartDate) ||
+            eventDateEndOfDay.isAtSameMomentAs(saleStartDate)
+        ? saleStartDate.add(const Duration(days: 1))
+        : eventDateEndOfDay;
 
-          final vipResponse = await http.post(
-            uri,
-            headers: headers,
-            body: jsonEncode(vipTicketRequest),
+    if (_isPaid) {
+      // Create VIP ticket if count > 0 and price > 0
+      final vipCount = int.tryParse(_vipCountController.text.trim()) ?? 0;
+      final vipPrice = double.tryParse(_vipPriceController.text.trim()) ?? 0.0;
+
+      print('Creating VIP ticket: count=$vipCount, price=$vipPrice');
+
+      if (vipCount > 0 && vipPrice > 0) {
+        final vipTicketRequest = {
+          'eventId': eventId,
+          'ticketType': 'Vip',
+          'price': vipPrice,
+          'quantity': vipCount,
+          'saleStartDate': saleStartDate.toIso8601String(),
+          'saleEndDate': saleEndDate.toIso8601String(),
+        };
+
+        print('VIP ticket request: $vipTicketRequest');
+
+        final vipResponse = await http.post(
+          uri,
+          headers: headers,
+          body: jsonEncode(vipTicketRequest),
+        );
+
+        print('VIP ticket response status: ${vipResponse.statusCode}');
+        print('VIP ticket response body: ${vipResponse.body}');
+
+        if (vipResponse.statusCode >= 300) {
+          throw Exception(
+            'Failed to create VIP ticket: ${vipResponse.statusCode} - ${vipResponse.body}',
           );
-
-          if (vipResponse.statusCode >= 300) {
-            throw Exception(
-              'Failed to create VIP ticket: ${vipResponse.statusCode}',
-            );
-          }
-          print('VIP ticket created');
         }
-
-        // Create Economy ticket if count > 0
-        final ecoCount = int.tryParse(_ecoCountController.text.trim()) ?? 0;
-        final ecoPrice =
-            double.tryParse(_ecoPriceController.text.trim()) ?? 0.0;
-
-        if (ecoCount > 0 && ecoPrice > 0) {
-          final ecoTicketRequest = {
-            'eventId': eventId,
-            'ticketType': 'Economy',
-            'price': ecoPrice,
-            'quantity': ecoCount,
-            'saleStartDate': saleStartDate.toIso8601String(),
-            'saleEndDate': saleEndDate.toIso8601String(),
-          };
-
-          final ecoResponse = await http.post(
-            uri,
-            headers: headers,
-            body: jsonEncode(ecoTicketRequest),
-          );
-
-          if (ecoResponse.statusCode >= 300) {
-            throw Exception(
-              'Failed to create Economy ticket: ${ecoResponse.statusCode}',
-            );
-          }
-          print('Economy ticket created');
-        }
+        print('VIP ticket created successfully');
       } else {
-        // Create free ticket for free events (same as mobile app)
+        print(
+          'Skipping VIP ticket creation: count=$vipCount, price=$vipPrice (both must be > 0)',
+        );
+      }
+
+      // Create Economy ticket if count > 0 and price > 0
+      final ecoCount = int.tryParse(_ecoCountController.text.trim()) ?? 0;
+      final ecoPrice = double.tryParse(_ecoPriceController.text.trim()) ?? 0.0;
+
+      print('Creating Economy ticket: count=$ecoCount, price=$ecoPrice');
+
+      if (ecoCount > 0 && ecoPrice > 0) {
+        final ecoTicketRequest = {
+          'eventId': eventId,
+          'ticketType': 'Economy',
+          'price': ecoPrice,
+          'quantity': ecoCount,
+          'saleStartDate': saleStartDate.toIso8601String(),
+          'saleEndDate': saleEndDate.toIso8601String(),
+        };
+
+        print('Economy ticket request: $ecoTicketRequest');
+
+        final ecoResponse = await http.post(
+          uri,
+          headers: headers,
+          body: jsonEncode(ecoTicketRequest),
+        );
+
+        print('Economy ticket response status: ${ecoResponse.statusCode}');
+        print('Economy ticket response body: ${ecoResponse.body}');
+
+        if (ecoResponse.statusCode >= 300) {
+          throw Exception(
+            'Failed to create Economy ticket: ${ecoResponse.statusCode} - ${ecoResponse.body}',
+          );
+        }
+        print('Economy ticket created successfully');
+      } else {
+        print(
+          'Skipping Economy ticket creation: count=$ecoCount, price=$ecoPrice (both must be > 0)',
+        );
+      }
+    } else {
+      // Create free ticket for free events (same as mobile app)
+      final capacity = int.tryParse(_capacityController.text.trim()) ?? 0;
+      if (capacity > 0) {
         final freeTicketRequest = {
           'eventId': eventId,
           'ticketType': 'Free',
           'price': 0.0,
-          'quantity': int.parse(_capacityController.text.trim()),
+          'quantity': capacity,
           'saleStartDate': saleStartDate.toIso8601String(),
           'saleEndDate': saleEndDate.toIso8601String(),
         };
+
+        print('Free ticket request: $freeTicketRequest');
 
         final freeResponse = await http.post(
           uri,
@@ -1048,16 +1152,16 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
           body: jsonEncode(freeTicketRequest),
         );
 
+        print('Free ticket response status: ${freeResponse.statusCode}');
+        print('Free ticket response body: ${freeResponse.body}');
+
         if (freeResponse.statusCode >= 300) {
           throw Exception(
-            'Failed to create free ticket: ${freeResponse.statusCode}',
+            'Failed to create free ticket: ${freeResponse.statusCode} - ${freeResponse.body}',
           );
         }
-        print('Free ticket created');
+        print('Free ticket created successfully');
       }
-    } catch (e) {
-      print('Error creating tickets: $e');
-      // Don't throw - tickets are supplementary, event is already created
     }
   }
 

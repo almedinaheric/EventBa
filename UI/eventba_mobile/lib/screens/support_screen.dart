@@ -64,8 +64,8 @@ class _SupportScreenState extends State<SupportScreen> {
           content: Text("Question submitted successfully!"),
         ),
       );
-      // Navigate back to profile screen (pop twice: support screen -> profile screen)
-      Navigator.pop(context); // Pop support screen
+      
+      Navigator.pop(context); 
     } catch (e, stackTrace) {
       print("Error submitting question: $e");
       print("Stack trace: $stackTrace");

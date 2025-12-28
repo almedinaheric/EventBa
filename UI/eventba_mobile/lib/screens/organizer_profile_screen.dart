@@ -28,7 +28,7 @@ class OrganizerProfileScreen extends StatefulWidget {
 }
 
 class _OrganizerProfileScreenState extends State<OrganizerProfileScreen> {
-  int selectedIndex = 0; // 0 = Upcoming, 1 = Past
+  int selectedIndex = 0; 
   List<BasicEvent> _upcomingEvents = [];
   List<BasicEvent> _pastEvents = [];
   bool _isLoading = true;
@@ -76,7 +76,7 @@ class _OrganizerProfileScreenState extends State<OrganizerProfileScreen> {
         children: [
           const SizedBox(height: 24),
 
-          // Avatar
+          
           CircleAvatar(
             radius: 50,
             backgroundColor: Colors.grey[300],
@@ -93,14 +93,14 @@ class _OrganizerProfileScreenState extends State<OrganizerProfileScreen> {
                     ),
                   ),
           ),
-          // Name
+          
           Text(
             widget.name,
             style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
 
-          // Bio
+          
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 32),
             child: Text(
@@ -112,7 +112,7 @@ class _OrganizerProfileScreenState extends State<OrganizerProfileScreen> {
 
           const SizedBox(height: 24),
 
-          // Section title
+          
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 16),
             child: Align(
@@ -126,7 +126,7 @@ class _OrganizerProfileScreenState extends State<OrganizerProfileScreen> {
 
           const SizedBox(height: 12),
 
-          // Toggle buttons
+          
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
@@ -193,7 +193,7 @@ class _OrganizerProfileScreenState extends State<OrganizerProfileScreen> {
 
           const SizedBox(height: 12),
 
-          // Event list
+          
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())

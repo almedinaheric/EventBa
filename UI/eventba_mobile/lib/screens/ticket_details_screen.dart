@@ -59,22 +59,22 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
       );
       final userProvider = Provider.of<UserProvider>(context, listen: false);
 
-      // Load event
+      
       final event = await eventProvider.getById(widget.eventId);
 
-      // Load tickets for the event
+      
       final tickets = await ticketProvider.getTicketsForEvent(widget.eventId);
       var ticketsMap = {for (var t in tickets) t.id: t};
 
-      // Debug: Print all ticket IDs
+      
       print("Loaded ticket IDs: ${tickets.map((t) => t.id).toList()}");
 
-      // Group purchases by ticket ID and load missing tickets
+      
       final purchasesByTicketId = <String, List<TicketPurchase>>{};
       for (final purchase in widget.purchases) {
         print("Purchase ticket ID: ${purchase.ticketId}");
 
-        // If ticket not found in event tickets, try to load it directly
+        
         if (!ticketsMap.containsKey(purchase.ticketId)) {
           try {
             print(
@@ -93,21 +93,21 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
             .add(purchase);
       }
 
-      // Debug: Check if any purchase ticket IDs match loaded tickets
+      
       for (var purchase in widget.purchases) {
         final found = ticketsMap.containsKey(purchase.ticketId);
         print("Purchase ${purchase.ticketId} found in tickets: $found");
         if (!found) {
-          // Try to find by comparing all tickets
+          
           final matchingTicket = tickets.firstWhere(
             (t) => t.id == purchase.ticketId,
-            orElse: () => tickets.first, // Fallback to first ticket if no match
+            orElse: () => tickets.first, 
           );
           print("Attempting to match purchase to ticket: ${matchingTicket.id}");
         }
       }
 
-      // Load organizer
+      
       User? organizer;
       try {
         organizer = await userProvider.getById(event.organizerId);
@@ -115,7 +115,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
         print("Failed to load organizer: $e");
       }
 
-      // Load current user profile
+      
       User? currentUser;
       try {
         currentUser = await userProvider.getProfile();
@@ -123,7 +123,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
         print("Failed to load current user: $e");
       }
 
-      // Load user's review if event is past
+      
       EventReview? userReview;
       if (currentUser != null) {
         try {
@@ -137,12 +137,12 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
           );
         } catch (e) {
           print("Error loading user review: $e");
-          // User hasn't reviewed yet, that's fine
+          
           userReview = null;
         }
       }
 
-      // Debug logging
+      
       print("=== TICKET DETAILS DEBUG ===");
       print("Total purchases: ${widget.purchases.length}");
       print("Purchases by ticket ID: ${purchasesByTicketId.length} groups");
@@ -181,7 +181,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
 
   String _formatTime(String timeStr) {
     try {
-      // Time is in format "HH:mm:ss" or "HH:mm"
+      
       final parts = timeStr.split(':');
       if (parts.length >= 2) {
         return "${parts[0].padLeft(2, '0')}:${parts[1].padLeft(2, '0')}";
@@ -345,7 +345,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Event image
+                      
                       GestureDetector(
                         onTap: () => _showImageDialog(0),
                         child: ClipRRect(
@@ -367,7 +367,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                       ),
                       const SizedBox(height: 24),
 
-                      // Event details
+                      
                       Column(
                         children: [
                           Row(
@@ -409,7 +409,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
 
                       const SizedBox(height: 24),
 
-                      // Organizer section
+                      
                       if (_organizer != null)
                         OrganizerSection(
                           organizerId: _organizer!.id,
@@ -435,7 +435,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                       ),
                       const SizedBox(height: 24),
 
-                      // Display tickets grouped by ticket type
+                      
                       if (_purchasesByTicketId.isNotEmpty)
                         ..._purchasesByTicketId.entries.expand((entry) {
                           final ticketId = entry.key;
@@ -446,7 +446,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                             print(
                               "WARNING: Ticket not found for ID: $ticketId. Available ticket IDs: ${_tickets.keys.toList()}",
                             );
-                            // Still show the purchase, but with fallback data
+                            
                             return purchases.map((purchase) {
                               final priceText = purchase.pricePaid > 0
                                   ? "\$${purchase.pricePaid.toStringAsFixed(2)}"
@@ -504,7 +504,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
 
                       const SizedBox(height: 24),
 
-                      // Show user's review or Add Review button for past events
+                      
                       if (_isEventPast())
                         Padding(
                           padding: const EdgeInsets.only(bottom: 24),
@@ -518,7 +518,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                 ),
                         ),
 
-                      const SizedBox(height: 60), // bottom spacing
+                      const SizedBox(height: 60), 
                     ],
                   ),
                 ),
@@ -526,7 +526,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
             ],
           ),
 
-          // QR Code overlay
+          
           if (_selectedQRCode != null && _selectedTicketCode != null)
             Container(
               color: Colors.black.withOpacity(0.5),
@@ -551,7 +551,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
   void _showImageDialog(int initialIndex) {
     if (_event == null) return;
 
-    // Build list of images: cover image first, then gallery images
+    
     List<String> allImages = [];
 
     if (_event!.coverImage?.data != null) {

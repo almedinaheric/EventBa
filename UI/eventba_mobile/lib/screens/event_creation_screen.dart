@@ -26,7 +26,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
 
   List<Map<String, dynamic>> _categories = [];
 
-  // Controllers
+  
   final TextEditingController _nameController = TextEditingController();
   String? _selectedCategoryId;
   String? _selectedCategoryName;
@@ -41,14 +41,14 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
   final TextEditingController _ecoPriceController = TextEditingController();
   final TextEditingController _ecoCountController = TextEditingController();
 
-  // Image handling
+  
   XFile? _mainImage;
   List<XFile> _additionalImages = [];
 
   bool _isPaid = false;
   bool _isLoading = false;
 
-  // Validation flags and error messages
+  
   bool _isNameValid = true;
   bool _isCategoryValid = true;
   bool _isVenueValid = true;
@@ -455,7 +455,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
                   onPressed: _isLoading ? () {} : _onSubmitPressed,
                 ),
               ),
-              const SizedBox(height: 60), // for safe area
+              const SizedBox(height: 60), 
             ],
           ),
         ),
@@ -530,23 +530,23 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
     if (!mounted) return;
 
     try {
-      // Use a small delay to ensure the UI is ready, especially on iOS
+      
       await Future.delayed(const Duration(milliseconds: 200));
 
       if (!mounted) return;
 
-      // iOS-specific optimizations
+      
       final bool isIOS = !kIsWeb && Platform.isIOS;
 
       final XFile? image = await _picker.pickImage(
         source: ImageSource.gallery,
         imageQuality: isIOS
             ? 60
-            : 70, // Lower quality for iOS to prevent crashes
-        maxWidth: isIOS ? 1000 : 1200, // Smaller size for iOS
+            : 70, 
+        maxWidth: isIOS ? 1000 : 1200, 
         maxHeight: isIOS ? 1000 : 1200,
         requestFullMetadata:
-            false, // Disable metadata to improve performance on iOS
+            false, 
       );
 
       if (image != null && mounted) {
@@ -570,23 +570,23 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
     if (!mounted) return;
 
     try {
-      // Use a small delay to ensure the UI is ready, especially on iOS
+      
       await Future.delayed(const Duration(milliseconds: 200));
 
       if (!mounted) return;
 
-      // iOS-specific optimizations
+      
       final bool isIOS = !kIsWeb && Platform.isIOS;
 
       final XFile? image = await _picker.pickImage(
         source: ImageSource.gallery,
         imageQuality: isIOS
             ? 60
-            : 70, // Lower quality for iOS to prevent crashes
-        maxWidth: isIOS ? 1000 : 1200, // Smaller size for iOS
+            : 70, 
+        maxWidth: isIOS ? 1000 : 1200, 
         maxHeight: isIOS ? 1000 : 1200,
         requestFullMetadata:
-            false, // Disable metadata to improve performance on iOS
+            false, 
       );
 
       if (image != null && mounted) {
@@ -803,7 +803,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
         listen: false,
       );
 
-      // Split the date range into start and end date strings
+      
       final dateRangeParts = _dateController.text.split(' - ');
       if (dateRangeParts.length != 2) {
         throw FormatException(
@@ -818,15 +818,15 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
         throw FormatException('Invalid date format. Use YYYY-MM-DD');
       }
 
-      // Date is already in YYYY-MM-DD format from DateTime.toString()
-      // Just use it directly
+      
+      
       final startDateFormatted = dateRangeParts[0].trim();
       final endDateFormatted = dateRangeParts[1].trim();
 
-      // Format time from 12-hour format (e.g., "1:16 PM") to 24-hour format (HH:mm:ss)
+      
       String formatTime(String timeStr) {
         try {
-          // Handle 12-hour format with AM/PM
+          
           if (timeStr.contains('AM') || timeStr.contains('PM')) {
             final parts = timeStr
                 .replaceAll(' AM', '')
@@ -836,7 +836,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
               int hour = int.parse(parts[0]);
               int minute = int.parse(parts[1]);
 
-              // Convert to 24-hour format
+              
               if (timeStr.contains('PM') && hour != 12) {
                 hour += 12;
               } else if (timeStr.contains('AM') && hour == 12) {
@@ -846,7 +846,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
               return '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}:00';
             }
           } else {
-            // Already in 24-hour format or just HH:mm
+            
             final parts = timeStr.split(':');
             if (parts.length >= 2) {
               final hour = parts[0].padLeft(2, '0');
@@ -863,7 +863,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
       final startTimeFormatted = formatTime(_startTimeController.text);
       final endTimeFormatted = formatTime(_endTimeController.text);
 
-      // Upload main/cover image
+      
       String? coverImageId;
       if (_mainImage != null) {
         final bytes = await File(_mainImage!.path).readAsBytes();
@@ -877,7 +877,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
         coverImageId = mainImageResponse.id;
       }
 
-      // Calculate total capacity
+      
       int totalCapacity;
       if (_isPaid) {
         totalCapacity =
@@ -887,7 +887,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
         totalCapacity = int.parse(_capacityController.text.trim());
       }
 
-      // Create event request
+      
       final request = {
         'title': _nameController.text.trim(),
         'description': _descriptionController.text.trim(),
@@ -899,11 +899,11 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
         'capacity': totalCapacity,
         'availableTicketsCount': totalCapacity,
         'status':
-            0, // Upcoming = 0 (C# EventStatus: Upcoming=0, Past=1, Cancelled=2)
+            0, 
         'isFeatured': true,
-        'type': 1, // Private = 1 (C# EventType: Public=0, Private=1)
+        'type': 1, 
         'isPublished': true,
-        'isPaid': _isPaid, // Set based on free/paid selection
+        'isPaid': _isPaid, 
         'categoryId': _selectedCategoryId,
         'coverImageId': coverImageId,
       };
@@ -915,7 +915,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
 
       print('Event created with ID: $eventId');
 
-      // Upload and link gallery images
+      
       if (_additionalImages.isNotEmpty) {
         List<String> galleryImageIds = [];
 
@@ -934,13 +934,13 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
           }
         }
 
-        // Link gallery images to event
+        
         if (galleryImageIds.isNotEmpty) {
           await _linkGalleryImages(eventId, galleryImageIds);
         }
       }
 
-      // Create tickets (both for free and paid events)
+      
       await _createTickets(eventId);
 
       if (!mounted) return;
@@ -952,7 +952,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
         ),
       );
 
-      // Navigate to My Events screen
+      
       Navigator.pushReplacement(
         context,
         PageRouteBuilder(
@@ -1003,7 +1003,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
       print('Gallery images linked successfully');
     } catch (e) {
       print('Error linking gallery images: $e');
-      // Don't throw - event is already created, this is optional
+      
     }
   }
 
@@ -1018,7 +1018,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
       ).createHeaders();
 
       if (_isPaid) {
-        // Create VIP ticket
+        
         if (int.parse(_vipCountController.text.trim()) > 0) {
           final vipTicketRequest = {
             'eventId': eventId,
@@ -1045,7 +1045,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
           print('VIP ticket created');
         }
 
-        // Create Economy ticket
+        
         if (int.parse(_ecoCountController.text.trim()) > 0) {
           final ecoTicketRequest = {
             'eventId': eventId,
@@ -1072,7 +1072,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
           print('Economy ticket created');
         }
       } else {
-        // Create free ticket
+        
         final freeTicketRequest = {
           'eventId': eventId,
           'ticketType': 'Free',
@@ -1099,7 +1099,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
       }
     } catch (e) {
       print('Error creating tickets: $e');
-      throw e; // Rethrow as this is critical
+      throw e; 
     }
   }
 

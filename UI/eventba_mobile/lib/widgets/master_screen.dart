@@ -67,7 +67,7 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
       });
     } catch (e) {
       print("Failed to check user role: $e");
-      // If we can't check role, assume not admin
+      
       setState(() {
         _isAdmin = false;
       });
@@ -77,7 +77,7 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Check user role first, then fetch notifications
+    
     _checkUserRole().then((_) {
       if (mounted) {
         _fetchUnreadNotifications();
@@ -136,7 +136,7 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
               ? AppBarType.titleLeftIconRight
               : AppBarType.titleCenterIconRight,
           title: index == 0 ? null : _getTitleForIndex(index),
-          showBottomNavBar: !_isAdmin, // Never show bottom nav for admin users
+          showBottomNavBar: !_isAdmin, 
           initialIndex: index,
           child: screen,
         ),
@@ -188,7 +188,7 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
             ],
           ),
           actions: [
-            // Don't show notification icon for admin users
+            
             if (!_isAdmin)
               Stack(
                 children: [
@@ -284,7 +284,7 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
 
   @override
   Widget build(BuildContext context) {
-    // Never show bottom nav bar for admin users, regardless of widget.showBottomNavBar
+    
     final shouldShowBottomNav = widget.showBottomNavBar && !_isAdmin;
 
     return Scaffold(

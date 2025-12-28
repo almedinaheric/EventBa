@@ -150,34 +150,30 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
     return MasterScreen(
       title: 'User Details',
       showBackButton: true,
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          return SingleChildScrollView(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: IntrinsicHeight(
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: EdgeInsets.all(
+                  MediaQuery.of(context).size.width < 600 ? 16 : 24,
+                ),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Padding(
-                      padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 16 : 24),
-                      child: Column(
-                        children: [
-                          _buildUserProfile(),
-                          const SizedBox(height: 32),
-                          _buildEventsSection(),
-                          const SizedBox(height: 16),
-                          _buildToggleButtons(),
-                        ],
-                      ),
-                    ),
+                    _buildUserProfile(),
+                    const SizedBox(height: 32),
+                    _buildEventsSection(),
                     const SizedBox(height: 16),
-                    Expanded(child: _buildEventsList()),
+                    _buildToggleButtons(),
+                    const SizedBox(height: 16),
+                    _buildEventsList(),
                   ],
                 ),
               ),
             ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }
@@ -459,14 +455,17 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
 
   Widget _buildEventsList() {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const SizedBox(
+        height: 200,
+        child: Center(child: CircularProgressIndicator()),
+      );
     }
 
     final currentEvents = selectedIndex == 0 ? _upcomingEvents : _pastEvents;
 
     if (currentEvents.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(24),
+      return SizedBox(
+        height: 200,
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -492,10 +491,9 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
     }
 
     return ListView.separated(
-      padding: EdgeInsets.symmetric(
-        horizontal: MediaQuery.of(context).size.width < 600 ? 16 : 24,
-        vertical: 16,
-      ),
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: EdgeInsets.zero,
       itemCount: currentEvents.length,
       separatorBuilder: (context, index) => const SizedBox(height: 16),
       itemBuilder: (context, index) {

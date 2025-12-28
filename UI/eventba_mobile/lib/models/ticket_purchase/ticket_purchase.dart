@@ -45,14 +45,14 @@ class TicketPurchase {
 
   Map<String, dynamic> toJson() => _$TicketPurchaseToJson(this);
 
-  // Handle qrCodeImage which can come as either:
-  // 1. A base64 string (from ASP.NET Core byte[] serialization)
-  // 2. A List<int> (array of bytes)
+  
+  
+  
   static List<int>? _qrCodeImageFromJson(dynamic value) {
     if (value == null) return null;
 
     if (value is String) {
-      // It's a base64 string, decode it
+      
       try {
         return base64Decode(value).toList();
       } catch (e) {
@@ -61,7 +61,7 @@ class TicketPurchase {
     }
 
     if (value is List) {
-      // It's already a list, convert to List<int>
+      
       try {
         return value.map((e) => (e as num).toInt()).toList();
       } catch (e) {

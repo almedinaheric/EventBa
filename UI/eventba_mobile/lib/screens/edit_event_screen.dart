@@ -44,15 +44,15 @@ class _EditEventScreenState extends State<EditEventScreen> {
 
   XFile? _mainImage;
   List<XFile> _additionalImages = [];
-  String? _existingCoverImageData; // Store existing cover image as base64
+  String? _existingCoverImageData; 
   List<String> _existingGalleryImageData =
-      []; // Store existing gallery images as base64
-  String? _existingCoverImageId; // Store existing cover image ID
+      []; 
+  String? _existingCoverImageId; 
   List<String> _existingGalleryImageIds =
-      []; // Store existing gallery image IDs
+      []; 
 
   bool _isPaid = false;
-  bool _originalIsPaid = false; // Track original paid status
+  bool _originalIsPaid = false; 
   bool _isLoading = false;
   List<CategoryModel> _categories = [];
   bool _categoriesLoading = true;
@@ -64,7 +64,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
     final event = widget.event;
     _nameController = TextEditingController(text: event['name']);
     _selectedCategory =
-        event['categoryId']; // Use categoryId, not category name
+        event['categoryId']; 
     _venueController = TextEditingController(text: event['venue']);
     _dateController = TextEditingController(text: event['date']);
     _startTimeController = TextEditingController(text: event['startTime']);
@@ -86,17 +86,17 @@ class _EditEventScreenState extends State<EditEventScreen> {
       text: event['ecoCount']?.toString() ?? '',
     );
     _isPaid = event['isPaid'] ?? false;
-    _originalIsPaid = _isPaid; // Store original paid status
+    _originalIsPaid = _isPaid; 
 
-    // Load existing images
+    
     _loadExistingImages();
 
-    // Load categories and tickets
+    
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadCategories();
       _loadExistingTickets();
-      // Always fetch event from backend to get proper gallery image IDs
-      // This ensures we have the actual IDs even if the event data map doesn't have them
+      
+      
       _fetchGalleryImageIds();
     });
   }
@@ -107,8 +107,8 @@ class _EditEventScreenState extends State<EditEventScreen> {
       final eventId = widget.event['id'];
       print("Fetching event $eventId from backend to get gallery image IDs...");
 
-      // Fetch the raw JSON response to get galleryImageIds directly
-      // The backend returns galleryImageIds as a separate property
+      
+      
       final url = "${eventProvider.baseUrl}Event/$eventId";
       final uri = Uri.parse(url);
       final headers = eventProvider.createHeaders();
@@ -147,7 +147,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
       }
     } catch (e) {
       print("Error fetching gallery image IDs: $e");
-      // Don't fail silently - if we can't fetch, at least log it
+      
     }
   }
 
@@ -172,7 +172,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
   }
 
   void _loadExistingImages() {
-    // Load cover image - handle both string and ImageModel formats
+    
     final coverImage = widget.event['coverImage'];
     if (coverImage != null) {
       if (coverImage is String && coverImage.isNotEmpty) {
@@ -183,11 +183,11 @@ class _EditEventScreenState extends State<EditEventScreen> {
       }
     }
 
-    // Load cover image ID
+    
     _existingCoverImageId = widget.event['coverImageId'];
     print("Loaded existing cover image ID: $_existingCoverImageId");
 
-    // Load gallery images - handle both list of strings and list of objects
+    
     final galleryImages = widget.event['galleryImages'];
     print("Loading gallery images from event data: $galleryImages");
     if (galleryImages != null && galleryImages is List) {
@@ -208,7 +208,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
       print("No gallery images found or invalid format");
     }
 
-    // Load gallery image IDs
+    
     final galleryImageIds = widget.event['galleryImageIds'];
     print("Loading gallery image IDs from event data: $galleryImageIds");
     if (galleryImageIds != null && galleryImageIds is List) {
@@ -222,8 +222,8 @@ class _EditEventScreenState extends State<EditEventScreen> {
       );
     } else {
       print("No gallery image IDs found in event data");
-      // If galleryImageIds is null but we have gallery images, try to fetch the event from backend
-      // to get the actual IDs
+      
+      
       if (_existingGalleryImageData.isNotEmpty) {
         print(
           "WARNING: Gallery images exist but no IDs found. Will need to fetch event from backend.",
@@ -242,7 +242,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
       title: "Edit Event",
       leftIcon: Icons.arrow_back,
       onLeftButtonPressed: () {
-        Navigator.pop(context); // Back button functionality
+        Navigator.pop(context); 
       },
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -550,23 +550,23 @@ class _EditEventScreenState extends State<EditEventScreen> {
     if (!mounted) return;
 
     try {
-      // Use a small delay to ensure the UI is ready, especially on iOS
+      
       await Future.delayed(const Duration(milliseconds: 200));
 
       if (!mounted) return;
 
-      // iOS-specific optimizations
+      
       final bool isIOS = !kIsWeb && Platform.isIOS;
 
       final XFile? image = await _picker.pickImage(
         source: ImageSource.gallery,
         imageQuality: isIOS
             ? 60
-            : 70, // Lower quality for iOS to prevent crashes
-        maxWidth: isIOS ? 1000 : 1200, // Smaller size for iOS
+            : 70, 
+        maxWidth: isIOS ? 1000 : 1200, 
         maxHeight: isIOS ? 1000 : 1200,
         requestFullMetadata:
-            false, // Disable metadata to improve performance on iOS
+            false, 
       );
 
       if (image != null && mounted) {
@@ -591,23 +591,23 @@ class _EditEventScreenState extends State<EditEventScreen> {
     if (!mounted) return;
 
     try {
-      // Use a small delay to ensure the UI is ready, especially on iOS
+      
       await Future.delayed(const Duration(milliseconds: 200));
 
       if (!mounted) return;
 
-      // iOS-specific optimizations
+      
       final bool isIOS = !kIsWeb && Platform.isIOS;
 
       final XFile? image = await _picker.pickImage(
         source: ImageSource.gallery,
         imageQuality: isIOS
             ? 60
-            : 70, // Lower quality for iOS to prevent crashes
-        maxWidth: isIOS ? 1000 : 1200, // Smaller size for iOS
+            : 70, 
+        maxWidth: isIOS ? 1000 : 1200, 
         maxHeight: isIOS ? 1000 : 1200,
         requestFullMetadata:
-            false, // Disable metadata to improve performance on iOS
+            false, 
       );
 
       if (image != null && mounted) {
@@ -715,7 +715,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
       final eventProvider = Provider.of<EventProvider>(context, listen: false);
       final event = widget.event;
 
-      // Parse date from controller
+      
       String dateStr = _dateController.text;
       if (dateStr.contains('/')) {
         final parts = dateStr.split('/');
@@ -725,7 +725,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
         }
       }
 
-      // Calculate capacity based on event type (paid/free)
+      
       int calculatedCapacity;
       if (_isPaid) {
         final vipCount = int.tryParse(_vipCountController.text) ?? 0;
@@ -735,10 +735,10 @@ class _EditEventScreenState extends State<EditEventScreen> {
         calculatedCapacity = int.tryParse(_capacityController.text) ?? 0;
       }
 
-      // Handle cover image upload if a new one was selected
+      
       String? coverImageId;
       if (_mainImage != null) {
-        // New cover image selected - upload it
+        
         final imageProvider = Provider.of<EventImageProvider>(
           context,
           listen: false,
@@ -753,12 +753,12 @@ class _EditEventScreenState extends State<EditEventScreen> {
         final mainImageResponse = await imageProvider.insert(mainImageRequest);
         coverImageId = mainImageResponse.id;
       } else {
-        // No new cover image - preserve existing one by passing null (backend will preserve it)
+        
         coverImageId = null;
       }
 
-      // Convert status string to integer enum value
-      // C# EventStatus: Upcoming=0, Past=1, Cancelled=2
+      
+      
       int statusValue;
       final statusStr = (event['status'] ?? 'Upcoming').toString();
       switch (statusStr) {
@@ -772,25 +772,25 @@ class _EditEventScreenState extends State<EditEventScreen> {
           statusValue = 2;
           break;
         default:
-          statusValue = 0; // Default to Upcoming
+          statusValue = 0; 
       }
 
-      // Format time to HH:mm:ss format for TimeOnly
+      
       String formatTime(String timeStr) {
-        // Remove any AM/PM and whitespace
+        
         String cleaned = timeStr.trim().toUpperCase();
 
-        // Check if it contains AM/PM
+        
         bool isPM = cleaned.contains('PM');
         bool isAM = cleaned.contains('AM');
 
-        // Remove AM/PM
+        
         cleaned = cleaned.replaceAll(RegExp(r'\s*(AM|PM)\s*'), '');
 
-        // Split by colon
+        
         final parts = cleaned.split(':');
         if (parts.length < 2) {
-          // If format is invalid, try to parse as HH:mm:ss
+          
           return timeStr.length >= 8 ? timeStr.substring(0, 8) : '$timeStr:00';
         }
 
@@ -798,21 +798,21 @@ class _EditEventScreenState extends State<EditEventScreen> {
         int minute = int.tryParse(parts[1]) ?? 0;
         int second = parts.length > 2 ? (int.tryParse(parts[2]) ?? 0) : 0;
 
-        // Handle AM/PM conversion
+        
         if (isPM && hour != 12) {
           hour += 12;
         } else if (isAM && hour == 12) {
           hour = 0;
         }
 
-        // Format as HH:mm:ss
+        
         return '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}:${second.toString().padLeft(2, '0')}';
       }
 
       final startTimeFormatted = formatTime(_startTimeController.text);
       final endTimeFormatted = formatTime(_endTimeController.text);
 
-      // Prepare update data
+      
       final updateData = {
         'id': event['id'],
         'title': _nameController.text,
@@ -827,17 +827,17 @@ class _EditEventScreenState extends State<EditEventScreen> {
         'availableTicketsCount': calculatedCapacity,
         'status': statusValue,
         'isFeatured': event['isFeatured'] ?? false,
-        'type': 1, // Private = 1 (C# EventType: Public=0, Private=1)
+        'type': 1, 
         'isPublished': true,
-        'isPaid': _isPaid, // Set based on free/paid selection
+        'isPaid': _isPaid, 
         'categoryId': _selectedCategory ?? event['categoryId'],
         'coverImageId': coverImageId,
       };
 
       await eventProvider.update(event['id'], updateData);
 
-      // Ensure we have gallery image IDs before processing
-      // If IDs are missing but we have gallery images, fetch them now
+      
+      
       if (_existingGalleryImageData.isNotEmpty &&
           _existingGalleryImageIds.isEmpty) {
         print(
@@ -846,7 +846,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
         await _fetchGalleryImageIds();
       }
 
-      // Handle gallery images - combine new and existing ones
+      
       final imageProvider = Provider.of<EventImageProvider>(
         context,
         listen: false,
@@ -858,11 +858,11 @@ class _EditEventScreenState extends State<EditEventScreen> {
       );
       print("Existing gallery image IDs: $_existingGalleryImageIds");
 
-      // Process each of the 3 gallery image slots
-      // For each slot: if new image is selected, upload it; otherwise, preserve existing image for that slot
+      
+      
       for (int i = 0; i < 3; i++) {
         if (i < _additionalImages.length) {
-          // New image selected for this slot - upload it
+          
           final additionalImage = _additionalImages[i];
           final bytes = await File(additionalImage.path).readAsBytes();
           final base64Image = base64Encode(bytes);
@@ -878,13 +878,13 @@ class _EditEventScreenState extends State<EditEventScreen> {
             print("Added new image at slot $i with ID: ${imageResponse.id}");
           }
         } else if (i < _existingGalleryImageIds.length) {
-          // No new image for this slot, but existing image exists - preserve it
+          
           finalGalleryImageIds.add(_existingGalleryImageIds[i]);
           print(
             "Preserved existing image at slot $i with ID: ${_existingGalleryImageIds[i]}",
           );
         }
-        // If neither new nor existing image for this slot, skip it (slot remains empty)
+        
       }
 
       print(
@@ -892,11 +892,11 @@ class _EditEventScreenState extends State<EditEventScreen> {
       );
       print("Final gallery image IDs: $finalGalleryImageIds");
 
-      // Replace gallery images with the final list (includes new uploads + preserved existing ones)
-      // Backend will only remove images that are NOT in this list
+      
+      
       await _replaceGalleryImages(event['id'], finalGalleryImageIds);
 
-      // Handle tickets based on event type change (paid/free)
+      
       await _handleTicketTypeChange(event['id'], dateStr);
 
       if (!mounted) return;
@@ -941,7 +941,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
       setState(() {
         _existingTickets = tickets;
 
-        // Populate ticket fields if tickets exist
+        
         for (var ticket in tickets) {
           if (ticket.ticketType == 'Vip') {
             _vipPriceController.text = ticket.price.toString();
@@ -964,24 +964,24 @@ class _EditEventScreenState extends State<EditEventScreen> {
         listen: false,
       );
 
-      // Check if event type changed from free to paid or paid to free
+      
       final wasPaid = _originalIsPaid;
       final isNowPaid = _isPaid;
 
       if (!wasPaid && isNowPaid) {
-        // Event changed from FREE to PAID - create tickets
+        
         await _createTicketsForPaidEvent(eventId, eventDate, ticketProvider);
       } else if (wasPaid && !isNowPaid) {
-        // Event changed from PAID to FREE - validate and delete tickets
+        
         await _validateAndDeleteTicketsForFreeEvent(eventId, ticketProvider);
       } else if (wasPaid && isNowPaid) {
-        // Event was and still is PAID - update existing tickets
+        
         await _updateTicketsForPaidEvent(eventId, eventDate, ticketProvider);
       }
-      // If was free and still free, no ticket changes needed
+      
     } catch (e) {
       print("Error handling ticket type change: $e");
-      rethrow; // Re-throw to show error to user
+      rethrow; 
     }
   }
 
@@ -989,7 +989,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
     String eventId,
     TicketProvider ticketProvider,
   ) async {
-    // Check if any tickets have been sold
+    
     for (var ticket in _existingTickets) {
       if (ticket.quantitySold > 0) {
         throw Exception(
@@ -998,7 +998,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
       }
     }
 
-    // If no tickets sold, delete all tickets
+    
     if (_existingTickets.isNotEmpty) {
       await ticketProvider.deleteAllTicketsForEvent(eventId);
     }
@@ -1014,7 +1014,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
     final ecoPrice = double.tryParse(_ecoPriceController.text) ?? 0.0;
     final ecoCount = int.tryParse(_ecoCountController.text) ?? 0;
 
-    // Validate that at least one ticket type is provided
+    
     final hasVip = vipCount > 0 && vipPrice > 0;
     final hasEco = ecoCount > 0 && ecoPrice > 0;
 
@@ -1024,7 +1024,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
       );
     }
 
-    // Validate VIP tickets if provided
+    
     if (vipCount > 0 && vipPrice <= 0) {
       throw Exception('VIP tickets require a price greater than 0');
     }
@@ -1032,7 +1032,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
       throw Exception('VIP tickets require a quantity greater than 0');
     }
 
-    // Validate Economy tickets if provided
+    
     if (ecoCount > 0 && ecoPrice <= 0) {
       throw Exception('Economy tickets require a price greater than 0');
     }
@@ -1040,12 +1040,12 @@ class _EditEventScreenState extends State<EditEventScreen> {
       throw Exception('Economy tickets require a quantity greater than 0');
     }
 
-    // Parse the date for ticket sale dates
+    
     DateTime saleStartDate = DateTime.now();
     DateTime eventDateParsed = DateTime.parse(eventDate);
 
-    // Parse date string to DateTime at end of day for comparison
-    // If eventDate is just a date string (YYYY-MM-DD), set to end of day
+    
+    
     DateTime eventDateEndOfDay = DateTime(
       eventDateParsed.year,
       eventDateParsed.month,
@@ -1055,16 +1055,16 @@ class _EditEventScreenState extends State<EditEventScreen> {
       59,
     );
 
-    // Ensure saleEndDate is always after saleStartDate
-    // If event date is in the past or same as now, set it to saleStartDate + 1 day
-    // Otherwise use the event date (end of day)
+    
+    
+    
     DateTime saleEndDate =
         eventDateEndOfDay.isBefore(saleStartDate) ||
             eventDateEndOfDay.isAtSameMomentAs(saleStartDate)
         ? saleStartDate.add(const Duration(days: 1))
         : eventDateEndOfDay;
 
-    // Create VIP ticket if provided
+    
     if (hasVip) {
       final vipTicketData = {
         'eventId': eventId,
@@ -1077,7 +1077,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
       await ticketProvider.createTicket(vipTicketData);
     }
 
-    // Create Economy ticket if provided
+    
     if (hasEco) {
       final ecoTicketData = {
         'eventId': eventId,
@@ -1101,7 +1101,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
     final ecoPrice = double.tryParse(_ecoPriceController.text) ?? 0.0;
     final ecoCount = int.tryParse(_ecoCountController.text) ?? 0;
 
-    // Validate that at least one ticket type is provided
+    
     final hasVip = vipCount > 0 && vipPrice > 0;
     final hasEco = ecoCount > 0 && ecoPrice > 0;
 
@@ -1111,7 +1111,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
       );
     }
 
-    // Validate VIP tickets if provided
+    
     if (vipCount > 0 && vipPrice <= 0) {
       throw Exception('VIP tickets require a price greater than 0');
     }
@@ -1119,7 +1119,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
       throw Exception('VIP tickets require a quantity greater than 0');
     }
 
-    // Validate Economy tickets if provided
+    
     if (ecoCount > 0 && ecoPrice <= 0) {
       throw Exception('Economy tickets require a price greater than 0');
     }
@@ -1127,12 +1127,12 @@ class _EditEventScreenState extends State<EditEventScreen> {
       throw Exception('Economy tickets require a quantity greater than 0');
     }
 
-    // Parse the date for ticket sale dates
+    
     DateTime saleStartDate = DateTime.now();
     DateTime eventDateParsed = DateTime.parse(eventDate);
 
-    // Parse date string to DateTime at end of day for comparison
-    // If eventDate is just a date string (YYYY-MM-DD), set to end of day
+    
+    
     DateTime eventDateEndOfDay = DateTime(
       eventDateParsed.year,
       eventDateParsed.month,
@@ -1142,16 +1142,16 @@ class _EditEventScreenState extends State<EditEventScreen> {
       59,
     );
 
-    // Ensure saleEndDate is always after saleStartDate
-    // If event date is in the past or same as now, set it to saleStartDate + 1 day
-    // Otherwise use the event date (end of day)
+    
+    
+    
     DateTime saleEndDate =
         eventDateEndOfDay.isBefore(saleStartDate) ||
             eventDateEndOfDay.isAtSameMomentAs(saleStartDate)
         ? saleStartDate.add(const Duration(days: 1))
         : eventDateEndOfDay;
 
-    // Find existing tickets
+    
     Ticket? existingVipTicket;
     Ticket? existingEcoTicket;
 
@@ -1163,7 +1163,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
       }
     }
 
-    // Handle VIP tickets
+    
     if (vipCount > 0 && vipPrice > 0) {
       final vipTicketData = {
         'eventId': eventId,
@@ -1175,16 +1175,16 @@ class _EditEventScreenState extends State<EditEventScreen> {
       };
 
       if (existingVipTicket != null) {
-        // Update existing VIP ticket
-        // Don't send quantityAvailable and quantitySold - backend will calculate them
+        
+        
         vipTicketData['id'] = existingVipTicket.id;
         await ticketProvider.updateTicket(existingVipTicket.id, vipTicketData);
       } else {
-        // Create new VIP ticket
+        
         await ticketProvider.createTicket(vipTicketData);
       }
     } else if (existingVipTicket != null) {
-      // Delete VIP ticket if it exists but no longer needed
+      
       if (existingVipTicket.quantitySold > 0) {
         throw Exception(
           'Cannot delete VIP ticket. ${existingVipTicket.quantitySold} ticket(s) have already been sold.',
@@ -1193,7 +1193,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
       await ticketProvider.deleteTicket(existingVipTicket.id);
     }
 
-    // Handle Economy tickets
+    
     if (ecoCount > 0 && ecoPrice > 0) {
       final ecoTicketData = {
         'eventId': eventId,
@@ -1205,16 +1205,16 @@ class _EditEventScreenState extends State<EditEventScreen> {
       };
 
       if (existingEcoTicket != null) {
-        // Update existing Economy ticket
-        // Don't send quantityAvailable and quantitySold - backend will calculate them
+        
+        
         ecoTicketData['id'] = existingEcoTicket.id;
         await ticketProvider.updateTicket(existingEcoTicket.id, ecoTicketData);
       } else {
-        // Create new Economy ticket
+        
         await ticketProvider.createTicket(ecoTicketData);
       }
     } else if (existingEcoTicket != null) {
-      // Delete Economy ticket if it exists but no longer needed
+      
       if (existingEcoTicket.quantitySold > 0) {
         throw Exception(
           'Cannot delete Economy ticket. ${existingEcoTicket.quantitySold} ticket(s) have already been sold.',
@@ -1234,7 +1234,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
       final uri = Uri.parse(url);
       final headers = eventProvider.createHeaders();
 
-      // Convert string IDs to GUIDs for the backend
+      
       final guidIds = imageIds.map((id) => id).toList();
 
       final response = await http.put(

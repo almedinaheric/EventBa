@@ -2,15 +2,13 @@ import 'package:eventba_mobile/providers/notification_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:eventba_mobile/widgets/master_screen.dart';
 import 'package:provider/provider.dart';
-import 'package:eventba_mobile/models/notification/notification.dart' as notification_model;
+import 'package:eventba_mobile/models/notification/notification.dart'
+    as notification_model;
 
 class NotificationDetailsScreen extends StatelessWidget {
   final notification_model.Notification? notification;
 
-  const NotificationDetailsScreen({
-    super.key,
-    required this.notification
-  });
+  const NotificationDetailsScreen({super.key, required this.notification});
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +24,6 @@ class NotificationDetailsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Notification Card Header
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
@@ -45,11 +42,9 @@ class NotificationDetailsScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Title Section
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Notification Icon
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
@@ -64,7 +59,6 @@ class NotificationDetailsScreen extends StatelessWidget {
                       ),
                       const SizedBox(width: 12),
 
-                      // Title and Time
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -79,7 +73,9 @@ class NotificationDetailsScreen extends StatelessWidget {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              _formatDateTime(_formatTime(notification!.createdAt)),
+                              _formatDateTime(
+                                _formatTime(notification!.createdAt),
+                              ),
                               style: const TextStyle(
                                 fontSize: 14,
                                 color: Colors.grey,
@@ -93,15 +89,10 @@ class NotificationDetailsScreen extends StatelessWidget {
 
                   const SizedBox(height: 16),
 
-                  // Divider
-                  Container(
-                    height: 1,
-                    color: Colors.grey.withOpacity(0.3),
-                  ),
+                  Container(height: 1, color: Colors.grey.withOpacity(0.3)),
 
                   const SizedBox(height: 16),
 
-                  // Content Section
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -124,14 +115,7 @@ class NotificationDetailsScreen extends StatelessWidget {
                             color: Colors.grey.withOpacity(0.2),
                           ),
                         ),
-                        child: Text(
-                          notification!.content,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            color: Colors.black87,
-                            height: 1.5,
-                          ),
-                        ),
+                        child: _buildNotificationContent(notification!.content),
                       ),
                     ],
                   ),
@@ -141,7 +125,6 @@ class NotificationDetailsScreen extends StatelessWidget {
 
             const SizedBox(height: 24),
 
-            // Action Buttons (Optional)
             Row(
               children: [
                 Expanded(
@@ -170,8 +153,6 @@ class NotificationDetailsScreen extends StatelessWidget {
   }
 
   String _formatDateTime(String time) {
-    // Convert relative time to a more detailed format
-    // In a real app, you'd probably have actual DateTime objects
     final now = DateTime.now();
 
     if (time.contains('h ago')) {
@@ -193,17 +174,85 @@ class NotificationDetailsScreen extends StatelessWidget {
 
   String _formatDate(DateTime date) {
     final months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
 
   String _formatTime(DateTime date) {
-    final hour = date.hour == 0 ? 12 : (date.hour > 12 ? date.hour - 12 : date.hour);
+    final hour = date.hour == 0
+        ? 12
+        : (date.hour > 12 ? date.hour - 12 : date.hour);
     final minute = date.minute.toString().padLeft(2, '0');
     final period = date.hour >= 12 ? 'PM' : 'AM';
     return '$hour:$minute $period';
+  }
+
+  Widget _buildNotificationContent(String content) {
+    if (content.startsWith('your question:') && content.contains('answer:')) {
+      final parts = content.split('answer:');
+      if (parts.length == 2) {
+        final question = parts[0].replaceFirst('your question:', '').trim();
+        final answer = parts[1].trim();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Your question:',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              question,
+              style: const TextStyle(
+                fontSize: 15,
+                color: Colors.black87,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Answer:',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              answer,
+              style: const TextStyle(
+                fontSize: 15,
+                color: Colors.black87,
+                height: 1.5,
+              ),
+            ),
+          ],
+        );
+      }
+    }
+
+    return Text(
+      content,
+      style: const TextStyle(fontSize: 15, color: Colors.black87, height: 1.5),
+    );
   }
 
   void _showDeleteConfirmation(BuildContext context) async {
@@ -212,7 +261,9 @@ class NotificationDetailsScreen extends StatelessWidget {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Delete Notification'),
-          content: const Text('Are you sure you want to delete this notification?'),
+          content: const Text(
+            'Are you sure you want to delete this notification?',
+          ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -233,8 +284,10 @@ class NotificationDetailsScreen extends StatelessWidget {
 
     if (confirmed == true) {
       try {
-        await Provider.of<NotificationProvider>(context, listen: false)
-            .delete(notification!.id);
+        await Provider.of<NotificationProvider>(
+          context,
+          listen: false,
+        ).delete(notification!.id);
         Navigator.of(context).pop(true);
       } catch (e) {
         print("Error deleting notification: $e");
@@ -248,5 +301,4 @@ class NotificationDetailsScreen extends StatelessWidget {
       }
     }
   }
-
 }

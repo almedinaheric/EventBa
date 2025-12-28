@@ -19,7 +19,7 @@ class EventCard extends StatelessWidget {
 
   const EventCard({
     super.key,
-    this.imageData, // Now accepts String? (base64 data)
+    this.imageData, 
     required this.eventName,
     required this.location,
     required this.date,

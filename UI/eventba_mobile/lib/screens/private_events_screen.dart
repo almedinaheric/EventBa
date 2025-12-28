@@ -88,10 +88,10 @@ class _PrivateEventsScreenState extends State<PrivateEventsScreen> {
               separatorBuilder: (_, __) => const SizedBox(height: 8),
               itemBuilder: (context, index) {
                 if (index == _events.length) {
-                  // Load More button
+                  
                   final screenWidth = MediaQuery.of(context).size.width;
                   final buttonWidth =
-                      screenWidth - 32; // Account for ListView padding (16 * 2)
+                      screenWidth - 32; 
 
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 16),

@@ -53,7 +53,6 @@ class _HomeScreenState extends State<HomeScreen> {
       listen: false,
     );
 
-    // Fetch different types of events from your API
     _recommendedEventsFuture = _fetchRecommendedEvents(eventProvider);
     _publicEventsFuture = _fetchPublicEvents(eventProvider);
     _privateEventsFuture = _fetchPrivateEvents(eventProvider);
@@ -64,9 +63,8 @@ class _HomeScreenState extends State<HomeScreen> {
     EventProvider provider,
   ) async {
     try {
-      // Assuming your provider has a method to get recommended events
       final result = await provider.getRecommendedEvents();
-      return result; // Adjust based on your API response structure
+      return result;
     } catch (e) {
       print('Error fetching recommended events: $e');
       return [];
@@ -76,7 +74,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<List<BasicEvent>> _fetchPublicEvents(EventProvider provider) async {
     try {
       final result = await provider.getPublicEvents();
-      return result; // Adjust based on your API response structure
+      return result;
     } catch (e) {
       print('Error fetching public events: $e');
       return [];
@@ -86,7 +84,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<List<BasicEvent>> _fetchPrivateEvents(EventProvider provider) async {
     try {
       final result = await provider.getPrivateEvents();
-      return result; // Adjust based on your API response structure
+      return result;
     } catch (e) {
       print('Error fetching private events: $e');
       return [];
@@ -97,14 +95,7 @@ class _HomeScreenState extends State<HomeScreen> {
     CategoryProvider provider,
   ) async {
     try {
-      // Request all categories by setting a very large page size
-      // This ensures all categories are loaded from the database
-      final result = await provider.get(
-        filter: {
-          'page': 1,
-          'pageSize': 1000, // Large enough to get all categories
-        },
-      );
+      final result = await provider.get(filter: {'page': 1, 'pageSize': 1000});
       return result.result;
     } catch (e) {
       print('Error fetching categories: $e');
@@ -412,7 +403,6 @@ class _HomeScreenState extends State<HomeScreen> {
       date: event.startDate,
       height: 160,
 
-      //TODO: fix this
       isPaid: event.isPaid,
       onTap: () {
         Navigator.push(

@@ -19,7 +19,7 @@ class ImageHelpers {
     }
 
     try {
-      // Handle data URI format (data:image/jpeg;base64,...)
+      
       String base64String = image;
       if (image.startsWith('data:image')) {
         base64String = image.split(',').last;
@@ -64,7 +64,7 @@ class ImageHelpers {
     }
 
     try {
-      // Handle data URI format (data:image/jpeg;base64,...)
+      
       String base64String = image;
       if (image.startsWith('data:image')) {
         base64String = image.split(',').last;
@@ -85,7 +85,7 @@ class ImageHelpers {
         },
       );
     } catch (e) {
-      // If decoding fails, return placeholder
+      
       return Image.asset(
         "assets/images/profile_placeholder.png",
         height: height,

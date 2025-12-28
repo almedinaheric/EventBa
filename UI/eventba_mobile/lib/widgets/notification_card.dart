@@ -41,11 +41,11 @@ class NotificationCard extends StatelessWidget {
         ),
         child: Stack(
           children: [
-            // Main content
+            
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Left side: Icon with unread indicator
+                
                 Stack(
                   children: [
                     Container(
@@ -60,7 +60,7 @@ class NotificationCard extends StatelessWidget {
                         size: 32,
                       ),
                     ),
-                    // Unread indicator dot
+                    
                     if (isUnread)
                       Positioned(
                         top: 0,
@@ -78,7 +78,7 @@ class NotificationCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
 
-                // Center: Title and Content
+                
                 Expanded(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -86,7 +86,7 @@ class NotificationCard extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          // Important notification badge
+                          
                           if (notification.isImportant)
                             Container(
                               padding: const EdgeInsets.symmetric(
@@ -118,7 +118,7 @@ class NotificationCard extends StatelessWidget {
                                 ],
                               ),
                             ),
-                          // Unread indicator text
+                          
                           if (isUnread)
                             Container(
                               padding: const EdgeInsets.symmetric(
@@ -164,7 +164,7 @@ class NotificationCard extends StatelessWidget {
 
                 const SizedBox(width: 8),
 
-                // Right side: Time and Actions
+                
                 Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -176,7 +176,7 @@ class NotificationCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    // Delete button
+                    
                     if (onDelete != null)
                       GestureDetector(
                         onTap: onDelete,

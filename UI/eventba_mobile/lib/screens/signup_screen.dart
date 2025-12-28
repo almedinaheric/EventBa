@@ -149,7 +149,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Back button row
+            
             Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
@@ -161,7 +161,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ],
               ),
             ),
-            // Centered Sign Up title
+            
             const Center(
               child: Text(
                 'Sign Up',

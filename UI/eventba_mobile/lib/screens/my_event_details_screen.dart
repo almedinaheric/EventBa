@@ -58,16 +58,16 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
         listen: false,
       );
 
-      // Load event details
+      
       final event = await eventProvider.getById(widget.eventId);
 
-      // Check if event is past (using end date/time)
+      
       final eventEndDateTime = DateTime.parse(
         '${event.endDate} ${event.endTime}',
       );
       final isPast = eventEndDateTime.isBefore(DateTime.now());
 
-      // Load event statistics (for upcoming events, this returns revenue and tickets sold from ticket purchases)
+      
       Map<String, dynamic>? statistics;
       try {
         statistics = await eventProvider.getEventStatistics(widget.eventId);
@@ -76,7 +76,7 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
         print("Failed to load statistics: $e");
       }
 
-      // Load event reviews only if event is past
+      
       List<EventReview> reviews = [];
       if (isPast) {
         try {
@@ -125,7 +125,7 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
   void _showImageDialog(int initialIndex) {
     if (_event == null) return;
 
-    // Build list of images: cover image first, then gallery images
+    
     List<String> allImages = [];
 
     if (_event!.coverImage?.data != null) {
@@ -303,11 +303,11 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
       );
     }
 
-    // Admin view - only Scan QR Code button
+    
     if (_isAdmin) {
       return MasterScreenWidget(
         initialIndex: 4,
-        showBottomNavBar: false, // Hide bottom nav for admin
+        showBottomNavBar: false, 
         appBarType: AppBarType.iconsSideTitleCenter,
         title: _event!.title,
         leftIcon: Icons.arrow_back,
@@ -344,7 +344,7 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
       );
     }
 
-    // Customer view - full details
+    
     final totalAttendees =
         _statistics?['attendees'] ?? _event!.currentAttendees;
 
@@ -367,7 +367,7 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 16),
-                    // Event cover image
+                    
                     GestureDetector(
                       onTap: () => _showImageDialog(0),
                       child: ClipRRect(
@@ -464,7 +464,7 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    // Show short stats for upcoming events
+                    
                     if (!_isPast) ...[
                       _buildShortStats(),
                       const SizedBox(height: 16),
@@ -541,7 +541,7 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
                             );
                           },
                         ),
-                        // Only show Statistics button for past events
+                        
                         if (_isPast)
                           _buildActionButton(
                             context,
@@ -651,10 +651,10 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
   }
 
   Widget _buildShortStats() {
-    // Revenue: sum of all PricePaid from ticket purchases for this event
-    // Tickets Sold: count of all ticket purchases for this event
-    // Both are calculated in backend GetEventStatistics for upcoming events
-    // Backend returns: TotalRevenue (camelCase: totalRevenue) and TotalTicketsSold (camelCase: totalTicketsSold)
+    
+    
+    
+    
     final revenue =
         (_statistics?['totalRevenue'] ??
                 _statistics?['TotalRevenue'] ??

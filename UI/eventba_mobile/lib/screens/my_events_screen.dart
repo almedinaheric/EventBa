@@ -42,7 +42,7 @@ class _MyEventsScreenState extends State<MyEventsScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Reload data every time the screen becomes visible
+    
     _loadMyEvents();
   }
 
@@ -58,7 +58,7 @@ class _MyEventsScreenState extends State<MyEventsScreen> {
       final events = await eventProvider.getMyEvents();
       if (mounted) {
         setState(() {
-          // For admin users, filter to show only upcoming events
+          
           if (_isAdmin) {
             _events = events
                 .where((event) => event.status == EventStatus.Upcoming)
@@ -82,8 +82,8 @@ class _MyEventsScreenState extends State<MyEventsScreen> {
   @override
   Widget build(BuildContext context) {
     return MasterScreenWidget(
-      initialIndex: 4, // set your bottom nav index accordingly
-      showBottomNavBar: !_isAdmin, // Hide bottom nav for admin users
+      initialIndex: 4, 
+      showBottomNavBar: !_isAdmin, 
       appBarType: AppBarType.iconsSideTitleCenter,
       title: "My Events",
       leftIcon: Icons.arrow_back,
@@ -126,7 +126,7 @@ class _MyEventsScreenState extends State<MyEventsScreen> {
                                 reverseTransitionDuration: Duration.zero,
                               ),
                             );
-                            // Reload data when returning from detail screen
+                            
                             if (mounted) {
                               _loadMyEvents();
                             }
