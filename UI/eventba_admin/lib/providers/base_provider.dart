@@ -134,8 +134,6 @@ abstract class BaseProvider<T> with ChangeNotifier {
     String email = Authorization.email ?? "";
     String password = Authorization.password ?? "";
 
-    print("passed creds: $email, $password");
-
     String basicAuth = "Basic ${base64Encode(utf8.encode('$email:$password'))}";
 
     var headers = {

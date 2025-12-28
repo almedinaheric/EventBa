@@ -145,9 +145,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     onToggleVisibility: _togglePasswordVisibility,
                     onChanged: (text) {
                       setState(() {
-                        _isPasswordValid =
-                            text.trim().isNotEmpty &&
-                            RegExp(r'/*').hasMatch(text);
+                        _isPasswordValid = RegExp(
+                          r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$',
+                        ).hasMatch(text);
                         _passwordErrorMessage = _isPasswordValid
                             ? null
                             : 'Password must be at least 8 characters long and include an uppercase letter, a lowercase letter, and a number.';
