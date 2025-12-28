@@ -47,7 +47,6 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Left column
               Expanded(
                 flex: 1,
                 child: GridView.count(
@@ -65,7 +64,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               ),
-              // Vertical separator
               Container(
                 height: constraints.maxHeight,
                 width: 1,
@@ -82,7 +80,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ),
-              // Right column
               Expanded(
                 flex: 2,
                 child: GridView.count(

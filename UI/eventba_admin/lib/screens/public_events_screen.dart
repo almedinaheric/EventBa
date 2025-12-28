@@ -16,7 +16,7 @@ class PublicEventsScreen extends StatefulWidget {
 }
 
 class _PublicEventsScreenState extends State<PublicEventsScreen> {
-  int selectedIndex = 0; // 0 = Upcoming, 1 = Past
+  int selectedIndex = 0;
   List<Event> _allEvents = [];
   bool _isLoading = true;
   String? _errorMessage;
@@ -50,8 +50,6 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
     try {
       final eventProvider = Provider.of<EventProvider>(context, listen: false);
 
-      // If searching, only use getPublicEvents (which includes search)
-      // Otherwise, combine public events and my events
       if (_searchTerm.isNotEmpty) {
         final publicEvents = await eventProvider.getPublicEvents(
           searchTerm: _searchTerm,
@@ -59,7 +57,6 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
 
         if (!mounted) return;
 
-        // Filter only published events
         final publishedEvents = publicEvents
             .where((event) => event.isPublished)
             .toList();
@@ -69,30 +66,25 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
           _isLoading = false;
         });
       } else {
-        // Fetch both public events and my events to include all events including those created by current user
         final publicEvents = await eventProvider.getPublicEvents();
         final myEvents = await eventProvider.getMyEvents();
 
         if (!mounted) return;
 
-        // Combine both lists and remove duplicates (by ID)
         final allEventsMap = <String, Event>{};
 
-        // Add public events
         for (var event in publicEvents) {
           if (event.isPublished) {
             allEventsMap[event.id] = event;
           }
         }
 
-        // Add my events (these are public events created by current user)
         for (var event in myEvents) {
           if (event.isPublished && event.type.name == 'Public') {
             allEventsMap[event.id] = event;
           }
         }
 
-        // Filter only published events and convert to list
         final publishedEvents = allEventsMap.values.toList();
 
         setState(() {
@@ -106,7 +98,6 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
         _errorMessage = "Failed to load events: $e";
         _isLoading = false;
       });
-      print("Error loading events: $e");
     }
   }
 
@@ -117,7 +108,6 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
       _searchTerm = query;
     });
 
-    // Debounce search to avoid losing focus
     _searchTimer = Timer(const Duration(milliseconds: 500), () {
       _loadEvents();
     });
@@ -150,7 +140,6 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
             )
           : Column(
               children: [
-                // Search Bar
                 Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 24,
@@ -179,7 +168,6 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
                     ),
                   ),
                 ),
-                // Custom toggle buttons (Upcoming / Past)
                 Container(
                   margin: const EdgeInsets.symmetric(
                     horizontal: 24,
@@ -187,7 +175,6 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
                   ),
                   child: Row(
                     children: [
-                      // Upcoming button
                       Expanded(
                         child: GestureDetector(
                           onTap: () {
@@ -223,7 +210,6 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
                         ),
                       ),
 
-                      // Past button
                       Expanded(
                         child: GestureDetector(
                           onTap: () {
@@ -262,7 +248,6 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
                   ),
                 ),
 
-                // Events List
                 Expanded(
                   child: _buildEventsList(isUpcoming: selectedIndex == 0),
                 ),
@@ -272,7 +257,6 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
   }
 
   Widget _buildEventsList({required bool isUpcoming}) {
-    // Filter events by status
     final filteredEvents = _allEvents.where((event) {
       if (isUpcoming) {
         return event.status == EventStatus.Upcoming;
@@ -352,7 +336,6 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
     final badgeText = event.isPaid ? 'PAID' : 'FREE';
     final badgeColor = event.isPaid ? const Color(0xFF4776E6) : Colors.green;
 
-    // Format date
     final formattedDate = event.startDate;
 
     return GestureDetector(
@@ -369,7 +352,6 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
           ),
         );
 
-        // Reload events if the event was deleted or updated
         if (result == true) {
           _loadEvents();
         }
@@ -392,7 +374,6 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                // Background image
                 event.coverImage != null && event.coverImage!.isNotEmpty
                     ? Image.memory(
                         base64Decode(event.coverImage!.split(',').last),
@@ -408,7 +389,6 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
                         'assets/images/default_event_cover_image.png',
                         fit: BoxFit.cover,
                       ),
-                // Gradient overlay
                 Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -421,13 +401,11 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
                     ),
                   ),
                 ),
-                // Content
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Top row with date and badge
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -460,7 +438,6 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
                         ],
                       ),
                       const Spacer(),
-                      // Event details
                       Text(
                         event.title,
                         style: const TextStyle(

@@ -21,7 +21,6 @@ class _SupportScreenState extends State<SupportScreen> {
   @override
   void initState() {
     super.initState();
-    // Load questions after the first frame to avoid context issues
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadUserQuestions();
     });
@@ -45,7 +44,6 @@ class _SupportScreenState extends State<SupportScreen> {
         _isLoading = false;
       });
     } catch (e) {
-      print("Failed to load user questions: $e");
       setState(() {
         _isLoading = false;
         _errorMessage = 'Failed to load questions: ${e.toString()}';
@@ -166,7 +164,7 @@ class _SupportScreenState extends State<SupportScreen> {
               duration: Duration(seconds: 2),
             ),
           );
-          _loadUserQuestions(); // Refresh the list
+          _loadUserQuestions();
         }
       } catch (e) {
         if (mounted) {

@@ -30,7 +30,6 @@ class TicketProvider extends BaseProvider<Ticket> {
     }
   }
 
-  // Create a new ticket
   Future<Ticket> createTicket(Map<String, dynamic> ticketData) async {
     var url = "${baseUrl}Ticket";
     var uri = Uri.parse(url);
@@ -47,7 +46,6 @@ class TicketProvider extends BaseProvider<Ticket> {
     }
   }
 
-  // Update an existing ticket
   Future<Ticket> updateTicket(
     String ticketId,
     Map<String, dynamic> ticketData,
@@ -67,7 +65,6 @@ class TicketProvider extends BaseProvider<Ticket> {
     }
   }
 
-  // Delete a ticket
   Future<void> deleteTicket(String ticketId) async {
     var url = "${baseUrl}Ticket/$ticketId";
     var uri = Uri.parse(url);
@@ -80,7 +77,6 @@ class TicketProvider extends BaseProvider<Ticket> {
     }
   }
 
-  // Delete all tickets for an event
   Future<void> deleteAllTicketsForEvent(String eventId) async {
     try {
       final tickets = await getTicketsForEvent(eventId);
@@ -88,7 +84,6 @@ class TicketProvider extends BaseProvider<Ticket> {
         await deleteTicket(ticket.id);
       }
     } catch (e) {
-      print("Error deleting tickets: $e");
       throw Exception("Failed to delete tickets for event");
     }
   }

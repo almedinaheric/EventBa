@@ -45,11 +45,9 @@ class _LoginScreenState extends State<LoginScreen> {
         MaterialPageRoute(builder: (context) => const HomeScreen()),
       );
     } catch (e) {
-      // Clear credentials on failed login
       Authorization.email = null;
       Authorization.password = null;
 
-      // Show appropriate error message
       String errorMessage = "Login failed. Please check your credentials.";
       if (e.toString().contains("Unauthorized") ||
           e.toString().contains("403")) {
@@ -102,7 +100,7 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center, // vertical centering
+            mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Column(
@@ -149,7 +147,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       setState(() {
                         _isPasswordValid =
                             text.trim().isNotEmpty &&
-                            //RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$')
                             RegExp(r'/*').hasMatch(text);
                         _passwordErrorMessage = _isPasswordValid
                             ? null
@@ -160,11 +157,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 10),
                   Row(
                     children: [
-                      const Spacer(), // This will push the TextLinkButton to the right
+                      const Spacer(),
                       Padding(
-                        padding: EdgeInsets.only(
-                          right: size.width * 0.29,
-                        ), // Adjust the right padding as needed
+                        padding: EdgeInsets.only(right: size.width * 0.29),
                         child: TextLinkButton(
                           linkText: "Forgot Password?",
                           onTap: () {

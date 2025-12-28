@@ -30,11 +30,9 @@ class NotificationDetailsScreen extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Notification Card Header
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Notification Icon
                     Container(
                       width: 60,
                       height: 60,
@@ -52,7 +50,6 @@ class NotificationDetailsScreen extends StatelessWidget {
                     ),
                     const SizedBox(width: 16),
 
-                    // Title and Time
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -106,12 +103,10 @@ class NotificationDetailsScreen extends StatelessWidget {
 
                 const SizedBox(height: 32),
 
-                // Divider
                 Container(height: 1, color: Colors.grey.withOpacity(0.3)),
 
                 const SizedBox(height: 32),
 
-                // Content Section
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -146,7 +141,6 @@ class NotificationDetailsScreen extends StatelessWidget {
 
                 const SizedBox(height: 40),
 
-                // Action Buttons
                 Row(
                   children: [
                     Expanded(
@@ -209,9 +203,7 @@ class NotificationDetailsScreen extends StatelessWidget {
                   await provider.delete(notification.id);
 
                   if (context.mounted) {
-                    Navigator.of(
-                      context,
-                    ).pop(); // Go back to notifications list
+                    Navigator.of(context).pop();
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Notification deleted successfully'),

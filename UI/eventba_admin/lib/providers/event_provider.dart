@@ -50,7 +50,6 @@ class EventProvider extends BaseProvider<Event> {
   }
 
   Future<List<Event>> getPublicEvents({String? searchTerm}) async {
-    // Use base Get method with filters for search support
     final filter = {
       'type': 'Public',
       if (searchTerm != null && searchTerm.isNotEmpty) 'searchTerm': searchTerm,
@@ -61,7 +60,6 @@ class EventProvider extends BaseProvider<Event> {
   }
 
   Future<List<Event>> getPrivateEvents({String? searchTerm}) async {
-    // Use base Get method with filters for search support
     final filter = {
       'type': 'Private',
       if (searchTerm != null && searchTerm.isNotEmpty) 'searchTerm': searchTerm,
@@ -111,12 +109,7 @@ class EventProvider extends BaseProvider<Event> {
     var jsonRequest = jsonEncode(eventData);
     var response = await http.put(uri, headers: headers, body: jsonRequest);
 
-    print("Update response status: ${response.statusCode}");
-    print("Update response body: ${response.body}");
-
     if (isValidResponse(response)) {
-      // Always fetch the updated event by ID to ensure we get all related entities
-      // (category, coverImage, galleryImages, etc.) properly populated
       return await getEventById(eventId);
     } else {
       throw Exception("Unknown error in a PUT request");

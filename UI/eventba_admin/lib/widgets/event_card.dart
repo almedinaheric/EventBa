@@ -169,7 +169,6 @@ class EventCard extends StatelessWidget {
   }
 
   Widget _buildImage() {
-    // Check if imageUrl is a base64 data URI or an asset path
     if (imageUrl.startsWith('data:image') ||
         (!imageUrl.startsWith('assets/') && imageUrl.isNotEmpty)) {
       try {

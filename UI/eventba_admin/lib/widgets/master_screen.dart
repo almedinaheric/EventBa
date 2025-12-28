@@ -50,7 +50,6 @@ class MasterScreen extends StatelessWidget {
                 ),
               ),
             ),
-            // Center: Dynamic title
             if (title != 'EventBa')
               Center(
                 child: Text(
@@ -156,20 +155,14 @@ class MasterScreen extends StatelessWidget {
   }
 
   void _performSignOut(BuildContext context) {
-    // Clear authentication credentials
     Authorization.email = null;
     Authorization.password = null;
 
-    // Clear user data from provider
     try {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       userProvider.clearUser();
-    } catch (e) {
-      // Provider might not be available in some contexts
-      print('Error clearing user provider: $e');
-    }
+    } catch (e) {}
 
-    // Show success message
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Successfully signed out'),
@@ -178,7 +171,6 @@ class MasterScreen extends StatelessWidget {
       ),
     );
 
-    // Navigate to login screen and clear navigation stack
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (context) => const LoginScreen()),
@@ -207,7 +199,6 @@ class MasterScreen extends StatelessWidget {
   }
 }
 
-// Helper class for responsive grid calculations
 class ResponsiveHelper {
   static int getCrossAxisCount(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;

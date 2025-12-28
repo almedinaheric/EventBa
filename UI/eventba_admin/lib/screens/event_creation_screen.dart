@@ -26,7 +26,6 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
 
   List<Map<String, dynamic>> _categories = [];
 
-  // Controllers
   final TextEditingController _nameController = TextEditingController();
   String? _selectedCategoryId;
   final TextEditingController _venueController = TextEditingController();
@@ -40,14 +39,12 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
   final TextEditingController _ecoPriceController = TextEditingController();
   final TextEditingController _ecoCountController = TextEditingController();
 
-  // Image handling
   XFile? _mainImage;
   List<XFile> _additionalImages = [];
 
   bool _isPaid = false;
   bool _isLoading = false;
 
-  // Validation flags and error messages
   bool _isNameValid = true;
   bool _isCategoryValid = true;
   bool _isVenueValid = true;
@@ -106,7 +103,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final formWidth = screenWidth * 0.6; // 60% of the screen width
+    final formWidth = screenWidth * 0.6;
 
     return MasterScreen(
       title: 'Create Event',
@@ -115,7 +112,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
         padding: const EdgeInsets.all(16),
         child: Center(
           child: Container(
-            width: formWidth, // Set width to 60% of screen width
+            width: formWidth,
             child: Form(
               key: _formKey,
               child: Column(
@@ -142,7 +139,6 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
                   ),
                   const SizedBox(height: 12),
 
-                  // Changed from CustomTextField to Dropdown
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -457,7 +453,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
                       onPressed: _isLoading ? () {} : _onSubmitPressed,
                     ),
                   ),
-                  const SizedBox(height: 60), // for safe area
+                  const SizedBox(height: 60),
                 ],
               ),
             ),
@@ -532,19 +528,13 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
 
   Future<void> _pickMainImage() async {
     try {
-      print('Attempting to pick main image...');
       final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-      print('Image picker returned: ${image?.path ?? "null"}');
       if (image != null) {
         setState(() {
           _mainImage = image;
         });
-        print('Main image set successfully');
-      } else {
-        print('No image selected');
       }
     } catch (e) {
-      print('Error picking main image: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -558,9 +548,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
 
   Future<void> _pickAdditionalImage(int index) async {
     try {
-      print('Attempting to pick additional image at index $index...');
       final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-      print('Image picker returned: ${image?.path ?? "null"}');
       if (image != null) {
         setState(() {
           if (index < _additionalImages.length) {
@@ -569,12 +557,8 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
             _additionalImages.add(image);
           }
         });
-        print('Additional image at index $index set successfully');
-      } else {
-        print('No image selected');
       }
     } catch (e) {
-      print('Error picking additional image: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -740,7 +724,6 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
   void _onSubmitPressed() {
     _validateForm();
 
-    // Validate start time is before end time if dates are the same
     bool timeValid = true;
     String? timeErrorMessage;
     if (_dateController.text.isNotEmpty &&
@@ -752,9 +735,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
           final startDateStr = dateRangeParts[0].trim();
           final endDateStr = dateRangeParts[1].trim();
 
-          // If start and end dates are the same, validate times
           if (startDateStr == endDateStr) {
-            // Parse times (handle AM/PM format)
             int formatTimeToMinutes(String timeStr) {
               final parts = timeStr.split(' ');
               final timePart = parts[0];
@@ -771,7 +752,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
                 }
               }
 
-              return hour * 60 + minute; // Convert to minutes for comparison
+              return hour * 60 + minute;
             }
 
             final startTimeMinutes = formatTimeToMinutes(
@@ -786,9 +767,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
             }
           }
         }
-      } catch (e) {
-        print("Error validating time: $e");
-      }
+      } catch (e) {}
     }
 
     bool allValid =
@@ -833,7 +812,6 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
         listen: false,
       );
 
-      // Split the date range into start and end date strings
       final dateRangeParts = _dateController.text.split(' - ');
       if (dateRangeParts.length != 2) {
         throw FormatException(
@@ -841,20 +819,17 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
         );
       }
 
-      // Dates are already in YYYY-MM-DD format from the date picker
       final startDateFormatted = dateRangeParts[0];
       final endDateFormatted = dateRangeParts[1];
 
-      // Parse and format time to HH:MM format (removing AM/PM if present)
       String formatTime(String timeStr) {
         final parts = timeStr.split(' ');
-        final timePart = parts[0]; // Get time without AM/PM
+        final timePart = parts[0];
         final timeParts = timePart.split(':');
 
         int hour = int.parse(timeParts[0]);
         final minute = timeParts[1];
 
-        // Handle AM/PM if present
         if (parts.length > 1) {
           final period = parts[1].toUpperCase();
           if (period == 'PM' && hour != 12) {
@@ -870,7 +845,6 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
       final startTimeFormatted = formatTime(_startTimeController.text);
       final endTimeFormatted = formatTime(_endTimeController.text);
 
-      // Upload main/cover image
       String? coverImageId;
       if (_mainImage != null) {
         final bytes = await File(_mainImage!.path).readAsBytes();
@@ -883,7 +857,6 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
         coverImageId = mainImageResponse.id;
       }
 
-      // Calculate total capacity
       int totalCapacity;
       if (_isPaid) {
         totalCapacity =
@@ -893,72 +866,53 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
         totalCapacity = int.parse(_capacityController.text.trim());
       }
 
-      // Create event request matching EventInsertRequestDto
       final request = {
         'title': _nameController.text.trim(),
         'description': _descriptionController.text.trim(),
         'location': _venueController.text.trim(),
-        'startDate': startDateFormatted, // YYYY-MM-DD
-        'endDate': endDateFormatted, // YYYY-MM-DD
-        'startTime': startTimeFormatted, // HH:MM
-        'endTime': endTimeFormatted, // HH:MM
+        'startDate': startDateFormatted,
+        'endDate': endDateFormatted,
+        'startTime': startTimeFormatted,
+        'endTime': endTimeFormatted,
         'capacity': totalCapacity,
         'availableTicketsCount': totalCapacity,
         'status': 'Upcoming',
         'isFeatured': false,
-        'type': 'Public', // Always public for admin-created events
+        'type': 'Public',
         'isPublished': true,
-        'isPaid': _isPaid, // Set based on free/paid selection
+        'isPaid': _isPaid,
         'categoryId': _selectedCategoryId,
         if (coverImageId != null) 'coverImageId': coverImageId,
       };
 
-      print('Creating event with request: $request');
-
       final createdEvent = await eventProvider.insert(request);
       final eventId = createdEvent.id;
 
-      print('Event created with ID: $eventId');
-
-      // Upload and link gallery images
       if (_additionalImages.isNotEmpty) {
-        print('Uploading ${_additionalImages.length} gallery images...');
         List<String> galleryImageIds = [];
 
         for (var i = 0; i < _additionalImages.length; i++) {
           final additionalImage = _additionalImages[i];
-          print('Uploading gallery image ${i + 1}/${_additionalImages.length}');
           final bytes = await File(additionalImage.path).readAsBytes();
           final base64Image = base64Encode(bytes);
           final imageRequest = {
             'Data': base64Image,
             'ContentType': 'image/jpeg',
-            'ImageType': 'EventGallery', // Set the correct image type
-            'EventId': eventId, // Link to event immediately
+            'ImageType': 'EventGallery',
+            'EventId': eventId,
           };
           final imageResponse = await imageProvider.insert(imageRequest);
-          print('Gallery image ${i + 1} uploaded with ID: ${imageResponse.id}');
           galleryImageIds.add(imageResponse.id!);
         }
 
-        // Link gallery images to event
         if (galleryImageIds.isNotEmpty) {
-          print(
-            'Linking ${galleryImageIds.length} gallery images to event $eventId',
-          );
           await _linkGalleryImages(eventId, galleryImageIds);
         }
       }
 
-      // Create tickets based on event type (free/paid)
       try {
         await _createTickets(eventId, startDateFormatted);
-        print('Tickets creation completed for event $eventId');
-      } catch (e) {
-        print('Error creating tickets: $e');
-        // Still show success message but log the error
-        // Tickets can be added later via edit
-      }
+      } catch (e) {}
 
       if (!mounted) return;
 
@@ -970,7 +924,6 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
       );
       Navigator.pop(context);
     } catch (e) {
-      print("Failed to create event: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           behavior: SnackBarBehavior.floating,
@@ -990,8 +943,6 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
     try {
       final url =
           "${Provider.of<EventProvider>(context, listen: false).baseUrl}Event/$eventId/gallery-images";
-      print('Linking gallery images to: $url');
-      print('Image IDs to link: $imageIds');
 
       final uri = Uri.parse(url);
       final headers = Provider.of<EventProvider>(
@@ -1005,20 +956,12 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
         body: jsonEncode(imageIds),
       );
 
-      print('Gallery link response status: ${response.statusCode}');
-      print('Gallery link response body: ${response.body}');
-
       if (response.statusCode >= 300) {
         throw Exception(
           'Failed to link gallery images: ${response.statusCode} - ${response.body}',
         );
       }
-
-      print('Gallery images linked successfully!');
-    } catch (e) {
-      print('Error linking gallery images: $e');
-      // Don't throw - event is already created, this is optional
-    }
+    } catch (e) {}
   }
 
   Future<void> _createTickets(String eventId, String eventDate) async {
@@ -1033,8 +976,6 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
     DateTime saleStartDate = DateTime.now();
     DateTime eventDateParsed = DateTime.parse(eventDate);
 
-    // Parse date string to DateTime at end of day for comparison
-    // If eventDate is just a date string (YYYY-MM-DD), set to end of day
     DateTime eventDateEndOfDay = DateTime(
       eventDateParsed.year,
       eventDateParsed.month,
@@ -1044,9 +985,6 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
       59,
     );
 
-    // Ensure saleEndDate is always after saleStartDate
-    // If event date is in the past or same as now, set it to saleStartDate + 1 day
-    // Otherwise use the event date (end of day)
     DateTime saleEndDate =
         eventDateEndOfDay.isBefore(saleStartDate) ||
             eventDateEndOfDay.isAtSameMomentAs(saleStartDate)
@@ -1054,11 +992,8 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
         : eventDateEndOfDay;
 
     if (_isPaid) {
-      // Create VIP ticket if count > 0 and price > 0
       final vipCount = int.tryParse(_vipCountController.text.trim()) ?? 0;
       final vipPrice = double.tryParse(_vipPriceController.text.trim()) ?? 0.0;
-
-      print('Creating VIP ticket: count=$vipCount, price=$vipPrice');
 
       if (vipCount > 0 && vipPrice > 0) {
         final vipTicketRequest = {
@@ -1070,34 +1005,21 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
           'saleEndDate': saleEndDate.toIso8601String(),
         };
 
-        print('VIP ticket request: $vipTicketRequest');
-
         final vipResponse = await http.post(
           uri,
           headers: headers,
           body: jsonEncode(vipTicketRequest),
         );
 
-        print('VIP ticket response status: ${vipResponse.statusCode}');
-        print('VIP ticket response body: ${vipResponse.body}');
-
         if (vipResponse.statusCode >= 300) {
           throw Exception(
             'Failed to create VIP ticket: ${vipResponse.statusCode} - ${vipResponse.body}',
           );
         }
-        print('VIP ticket created successfully');
-      } else {
-        print(
-          'Skipping VIP ticket creation: count=$vipCount, price=$vipPrice (both must be > 0)',
-        );
       }
 
-      // Create Economy ticket if count > 0 and price > 0
       final ecoCount = int.tryParse(_ecoCountController.text.trim()) ?? 0;
       final ecoPrice = double.tryParse(_ecoPriceController.text.trim()) ?? 0.0;
-
-      print('Creating Economy ticket: count=$ecoCount, price=$ecoPrice');
 
       if (ecoCount > 0 && ecoPrice > 0) {
         final ecoTicketRequest = {
@@ -1109,30 +1031,19 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
           'saleEndDate': saleEndDate.toIso8601String(),
         };
 
-        print('Economy ticket request: $ecoTicketRequest');
-
         final ecoResponse = await http.post(
           uri,
           headers: headers,
           body: jsonEncode(ecoTicketRequest),
         );
 
-        print('Economy ticket response status: ${ecoResponse.statusCode}');
-        print('Economy ticket response body: ${ecoResponse.body}');
-
         if (ecoResponse.statusCode >= 300) {
           throw Exception(
             'Failed to create Economy ticket: ${ecoResponse.statusCode} - ${ecoResponse.body}',
           );
         }
-        print('Economy ticket created successfully');
-      } else {
-        print(
-          'Skipping Economy ticket creation: count=$ecoCount, price=$ecoPrice (both must be > 0)',
-        );
       }
     } else {
-      // Create free ticket for free events (same as mobile app)
       final capacity = int.tryParse(_capacityController.text.trim()) ?? 0;
       if (capacity > 0) {
         final freeTicketRequest = {
@@ -1144,23 +1055,17 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
           'saleEndDate': saleEndDate.toIso8601String(),
         };
 
-        print('Free ticket request: $freeTicketRequest');
-
         final freeResponse = await http.post(
           uri,
           headers: headers,
           body: jsonEncode(freeTicketRequest),
         );
 
-        print('Free ticket response status: ${freeResponse.statusCode}');
-        print('Free ticket response body: ${freeResponse.body}');
-
         if (freeResponse.statusCode >= 300) {
           throw Exception(
             'Failed to create free ticket: ${freeResponse.statusCode} - ${freeResponse.body}',
           );
         }
-        print('Free ticket created successfully');
       }
     }
   }

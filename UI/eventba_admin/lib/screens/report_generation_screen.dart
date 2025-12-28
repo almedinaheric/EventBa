@@ -71,12 +71,10 @@ class _ReportGenerationScreenState extends State<ReportGenerationScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Date Selection Section
             _buildDateSelectionSection(),
 
             const SizedBox(height: 32),
 
-            // Report Options Section
             _buildReportOptionsSection(),
           ],
         ),
@@ -309,12 +307,10 @@ class _ReportGenerationScreenState extends State<ReportGenerationScreen> {
       setState(() {
         if (isFromDate) {
           fromDate = picked;
-          // Clear toDate if it's before fromDate
           if (toDate != null && toDate!.isBefore(picked)) {
             toDate = null;
           }
         } else {
-          // Only allow toDate if fromDate is selected and toDate is after fromDate
           if (fromDate != null && picked.isAfter(fromDate!)) {
             toDate = picked;
           } else if (fromDate == null) {
@@ -356,13 +352,10 @@ class _ReportGenerationScreenState extends State<ReportGenerationScreen> {
     });
 
     try {
-      // Fetch data based on report type
       final reportData = await _fetchReportData(reportType);
 
-      // Generate PDF
       await _generateAndDownloadPDF(reportType, reportData);
     } catch (e) {
-      print("Error generating report: $e");
       _showErrorDialog('Failed to generate report: $e');
     } finally {
       setState(() {
@@ -379,12 +372,10 @@ class _ReportGenerationScreenState extends State<ReportGenerationScreen> {
     );
     final userProvider = Provider.of<UserProvider>(context, listen: false);
 
-    // Get all events (we'll filter by date range in the app)
     final allEvents = await eventProvider.get(
       filter: {'page': 1, 'pageSize': 1000},
     );
 
-    // Filter events by date range
     final filteredEvents = allEvents.result.where((event) {
       try {
         final eventDate = DateFormat('yyyy-MM-dd').parse(event.startDate);
@@ -406,7 +397,6 @@ class _ReportGenerationScreenState extends State<ReportGenerationScreen> {
       'toDate': toDate!,
     };
 
-    // Add specific data based on report type
     switch (reportType) {
       case 'Events Overview':
         data['publicEvents'] = filteredEvents
@@ -417,7 +407,6 @@ class _ReportGenerationScreenState extends State<ReportGenerationScreen> {
             .toList();
         break;
       case 'Category Analysis':
-        // Group events by category
         final eventsByCategory = <String, int>{};
         for (var event in filteredEvents) {
           final categoryName = event.category?.name ?? 'Uncategorized';
@@ -427,23 +416,18 @@ class _ReportGenerationScreenState extends State<ReportGenerationScreen> {
         data['eventsByCategory'] = eventsByCategory;
         break;
       case 'Attendance Report':
-        // Sort events by attendance
         final sortedByAttendance = List<Event>.from(filteredEvents)
           ..sort((a, b) => b.currentAttendees.compareTo(a.currentAttendees));
         data['sortedEvents'] = sortedByAttendance;
         break;
       case 'User Activity':
-        // Fetch all users (including admins)
         final allUsers = await userProvider.get(
           filter: {'page': 1, 'pageSize': 1000, 'excludeAdmins': false},
         );
 
-        // Use all users, not just organizers
         data['users'] = allUsers.result;
         break;
       case 'Complete Report':
-        // Prepare all data structures for complete report
-        // Events Overview data
         data['publicEvents'] = filteredEvents
             .where((e) => e.type.name == 'Public')
             .toList();
@@ -451,7 +435,6 @@ class _ReportGenerationScreenState extends State<ReportGenerationScreen> {
             .where((e) => e.type.name == 'Private')
             .toList();
 
-        // Category Analysis data
         final eventsByCategory = <String, int>{};
         for (var event in filteredEvents) {
           final categoryName = event.category?.name ?? 'Uncategorized';
@@ -460,12 +443,10 @@ class _ReportGenerationScreenState extends State<ReportGenerationScreen> {
         }
         data['eventsByCategory'] = eventsByCategory;
 
-        // Attendance Report data
         final sortedByAttendance = List<Event>.from(filteredEvents)
           ..sort((a, b) => b.currentAttendees.compareTo(a.currentAttendees));
         data['sortedEvents'] = sortedByAttendance;
 
-        // User Activity data - fetch all users (not just organizers)
         final allUsers = await userProvider.get(
           filter: {'page': 1, 'pageSize': 1000, 'excludeAdmins': false},
         );
@@ -483,14 +464,12 @@ class _ReportGenerationScreenState extends State<ReportGenerationScreen> {
   ) async {
     final pdf = pw.Document();
 
-    // Load logo image
     final ByteData logoData = await rootBundle.load(
       'assets/icons/app_icon.png',
     );
     final Uint8List logoBytes = logoData.buffer.asUint8List();
     final pw.ImageProvider logoImage = pw.MemoryImage(logoBytes);
 
-    // Load Poppins font for Unicode support
     final ByteData fontData = await rootBundle.load(
       'assets/fonts/poppins/Poppins-Regular.ttf',
     );
@@ -577,7 +556,6 @@ class _ReportGenerationScreenState extends State<ReportGenerationScreen> {
         },
         build: (pw.Context context) {
           return [
-            // Report Title
             pw.Container(
               width: double.infinity,
               padding: const pw.EdgeInsets.all(15),
@@ -606,14 +584,12 @@ class _ReportGenerationScreenState extends State<ReportGenerationScreen> {
             ),
             pw.SizedBox(height: 25),
 
-            // Report Content
             ..._buildReportContent(reportType, data),
           ];
         },
       ),
     );
 
-    // Save PDF
     final result = await FilePicker.platform.saveFile(
       dialogTitle: 'Save PDF Report',
       fileName:
@@ -767,7 +743,6 @@ class _ReportGenerationScreenState extends State<ReportGenerationScreen> {
     final categories =
         (data['categories'] as List<CategoryModel>?) ?? <CategoryModel>[];
 
-    // Build complete category list with event counts (including categories with 0 events)
     final allCategoriesWithCounts = <String, int>{};
     for (var category in categories) {
       final categoryName = category.name;
@@ -775,7 +750,6 @@ class _ReportGenerationScreenState extends State<ReportGenerationScreen> {
           eventsByCategory[categoryName] ?? 0;
     }
 
-    // Find hottest category
     String? hottestCategory;
     int maxEvents = 0;
     allCategoriesWithCounts.forEach((category, count) {
@@ -785,7 +759,6 @@ class _ReportGenerationScreenState extends State<ReportGenerationScreen> {
       }
     });
 
-    // Sort categories by event count (descending), then by name
     final sortedCategories = allCategoriesWithCounts.entries.toList()
       ..sort((a, b) {
         if (b.value != a.value) {
@@ -948,14 +921,12 @@ class _ReportGenerationScreenState extends State<ReportGenerationScreen> {
     final users = (data['users'] as List?) ?? <dynamic>[];
     final events = (data['events'] as List<Event>?) ?? <Event>[];
 
-    // Count events per user
     final userEventCounts = <String, int>{};
     for (var event in events) {
       userEventCounts[event.organizerId] =
           (userEventCounts[event.organizerId] ?? 0) + 1;
     }
 
-    // Find user with most events
     String? mostActiveUserId;
     int maxEvents = 0;
     userEventCounts.forEach((userId, count) {
@@ -965,11 +936,9 @@ class _ReportGenerationScreenState extends State<ReportGenerationScreen> {
       }
     });
 
-    // Find the user object to get full name
     String? mostActiveUserName;
     if (mostActiveUserId != null) {
       try {
-        // Search through users list
         User? foundUser;
         for (var user in users) {
           if (user is User && user.id == mostActiveUserId) {
@@ -979,18 +948,7 @@ class _ReportGenerationScreenState extends State<ReportGenerationScreen> {
         }
 
         mostActiveUserName = foundUser?.fullName ?? 'Unknown User';
-
-        // Debug print
-        if (foundUser == null) {
-          print("User not found in list. Looking for ID: $mostActiveUserId");
-          print(
-            "Available user IDs: ${users.map((u) => u is User ? u.id : 'not User').toList()}",
-          );
-        } else {
-          print("Found user: ${foundUser.fullName} (ID: ${foundUser.id})");
-        }
       } catch (e) {
-        print("Error finding user: $e");
         mostActiveUserName = 'Unknown User';
       }
     }

@@ -44,7 +44,6 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         _isLoading = false;
       });
     } catch (e) {
-      print("Error loading categories: $e");
       setState(() {
         _isLoading = false;
       });
@@ -113,7 +112,6 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       // Reload categories
       _loadCategories();
     } catch (e) {
-      print("Error deleting category: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -176,7 +174,6 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                   _loadCategories();
                 }
               } catch (e) {
-                print("Error updating category: $e");
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -247,9 +244,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                   );
                   _loadCategories();
                 }
-              } catch (e) {
-                print("Error adding category: $e");
-                if (mounted) {
+              } catch (e) {if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('Error adding category: $e'),

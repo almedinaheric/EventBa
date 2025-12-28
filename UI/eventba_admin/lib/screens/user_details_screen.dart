@@ -18,7 +18,7 @@ class UserDetailsScreen extends StatefulWidget {
 }
 
 class _UserDetailsScreenState extends State<UserDetailsScreen> {
-  int selectedIndex = 0; // 0 = Upcoming, 1 = Past
+  int selectedIndex = 0;
   bool _isLoading = false;
   bool _isLoadingUser = false;
   List<Event> _upcomingEvents = [];
@@ -46,7 +46,6 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
         _isLoadingUser = false;
       });
     } catch (e) {
-      print("Error loading user data: $e");
       setState(() {
         _isLoadingUser = false;
       });
@@ -64,13 +63,11 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
     });
 
     try {
-      // Validate that userId is a valid GUID format
       final guidRegex = RegExp(
         r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
       );
 
       if (!guidRegex.hasMatch(widget.userId)) {
-        print("Invalid userId format: ${widget.userId}. Expected GUID format.");
         setState(() {
           _isLoading = false;
         });
@@ -81,7 +78,6 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
       final events = await eventProvider.getEventsByOrganizer(widget.userId);
 
       setState(() {
-        // Filter by status: Upcoming vs Past
         _upcomingEvents = events
             .where(
               (event) => event.status.name == 'Upcoming' && event.isPublished,
@@ -93,12 +89,9 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
         _isLoading = false;
       });
     } catch (e) {
-      print("Error loading events: $e");
       setState(() {
         _isLoading = false;
       });
-      // Don't show error to user if it's just about events not loading
-      // The user profile will still be shown
     }
   }
 
@@ -179,7 +172,6 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
   }
 
   Widget _buildUserProfile() {
-    // Get profile image data
     String? profileImageData;
     if (_user!.profileImage != null && _user!.profileImage!.data != null) {
       profileImageData = _user!.profileImage!.data;
@@ -193,7 +185,6 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
       ),
       child: Column(
         children: [
-          // Avatar
           Container(
             width: 80,
             height: 80,
@@ -230,7 +221,6 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
 
           const SizedBox(height: 16),
 
-          // User Name
           Text(
             _user!.fullName,
             style: const TextStyle(
@@ -510,7 +500,6 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
 
     return GestureDetector(
       onTap: () async {
-        // Navigate to event details screen
         final result = await Navigator.push(
           context,
           MaterialPageRoute(
@@ -523,7 +512,6 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
           ),
         );
 
-        // Reload events if something changed
         if (result == true) {
           _loadEvents();
         }
@@ -536,7 +524,6 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Event Image
             ClipRRect(
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(12),
@@ -548,7 +535,6 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    // Cover image
                     event.coverImage != null && event.coverImage!.isNotEmpty
                         ? Image.memory(
                             base64Decode(event.coverImage!.split(',').last),
@@ -576,7 +562,6 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                               );
                             },
                           ),
-                    // Paid/Free tag
                     Positioned(
                       top: 12,
                       right: 12,
@@ -604,7 +589,6 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
               ),
             ),
 
-            // Event Details
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(

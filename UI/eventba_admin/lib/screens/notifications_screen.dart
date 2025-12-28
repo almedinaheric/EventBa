@@ -39,7 +39,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         _isLoading = false;
       });
     } catch (e) {
-      print("Failed to load notifications: $e");
       setState(() {
         _isLoading = false;
       });
@@ -108,7 +107,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       padding: const EdgeInsets.all(24),
       child: Row(
         children: [
-          // Notification icon
           Container(
             width: 50,
             height: 50,
@@ -126,7 +124,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ),
           const SizedBox(width: 16),
 
-          // Notification info
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -180,7 +177,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             ),
           ),
 
-          // See more button
           GestureDetector(
             onTap: () async {
               await Navigator.push(
@@ -190,7 +186,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       NotificationDetailsScreen(notification: notification),
                 ),
               );
-              // Refresh list after returning from details screen
               _loadNotifications();
             },
             child: Container(

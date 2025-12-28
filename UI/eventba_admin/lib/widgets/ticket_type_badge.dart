@@ -31,19 +31,14 @@ class TicketTypeBadge extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // First item takes 2/3
           Expanded(
             flex: 2,
             child: Text(
               type,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
             ),
           ),
 
-          // Second item (price) takes 1/6
           Expanded(
             flex: 1,
             child: Text(
@@ -56,7 +51,6 @@ class TicketTypeBadge extends StatelessWidget {
             ),
           ),
 
-          // Third item (QR button) takes 1/6
           Expanded(
             flex: 1,
             child: Align(

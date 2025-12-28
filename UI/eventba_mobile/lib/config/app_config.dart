@@ -1,6 +1,3 @@
-/// Application Configuration
-/// Contains API endpoints, Stripe keys, and other configuration values
-
 class AppConfig {
   // API Base URL
   static const String apiBaseUrl = "http://localhost:5187/";

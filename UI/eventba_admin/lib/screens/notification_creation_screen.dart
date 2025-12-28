@@ -37,7 +37,7 @@ class _NotificationCreationScreenState
         'title': _titleController.text.trim(),
         'content': _contentController.text.trim(),
         'isImportant': _isImportant,
-        'isSystemNotification': true, // Always true for admin notifications
+        'isSystemNotification': true,
       };
 
       await provider.insert(request);
@@ -47,7 +47,6 @@ class _NotificationCreationScreenState
           const SnackBar(content: Text('Notification added successfully!')),
         );
 
-        // Clear form
         _titleController.clear();
         _contentController.clear();
         setState(() {
@@ -101,7 +100,6 @@ class _NotificationCreationScreenState
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Notification title label
                     const Text(
                       'Notification title',
                       style: TextStyle(
@@ -112,7 +110,6 @@ class _NotificationCreationScreenState
                     ),
                     const SizedBox(height: 12),
 
-                    // Title input field
                     TextFormField(
                       controller: _titleController,
                       decoration: InputDecoration(
@@ -146,7 +143,6 @@ class _NotificationCreationScreenState
                     ),
                     const SizedBox(height: 24),
 
-                    // Notification content label
                     const Text(
                       'Notification content',
                       style: TextStyle(
@@ -157,7 +153,6 @@ class _NotificationCreationScreenState
                     ),
                     const SizedBox(height: 12),
 
-                    // Content input field
                     TextFormField(
                       controller: _contentController,
                       maxLines: 6,
@@ -192,7 +187,6 @@ class _NotificationCreationScreenState
                     ),
                     const SizedBox(height: 24),
 
-                    // Is Important checkbox
                     Row(
                       children: [
                         Checkbox(
@@ -216,7 +210,6 @@ class _NotificationCreationScreenState
                     ),
                     const SizedBox(height: 32),
 
-                    // Add Notification button
                     PrimaryButton(
                       text: _isSending ? 'Creating...' : 'Add Notification',
                       onPressed: _isSending ? () {} : _addNotification,

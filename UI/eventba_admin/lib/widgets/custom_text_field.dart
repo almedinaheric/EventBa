@@ -71,9 +71,8 @@ class CustomTextField extends StatelessWidget {
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
               ),
-              filled: true, // Enable background fill
-              fillColor:
-                  const Color(0xFFF9FBFF), // Set the background color here
+              filled: true,
+              fillColor: const Color(0xFFF9FBFF),
               suffixIcon: isPassword
                   ? IconButton(
                       icon: Icon(

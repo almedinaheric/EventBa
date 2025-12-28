@@ -45,14 +45,13 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   bool _ticketsLoading = false;
   bool _organizerLoading = false;
   bool _isDescriptionExpanded = false;
-  bool _wasUpdated = false; // Track if event was updated
+  bool _wasUpdated = false;
 
   @override
   void initState() {
     super.initState();
     _currentEventData = widget.eventData;
 
-    // Initialize image URLs from event data
     _imageUrls = [];
     if (_currentEventData['coverImage'] != null &&
         _currentEventData['coverImage'].toString().isNotEmpty) {
@@ -68,10 +67,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       _imageUrls.add('assets/images/default_event_cover_image.png');
     }
 
-    // Load organizer details
     _loadOrganizer();
 
-    // Load tickets if event is paid
     if (_currentEventData['isPaid'] == true) {
       _loadTickets();
     }
@@ -81,7 +78,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       _loadStatistics();
     }
 
-    // Reload event data to get fresh images from backend
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _reloadEventData();
     });
@@ -104,7 +100,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
         _organizerLoading = false;
       });
     } catch (e) {
-      print("Error loading organizer: $e");
       setState(() {
         _organizerLoading = false;
       });
@@ -113,13 +108,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
   Future<void> _loadTickets() async {
     if (_currentEventData['id'] == null) {
-      print("Cannot load tickets: event ID is null");
       return;
     }
-
-    print(
-      "Loading tickets for event: ${_currentEventData['id']}, isPaid: ${_currentEventData['isPaid']}",
-    );
 
     setState(() {
       _ticketsLoading = true;
@@ -133,15 +123,11 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       final tickets = await ticketProvider.getTicketsForEvent(
         _currentEventData['id'],
       );
-      print(
-        "Loaded ${tickets.length} tickets for event ${_currentEventData['id']}",
-      );
       setState(() {
         _tickets = tickets;
         _ticketsLoading = false;
       });
     } catch (e) {
-      print("Error loading tickets: $e");
       setState(() {
         _ticketsLoading = false;
       });
@@ -168,7 +154,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
         _reviewsLoading = false;
       });
     } catch (e) {
-      print("Error loading reviews: $e");
       setState(() {
         _reviewsLoading = false;
       });
@@ -192,7 +177,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
         _statisticsLoading = false;
       });
     } catch (e) {
-      print("Error loading statistics: $e");
       setState(() {
         _statisticsLoading = false;
       });
@@ -212,48 +196,20 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
         _currentEventData['id'],
       );
 
-      // Get raw JSON to extract image IDs (Event model doesn't include them)
       final rawEventData = await eventProvider.getEventByIdRaw(
         _currentEventData['id'],
       );
 
-      // Debug: Print raw response to see what backend is sending
-      print("=== DEBUG: Raw Event Data ===");
-      print("Raw galleryImages from backend: ${rawEventData['galleryImages']}");
-      print(
-        "Raw galleryImages type: ${rawEventData['galleryImages']?.runtimeType}",
-      );
-      if (rawEventData['galleryImages'] != null &&
-          rawEventData['galleryImages'] is List) {
-        print(
-          "Raw galleryImages count: ${(rawEventData['galleryImages'] as List).length}",
-        );
-      }
-      print("Parsed Event galleryImages: ${updatedEvent.galleryImages}");
-      print(
-        "Parsed Event galleryImages count: ${updatedEvent.galleryImages?.length ?? 0}",
-      );
-      print(
-        "Parsed Event coverImage: ${updatedEvent.coverImage != null ? 'exists' : 'null'}",
-      );
-      print("=============================");
-
-      // Extract image IDs from raw JSON response (backend now includes them)
       String? coverImageId;
       List<String>? galleryImageIds;
 
       try {
-        // Extract cover image ID from raw response
         if (rawEventData['coverImageId'] != null) {
           coverImageId = rawEventData['coverImageId'].toString();
-          print("Extracted coverImageId from backend: $coverImageId");
         } else {
-          // Fallback to existing data if not in raw response
           coverImageId = _currentEventData['coverImageId']?.toString();
-          print("Using existing coverImageId: $coverImageId");
         }
 
-        // Extract gallery image IDs from raw response
         if (rawEventData['galleryImageIds'] != null &&
             rawEventData['galleryImageIds'] is List) {
           galleryImageIds = (rawEventData['galleryImageIds'] as List)
@@ -261,11 +217,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               .whereType<String>()
               .where((e) => e.isNotEmpty)
               .toList();
-          print(
-            "Extracted ${galleryImageIds.length} gallery image IDs from backend: $galleryImageIds",
-          );
         } else {
-          // Fallback to existing data if not in raw response
           if (_currentEventData['galleryImageIds'] != null &&
               _currentEventData['galleryImageIds'] is List) {
             galleryImageIds = (_currentEventData['galleryImageIds'] as List)
@@ -273,16 +225,11 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 .whereType<String>()
                 .where((e) => e.isNotEmpty)
                 .toList();
-            print(
-              "Using existing gallery image IDs: ${galleryImageIds.length}",
-            );
           } else {
             galleryImageIds = [];
-            print("No gallery image IDs found in backend or existing data");
           }
         }
       } catch (e) {
-        print("Error extracting image IDs: $e");
         coverImageId = _currentEventData['coverImageId']?.toString();
         galleryImageIds =
             _currentEventData['galleryImageIds'] != null &&
@@ -321,60 +268,37 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           'galleryImageIds': galleryImageIds ?? [],
         };
 
-        // Load real images
         _imageUrls = [];
         if (updatedEvent.coverImage != null &&
             updatedEvent.coverImage!.isNotEmpty) {
           _imageUrls.add(updatedEvent.coverImage!);
-          print("Added cover image to _imageUrls");
         }
-        // Add gallery images (they are already base64 strings)
         if (updatedEvent.galleryImages != null) {
-          print(
-            "Processing gallery images: ${updatedEvent.galleryImages!.length} items",
-          );
           if (updatedEvent.galleryImages!.isNotEmpty) {
             final validGalleryImages = updatedEvent.galleryImages!
                 .where((img) => img.isNotEmpty)
                 .toList();
-            print("Valid gallery images: ${validGalleryImages.length}");
             _imageUrls.addAll(validGalleryImages);
-          } else {
-            print(
-              "No gallery images found in updatedEvent.galleryImages (empty list)",
-            );
           }
-        } else {
-          print("No gallery images found in updatedEvent.galleryImages (null)");
         }
-        // Fallback to default image if no images
         if (_imageUrls.isEmpty) {
           _imageUrls.add('assets/images/default_event_cover_image.png');
-          print("No images found, using default");
         }
-
-        print(
-          "Final _imageUrls count: ${_imageUrls.length} (Cover: ${updatedEvent.coverImage != null ? 'Yes' : 'No'}, Gallery: ${updatedEvent.galleryImages?.length ?? 0})",
-        );
 
         _isLoading = false;
       });
 
-      // Reload organizer
       _loadOrganizer();
 
-      // Reload tickets if event is paid
       if (_currentEventData['isPaid'] == true) {
         _loadTickets();
       }
 
-      // Reload reviews and statistics if applicable
       if (widget.isPublic && widget.isPastEvent) {
         _loadReviews();
         _loadStatistics();
       }
     } catch (e) {
-      print("Error reloading event data: $e");
       setState(() {
         _isLoading = false;
       });
@@ -398,18 +322,15 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               insetPadding: const EdgeInsets.all(10),
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  // Calculate available height for the image viewer
-                  // Account for: counter (if shown), close button, and padding
                   final counterHeight = _imageUrls.length > 1 ? 50.0 : 0.0;
                   final closeButtonHeight = 50.0;
-                  final padding = 20.0; // Top and bottom padding
+                  final padding = 20.0;
                   final availableHeight =
                       constraints.maxHeight -
                       counterHeight -
                       closeButtonHeight -
                       padding;
 
-                  // Use 16:9 aspect ratio but respect available space
                   final calculatedWidth = availableHeight * (16 / 9);
                   final imageHeight = constraints.maxWidth < calculatedWidth
                       ? constraints.maxWidth * (9 / 16)
@@ -418,7 +339,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   return Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Image counter
                       if (_imageUrls.length > 1)
                         Padding(
                           padding: const EdgeInsets.symmetric(
@@ -433,7 +353,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                             ),
                           ),
                         ),
-                      // Image viewer with PageView
                       Flexible(
                         child: ConstrainedBox(
                           constraints: BoxConstraints(
@@ -452,8 +371,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                               },
                               itemBuilder: (context, index) {
                                 return InteractiveViewer(
-                                  panEnabled:
-                                      false, // Disable pan to allow PageView to handle swipes
+                                  panEnabled: false,
                                   minScale: 0.5,
                                   maxScale: 4.0,
                                   child: _buildImageWidget(
@@ -466,7 +384,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                           ),
                         ),
                       ),
-                      // Close button
                       Padding(
                         padding: const EdgeInsets.symmetric(
                           vertical: 8.0,
@@ -489,7 +406,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   }
 
   Widget _buildImageWidget(String imageData, BoxFit fit) {
-    // Check if it's a base64 image
     if (imageData.startsWith('data:image')) {
       final base64String = imageData.split(',').last;
       return Image.memory(
@@ -503,13 +419,11 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
         },
       );
     } else {
-      // It's an asset path
       return Image.asset(imageData, fit: fit);
     }
   }
 
   bool _hasTicketPurchases() {
-    // Check if any ticket has been sold
     if (_tickets.isEmpty) return false;
 
     final totalSold = _tickets.fold<int>(
@@ -523,7 +437,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   Future<void> _deleteEvent() async {
     if (_currentEventData['id'] == null) return;
 
-    // Check if event has ticket purchases
     if (_hasTicketPurchases()) {
       if (!mounted) return;
 
@@ -552,8 +465,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
         ),
       );
 
-      // Navigate back to events list
-      Navigator.pop(context, true); // Return true to indicate deletion
+      Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
 
@@ -567,7 +479,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   }
 
   void _showRemoveEventDialog() {
-    // Check if event has ticket purchases before showing dialog
     if (_hasTicketPurchases()) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -596,8 +507,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
             ),
             TextButton(
               onPressed: () {
-                Navigator.pop(context); // Close dialog
-                _deleteEvent(); // Delete the event
+                Navigator.pop(context);
+                _deleteEvent();
               },
               style: TextButton.styleFrom(foregroundColor: Colors.red),
               child: const Text('Remove'),
@@ -612,12 +523,11 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        // Return true if event was updated, so parent screen can reload
         if (_wasUpdated) {
           Navigator.pop(context, true);
-          return false; // Prevent default pop
+          return false;
         }
-        return true; // Allow default pop
+        return true;
       },
       child: _buildContent(),
     );
@@ -646,7 +556,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Event Image Carousel
                     LayoutBuilder(
                       builder: (context, constraints) {
                         return SizedBox(
@@ -678,35 +587,28 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
                     const SizedBox(height: 24),
 
-                    // Event Header
                     _buildEventHeader(),
 
                     const SizedBox(height: 24),
 
-                    // Details Section
                     _buildEventDetails(),
 
                     const SizedBox(height: 24),
 
-                    // Organizer Section (only for private events)
                     if (!widget.isPublic) ...[
                       _buildOrganizerSection(),
                       const SizedBox(height: 24),
                     ],
 
-                    // Description
                     _buildDescription(),
 
                     const SizedBox(height: 24),
 
-                    // Tickets Section
-                    // Tickets (only for paid events)
                     if (_currentEventData['isPaid'] == true) ...[
                       _buildTicketsSection(),
                       const SizedBox(height: 24),
                     ],
 
-                    // Reviews and Statistics (only for past public events)
                     if (widget.isPublic && widget.isPastEvent) ...[
                       const SizedBox(height: 24),
                       _buildStatisticsSection(),
@@ -716,7 +618,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
                     const SizedBox(height: 24),
 
-                    // Action Buttons
                     _buildActionButtons(
                       isPublic: widget.isPublic,
                       isPastEvent: widget.isPastEvent,
@@ -1280,14 +1181,11 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   }
 
   Widget _buildReviewItem(EventReview review) {
-    // Format date
     String formattedDate = "N/A";
     try {
       final date = DateTime.parse(review.createdAt);
       formattedDate = DateFormat('MMM d, yyyy').format(date);
-    } catch (e) {
-      print("Error parsing date: $e");
-    }
+    } catch (e) {}
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -1357,13 +1255,11 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   Widget _buildActionButtons({bool isPublic = true, bool isPastEvent = false}) {
     return Column(
       children: [
-        // Conditional rendering for Edit Event Button
         if (isPublic && !isPastEvent)
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () async {
-                // Navigate to edit event screen
                 final result = await Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -1372,10 +1268,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   ),
                 );
 
-                // Reload data if edit was successful
                 if (result == true) {
                   await _reloadEventData();
-                  // Mark that event was updated so we can return true when user goes back
                   setState(() {
                     _wasUpdated = true;
                   });
@@ -1398,9 +1292,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               ),
             ),
           ),
-        if (isPublic && !isPastEvent)
-          const SizedBox(height: 12), // Add spacing conditionally
-        // Conditional rendering for Remove Event Button
+        if (isPublic && !isPastEvent) const SizedBox(height: 12),
         if (!isPastEvent)
           SizedBox(
             width: double.infinity,

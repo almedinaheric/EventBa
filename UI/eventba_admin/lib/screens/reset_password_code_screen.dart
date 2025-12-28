@@ -48,7 +48,6 @@ class _ResetPasswordCodeScreenState extends State<ResetPasswordCodeScreen> {
       if (!mounted) return;
 
       if (isValid) {
-        // Navigate to reset password screen
         Navigator.push(
           context,
           MaterialPageRoute(

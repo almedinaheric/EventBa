@@ -16,7 +16,7 @@ class PrivateEventsScreen extends StatefulWidget {
 }
 
 class _PrivateEventsScreenState extends State<PrivateEventsScreen> {
-  int selectedIndex = 0; // 0 = Upcoming, 1 = Past
+  int selectedIndex = 0;
   List<Event> _allEvents = [];
   bool _isLoading = true;
   String? _errorMessage;
@@ -55,7 +55,6 @@ class _PrivateEventsScreenState extends State<PrivateEventsScreen> {
 
       if (!mounted) return;
 
-      // Filter only published events (backend should already filter, but keep for safety)
       final publishedEvents = events
           .where((event) => event.isPublished)
           .toList();
@@ -70,7 +69,6 @@ class _PrivateEventsScreenState extends State<PrivateEventsScreen> {
         _errorMessage = "Failed to load events: $e";
         _isLoading = false;
       });
-      print("Error loading events: $e");
     }
   }
 
@@ -81,7 +79,6 @@ class _PrivateEventsScreenState extends State<PrivateEventsScreen> {
       _searchTerm = query;
     });
 
-    // Debounce search to avoid losing focus
     _searchTimer = Timer(const Duration(milliseconds: 500), () {
       _loadEvents();
     });
@@ -114,7 +111,6 @@ class _PrivateEventsScreenState extends State<PrivateEventsScreen> {
             )
           : Column(
               children: [
-                // Search Bar
                 Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 24,
@@ -143,7 +139,6 @@ class _PrivateEventsScreenState extends State<PrivateEventsScreen> {
                     ),
                   ),
                 ),
-                // Custom toggle buttons (Upcoming / Past)
                 Container(
                   margin: const EdgeInsets.symmetric(
                     horizontal: 24,
@@ -151,7 +146,6 @@ class _PrivateEventsScreenState extends State<PrivateEventsScreen> {
                   ),
                   child: Row(
                     children: [
-                      // Upcoming button
                       Expanded(
                         child: GestureDetector(
                           onTap: () {
@@ -187,7 +181,6 @@ class _PrivateEventsScreenState extends State<PrivateEventsScreen> {
                         ),
                       ),
 
-                      // Past button
                       Expanded(
                         child: GestureDetector(
                           onTap: () {
@@ -226,7 +219,6 @@ class _PrivateEventsScreenState extends State<PrivateEventsScreen> {
                   ),
                 ),
 
-                // Events List
                 Expanded(
                   child: _buildEventsList(isUpcoming: selectedIndex == 0),
                 ),
@@ -236,7 +228,6 @@ class _PrivateEventsScreenState extends State<PrivateEventsScreen> {
   }
 
   Widget _buildEventsList({required bool isUpcoming}) {
-    // Filter events by status
     final filteredEvents = _allEvents.where((event) {
       if (isUpcoming) {
         return event.status == EventStatus.Upcoming;
@@ -316,7 +307,6 @@ class _PrivateEventsScreenState extends State<PrivateEventsScreen> {
     final badgeText = event.isPaid ? 'PAID' : 'FREE';
     final badgeColor = event.isPaid ? const Color(0xFF4776E6) : Colors.green;
 
-    // Format date
     final formattedDate = event.startDate;
 
     return GestureDetector(
@@ -326,14 +316,13 @@ class _PrivateEventsScreenState extends State<PrivateEventsScreen> {
           MaterialPageRoute(
             builder: (context) => EventDetailsScreen(
               eventTitle: event.title,
-              isPublic: false, // Private events (created by customers)
+              isPublic: false,
               isPastEvent: event.status == EventStatus.Past,
               eventData: _eventToMap(event),
             ),
           ),
         );
 
-        // Reload events if the event was deleted or updated
         if (result == true) {
           _loadEvents();
         }
@@ -356,7 +345,6 @@ class _PrivateEventsScreenState extends State<PrivateEventsScreen> {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                // Background image
                 event.coverImage != null && event.coverImage!.isNotEmpty
                     ? Image.memory(
                         base64Decode(event.coverImage!.split(',').last),
@@ -372,7 +360,6 @@ class _PrivateEventsScreenState extends State<PrivateEventsScreen> {
                         'assets/images/default_event_cover_image.png',
                         fit: BoxFit.cover,
                       ),
-                // Gradient overlay
                 Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -385,13 +372,11 @@ class _PrivateEventsScreenState extends State<PrivateEventsScreen> {
                     ),
                   ),
                 ),
-                // Content
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Top row with date and badge
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -424,7 +409,6 @@ class _PrivateEventsScreenState extends State<PrivateEventsScreen> {
                         ],
                       ),
                       const Spacer(),
-                      // Event details
                       Text(
                         event.title,
                         style: const TextStyle(

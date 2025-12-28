@@ -35,7 +35,7 @@ class _UsersScreenState extends State<UsersScreen> {
       final filter = {
         'page': 1,
         'pageSize': 10,
-        'excludeAdmins': true, // Exclude admin users from the list
+        'excludeAdmins': true,
         if (_searchTerm.isNotEmpty) 'searchTerm': _searchTerm,
       };
 
@@ -46,7 +46,6 @@ class _UsersScreenState extends State<UsersScreen> {
         _isLoading = false;
       });
     } catch (e) {
-      print("Error loading users: $e");
       setState(() {
         _isLoading = false;
       });
@@ -78,7 +77,6 @@ class _UsersScreenState extends State<UsersScreen> {
         ),
         child: Column(
           children: [
-            // 🔍 Search Bar
             Padding(
               padding: const EdgeInsets.all(16),
               child: TextField(
@@ -95,7 +93,6 @@ class _UsersScreenState extends State<UsersScreen> {
               ),
             ),
 
-            // 📄 User List
             Expanded(
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
@@ -123,7 +120,6 @@ class _UsersScreenState extends State<UsersScreen> {
   }
 
   Widget _buildUserCard(User user) {
-    // Get profile image data
     String? profileImageData;
     if (user.profileImage != null && user.profileImage!.data != null) {
       profileImageData = user.profileImage!.data;
@@ -133,7 +129,6 @@ class _UsersScreenState extends State<UsersScreen> {
       padding: const EdgeInsets.all(24),
       child: Row(
         children: [
-          // Avatar
           Container(
             width: 50,
             height: 50,
@@ -169,7 +164,6 @@ class _UsersScreenState extends State<UsersScreen> {
           ),
           const SizedBox(width: 16),
 
-          // User info
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -191,10 +185,8 @@ class _UsersScreenState extends State<UsersScreen> {
             ),
           ),
 
-          // See more button
           GestureDetector(
             onTap: () {
-              // Navigate to UserDetailsScreen
               Navigator.push(
                 context,
                 MaterialPageRoute(

@@ -1,4 +1,3 @@
-import 'package:eventba_admin/widgets/master_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:eventba_admin/widgets/event_card.dart';
 
@@ -23,10 +22,7 @@ class _FavoriteEventsScreenState extends State<FavoriteEventsScreen> {
       child: favoriteEvents.isNotEmpty
           ? ListView(
               padding: const EdgeInsets.all(16),
-              children: [
-                ..._buildEventCardsList(),
-                const SizedBox(height: 60), // Bottom padding for nav bar
-              ],
+              children: [..._buildEventCardsList(), const SizedBox(height: 60)],
             )
           : const Center(
               child: Text(
@@ -48,7 +44,7 @@ class _FavoriteEventsScreenState extends State<FavoriteEventsScreen> {
             eventName: 'Event Name $index',
             location: 'Location $index',
             date: 'Date $index',
-            isPaid: index % 2 == 0, // Using dummy data pattern
+            isPaid: index % 2 == 0,
             height: 160,
             isFavoriteEvent: isFavoriteList[index],
             onFavoriteToggle: () {
@@ -69,14 +65,8 @@ class _FavoriteEventsScreenState extends State<FavoriteEventsScreen> {
       }
     });
 
-    // Call API to update favorite status
     _updateFavoriteStatus(index, isFavoriteList[index]);
   }
 
-  void _updateFavoriteStatus(int eventId, bool isFavorite) {
-    // Replace with actual API call
-    print('Updating favorite status for event $eventId to $isFavorite');
-    // Example API call:
-    // FavoriteService.updateFavoriteStatus(eventId, isFavorite);
-  }
+  void _updateFavoriteStatus(int eventId, bool isFavorite) {}
 }

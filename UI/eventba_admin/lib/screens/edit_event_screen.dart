@@ -42,15 +42,13 @@ class _EditEventScreenState extends State<EditEventScreen> {
 
   XFile? _mainImage;
   List<XFile> _additionalImages = [];
-  String? _existingCoverImageData; // Store existing cover image as base64
-  List<String> _existingGalleryImageData =
-      []; // Store existing gallery images as base64
-  String? _existingCoverImageId; // Store existing cover image ID
-  List<String> _existingGalleryImageIds =
-      []; // Store existing gallery image IDs
+  String? _existingCoverImageData;
+  List<String> _existingGalleryImageData = [];
+  String? _existingCoverImageId;
+  List<String> _existingGalleryImageIds = [];
 
   bool _isPaid = false;
-  bool _originalIsPaid = false; // Track original paid status
+  bool _originalIsPaid = false;
   bool _isLoading = false;
   List<CategoryModel> _categories = [];
   bool _categoriesLoading = true;
@@ -63,7 +61,6 @@ class _EditEventScreenState extends State<EditEventScreen> {
     _nameController = TextEditingController(text: event['name']);
     _selectedCategoryId = event['categoryId'];
     _venueController = TextEditingController(text: event['venue']);
-    // Initialize date controller with date range format (startDate - endDate)
     final startDate = event['startDate'] ?? event['date'] ?? '';
     final endDate = event['endDate'] ?? event['date'] ?? '';
     _dateController = TextEditingController(
@@ -78,19 +75,16 @@ class _EditEventScreenState extends State<EditEventScreen> {
       text: event['capacity']?.toString() ?? '0',
     );
 
-    // Initialize ticket controllers with empty strings
     _vipPriceController = TextEditingController(text: '');
     _vipCountController = TextEditingController(text: '');
     _ecoPriceController = TextEditingController(text: '');
     _ecoCountController = TextEditingController(text: '');
 
     _isPaid = event['isPaid'] ?? false;
-    _originalIsPaid = _isPaid; // Store original paid status
+    _originalIsPaid = _isPaid;
 
-    // Load existing images
     _loadExistingImages();
 
-    // Load categories and tickets after the widget is built
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadCategories();
       _loadExistingTickets();
@@ -98,7 +92,6 @@ class _EditEventScreenState extends State<EditEventScreen> {
   }
 
   void _loadExistingImages() {
-    // Load cover image - handle both string and ImageModel formats
     final coverImage = widget.event['coverImage'];
     if (coverImage != null) {
       if (coverImage is String && coverImage.isNotEmpty) {
@@ -109,14 +102,10 @@ class _EditEventScreenState extends State<EditEventScreen> {
       }
     }
 
-    // Load cover image ID
     final coverImageIdValue = widget.event['coverImageId'];
     _existingCoverImageId = coverImageIdValue?.toString();
-    print("Loaded existing cover image ID: $_existingCoverImageId");
 
-    // Load gallery images - handle both list of strings and list of objects
     final galleryImages = widget.event['galleryImages'];
-    print("Loading gallery images from event data: $galleryImages");
     if (galleryImages != null && galleryImages is List) {
       _existingGalleryImageData = galleryImages
           .map((e) {
@@ -130,25 +119,15 @@ class _EditEventScreenState extends State<EditEventScreen> {
           .whereType<String>()
           .where((e) => e.isNotEmpty)
           .toList();
-      print("Loaded ${_existingGalleryImageData.length} gallery images");
-    } else {
-      print("No gallery images found or invalid format");
     }
 
-    // Load gallery image IDs
     final galleryImageIds = widget.event['galleryImageIds'];
-    print("Loading gallery image IDs from event data: $galleryImageIds");
     if (galleryImageIds != null && galleryImageIds is List) {
       _existingGalleryImageIds = galleryImageIds
           .map((e) => e?.toString())
           .whereType<String>()
           .where((e) => e.isNotEmpty)
           .toList();
-      print(
-        "Loaded ${_existingGalleryImageIds.length} gallery image IDs: $_existingGalleryImageIds",
-      );
-    } else {
-      print("No gallery image IDs found in event data");
     }
   }
 
@@ -165,7 +144,6 @@ class _EditEventScreenState extends State<EditEventScreen> {
       setState(() {
         _existingTickets = tickets;
 
-        // Populate ticket fields if tickets exist
         for (var ticket in tickets) {
           if (ticket.ticketType == 'Vip') {
             _vipPriceController.text = ticket.price.toString();
@@ -176,9 +154,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
           }
         }
       });
-    } catch (e) {
-      print("Error loading existing tickets: $e");
-    }
+    } catch (e) {}
   }
 
   Future<void> _loadCategories() async {
@@ -187,51 +163,32 @@ class _EditEventScreenState extends State<EditEventScreen> {
     });
 
     try {
-      print("Loading categories...");
       final categoryProvider = Provider.of<CategoryProvider>(
         context,
         listen: false,
       );
-      print("CategoryProvider obtained");
       final result = await categoryProvider.get();
-      print("Categories loaded: ${result.result.length} categories");
 
       if (mounted) {
         setState(() {
           _categories = result.result;
           _categoriesLoading = false;
 
-          // Verify selected category exists in loaded categories
           if (_selectedCategoryId != null) {
             final categoryExists = _categories.any(
               (cat) => cat.id == _selectedCategoryId,
             );
             if (!categoryExists) {
-              print(
-                "Warning: Selected category ID $_selectedCategoryId not found in loaded categories",
-              );
-              // Set to first category if current selection doesn't exist
               if (_categories.isNotEmpty) {
                 _selectedCategoryId = _categories.first.id;
-                print("Reset to first category: ${_categories.first.name}");
               }
-            } else {
-              print(
-                "Selected category found: ${_categories.firstWhere((cat) => cat.id == _selectedCategoryId).name}",
-              );
             }
           } else if (_categories.isNotEmpty) {
             _selectedCategoryId = _categories.first.id;
-            print(
-              "No category selected, setting to first: ${_categories.first.name}",
-            );
           }
         });
-        print("Categories set in state. Count: ${_categories.length}");
       }
-    } catch (e, stackTrace) {
-      print("Error loading categories: $e");
-      print("Stack trace: $stackTrace");
+    } catch (e) {
       if (mounted) {
         setState(() {
           _categoriesLoading = false;
@@ -616,7 +573,6 @@ class _EditEventScreenState extends State<EditEventScreen> {
   }
 
   Future<void> _pickDate() async {
-    // Parse existing date range if available
     DateTimeRange? initialDateRange;
     final currentDateText = _dateController.text;
     if (currentDateText.contains(' - ')) {
@@ -626,9 +582,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
           final startDate = DateTime.parse(parts[0].trim());
           final endDate = DateTime.parse(parts[1].trim());
           initialDateRange = DateTimeRange(start: startDate, end: endDate);
-        } catch (e) {
-          print("Error parsing existing date range: $e");
-        }
+        } catch (e) {}
       }
     } else if (currentDateText.isNotEmpty) {
       try {
@@ -637,9 +591,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
           start: singleDate,
           end: singleDate.add(const Duration(days: 1)),
         );
-      } catch (e) {
-        print("Error parsing existing date: $e");
-      }
+      } catch (e) {}
     }
 
     DateTimeRange? picked = await showDateRangePicker(
@@ -692,34 +644,28 @@ class _EditEventScreenState extends State<EditEventScreen> {
         listen: false,
       );
 
-      // Check if event type changed from free to paid or paid to free
       final wasPaid = _originalIsPaid;
       final isNowPaid = _isPaid;
 
       if (!wasPaid && isNowPaid) {
-        // Event changed from FREE to PAID - validate and delete free tickets, then create paid tickets
         await _validateAndDeleteTicketsForPaidEvent(
           eventId,
           eventDate,
           ticketProvider,
         );
       } else if (wasPaid && !isNowPaid) {
-        // Event changed from PAID to FREE - validate and delete tickets, then create free ticket
         await _validateAndDeleteTicketsForFreeEvent(
           eventId,
           eventDate,
           ticketProvider,
         );
       } else if (wasPaid && isNowPaid) {
-        // Event was and still is PAID - update existing tickets
         await _updateTicketsForPaidEvent(eventId, eventDate, ticketProvider);
       } else if (!wasPaid && !isNowPaid) {
-        // Event was and still is FREE - update or create free ticket
         await _updateTicketsForFreeEvent(eventId, eventDate, ticketProvider);
       }
     } catch (e) {
-      print("Error handling ticket type change: $e");
-      rethrow; // Re-throw to show error to user
+      rethrow;
     }
   }
 
@@ -728,7 +674,6 @@ class _EditEventScreenState extends State<EditEventScreen> {
     String eventDate,
     TicketProvider ticketProvider,
   ) async {
-    // Check if any tickets have been sold
     for (var ticket in _existingTickets) {
       if (ticket.quantitySold > 0) {
         throw Exception(
@@ -737,12 +682,10 @@ class _EditEventScreenState extends State<EditEventScreen> {
       }
     }
 
-    // If no tickets sold, delete all tickets
     if (_existingTickets.isNotEmpty) {
       await ticketProvider.deleteAllTicketsForEvent(eventId);
     }
 
-    // Create free ticket for the free event (same as mobile app)
     final capacity = int.tryParse(_capacityController.text) ?? 0;
     if (capacity > 0) {
       DateTime saleStartDate = DateTime.now();
@@ -770,7 +713,6 @@ class _EditEventScreenState extends State<EditEventScreen> {
         'saleEndDate': saleEndDate.toIso8601String(),
       };
       await ticketProvider.createTicket(freeTicketData);
-      print('Free ticket created for free event');
     }
   }
 
@@ -779,7 +721,6 @@ class _EditEventScreenState extends State<EditEventScreen> {
     String eventDate,
     TicketProvider ticketProvider,
   ) async {
-    // Check if any free tickets have been sold
     for (var ticket in _existingTickets) {
       if (ticket.ticketType == 'Free' && ticket.quantitySold > 0) {
         throw Exception(
@@ -788,7 +729,6 @@ class _EditEventScreenState extends State<EditEventScreen> {
       }
     }
 
-    // Delete all free tickets if they exist
     final freeTickets = _existingTickets
         .where((t) => t.ticketType == 'Free')
         .toList();
@@ -796,10 +736,8 @@ class _EditEventScreenState extends State<EditEventScreen> {
       for (var ticket in freeTickets) {
         await ticketProvider.deleteTicket(ticket.id);
       }
-      print('Deleted ${freeTickets.length} free ticket(s)');
     }
 
-    // Create paid tickets
     await _createTicketsForPaidEvent(eventId, eventDate, ticketProvider);
   }
 
@@ -813,7 +751,6 @@ class _EditEventScreenState extends State<EditEventScreen> {
     final ecoPrice = double.tryParse(_ecoPriceController.text) ?? 0.0;
     final ecoCount = int.tryParse(_ecoCountController.text) ?? 0;
 
-    // Validate that at least one ticket type is provided
     final hasVip = vipCount > 0 && vipPrice > 0;
     final hasEco = ecoCount > 0 && ecoPrice > 0;
 
@@ -823,7 +760,6 @@ class _EditEventScreenState extends State<EditEventScreen> {
       );
     }
 
-    // Validate VIP tickets if provided
     if (vipCount > 0 && vipPrice <= 0) {
       throw Exception('VIP tickets require a price greater than 0');
     }
@@ -831,7 +767,6 @@ class _EditEventScreenState extends State<EditEventScreen> {
       throw Exception('VIP tickets require a quantity greater than 0');
     }
 
-    // Validate Economy tickets if provided
     if (ecoCount > 0 && ecoPrice <= 0) {
       throw Exception('Economy tickets require a price greater than 0');
     }
@@ -839,12 +774,9 @@ class _EditEventScreenState extends State<EditEventScreen> {
       throw Exception('Economy tickets require a quantity greater than 0');
     }
 
-    // Parse the date for ticket sale dates
     DateTime saleStartDate = DateTime.now();
     DateTime eventDateParsed = DateTime.parse(eventDate);
 
-    // Parse date string to DateTime at end of day for comparison
-    // If eventDate is just a date string (YYYY-MM-DD), set to end of day
     DateTime eventDateEndOfDay = DateTime(
       eventDateParsed.year,
       eventDateParsed.month,
@@ -854,16 +786,12 @@ class _EditEventScreenState extends State<EditEventScreen> {
       59,
     );
 
-    // Ensure saleEndDate is always after saleStartDate
-    // If event date is in the past or same as now, set it to saleStartDate + 1 day
-    // Otherwise use the event date (end of day)
     DateTime saleEndDate =
         eventDateEndOfDay.isBefore(saleStartDate) ||
             eventDateEndOfDay.isAtSameMomentAs(saleStartDate)
         ? saleStartDate.add(const Duration(days: 1))
         : eventDateEndOfDay;
 
-    // Create VIP ticket if provided
     if (hasVip) {
       final vipTicketData = {
         'eventId': eventId,
@@ -876,7 +804,6 @@ class _EditEventScreenState extends State<EditEventScreen> {
       await ticketProvider.createTicket(vipTicketData);
     }
 
-    // Create Economy ticket if provided
     if (hasEco) {
       final ecoTicketData = {
         'eventId': eventId,
@@ -901,7 +828,6 @@ class _EditEventScreenState extends State<EditEventScreen> {
       throw Exception('Free events require a capacity greater than 0');
     }
 
-    // Find existing free ticket
     Ticket? existingFreeTicket;
     for (var ticket in _existingTickets) {
       if (ticket.ticketType == 'Free' && ticket.price == 0) {
@@ -910,7 +836,6 @@ class _EditEventScreenState extends State<EditEventScreen> {
       }
     }
 
-    // Parse the date for ticket sale dates
     DateTime saleStartDate = DateTime.now();
     DateTime eventDateParsed = DateTime.parse(eventDate);
     DateTime eventDateEndOfDay = DateTime(
@@ -937,14 +862,10 @@ class _EditEventScreenState extends State<EditEventScreen> {
     };
 
     if (existingFreeTicket != null) {
-      // Update existing free ticket
       freeTicketData['id'] = existingFreeTicket.id;
       await ticketProvider.updateTicket(existingFreeTicket.id, freeTicketData);
-      print('Free ticket updated');
     } else {
-      // Create new free ticket if it doesn't exist
       await ticketProvider.createTicket(freeTicketData);
-      print('Free ticket created');
     }
   }
 
@@ -958,7 +879,6 @@ class _EditEventScreenState extends State<EditEventScreen> {
     final ecoPrice = double.tryParse(_ecoPriceController.text) ?? 0.0;
     final ecoCount = int.tryParse(_ecoCountController.text) ?? 0;
 
-    // Validate that at least one ticket type is provided
     final hasVip = vipCount > 0 && vipPrice > 0;
     final hasEco = ecoCount > 0 && ecoPrice > 0;
 
@@ -968,7 +888,6 @@ class _EditEventScreenState extends State<EditEventScreen> {
       );
     }
 
-    // Validate VIP tickets if provided
     if (vipCount > 0 && vipPrice <= 0) {
       throw Exception('VIP tickets require a price greater than 0');
     }
@@ -976,7 +895,6 @@ class _EditEventScreenState extends State<EditEventScreen> {
       throw Exception('VIP tickets require a quantity greater than 0');
     }
 
-    // Validate Economy tickets if provided
     if (ecoCount > 0 && ecoPrice <= 0) {
       throw Exception('Economy tickets require a price greater than 0');
     }
@@ -984,12 +902,9 @@ class _EditEventScreenState extends State<EditEventScreen> {
       throw Exception('Economy tickets require a quantity greater than 0');
     }
 
-    // Parse the date for ticket sale dates
     DateTime saleStartDate = DateTime.now();
     DateTime eventDateParsed = DateTime.parse(eventDate);
 
-    // Parse date string to DateTime at end of day for comparison
-    // If eventDate is just a date string (YYYY-MM-DD), set to end of day
     DateTime eventDateEndOfDay = DateTime(
       eventDateParsed.year,
       eventDateParsed.month,
@@ -999,16 +914,12 @@ class _EditEventScreenState extends State<EditEventScreen> {
       59,
     );
 
-    // Ensure saleEndDate is always after saleStartDate
-    // If event date is in the past or same as now, set it to saleStartDate + 1 day
-    // Otherwise use the event date (end of day)
     DateTime saleEndDate =
         eventDateEndOfDay.isBefore(saleStartDate) ||
             eventDateEndOfDay.isAtSameMomentAs(saleStartDate)
         ? saleStartDate.add(const Duration(days: 1))
         : eventDateEndOfDay;
 
-    // Find existing tickets
     Ticket? existingVipTicket;
     Ticket? existingEcoTicket;
 
@@ -1020,7 +931,6 @@ class _EditEventScreenState extends State<EditEventScreen> {
       }
     }
 
-    // Handle VIP tickets
     if (vipCount > 0 && vipPrice > 0) {
       final vipTicketData = {
         'eventId': eventId,
@@ -1032,16 +942,12 @@ class _EditEventScreenState extends State<EditEventScreen> {
       };
 
       if (existingVipTicket != null) {
-        // Update existing VIP ticket
-        // Don't send quantityAvailable and quantitySold - backend will calculate them
         vipTicketData['id'] = existingVipTicket.id;
         await ticketProvider.updateTicket(existingVipTicket.id, vipTicketData);
       } else {
-        // Create new VIP ticket
         await ticketProvider.createTicket(vipTicketData);
       }
     } else if (existingVipTicket != null) {
-      // Delete VIP ticket if it exists but no longer needed
       if (existingVipTicket.quantitySold > 0) {
         throw Exception(
           'Cannot delete VIP ticket. ${existingVipTicket.quantitySold} ticket(s) have already been sold.',
@@ -1050,7 +956,6 @@ class _EditEventScreenState extends State<EditEventScreen> {
       await ticketProvider.deleteTicket(existingVipTicket.id);
     }
 
-    // Handle Economy tickets
     if (ecoCount > 0 && ecoPrice > 0) {
       final ecoTicketData = {
         'eventId': eventId,
@@ -1062,16 +967,12 @@ class _EditEventScreenState extends State<EditEventScreen> {
       };
 
       if (existingEcoTicket != null) {
-        // Update existing Economy ticket
-        // Don't send quantityAvailable and quantitySold - backend will calculate them
         ecoTicketData['id'] = existingEcoTicket.id;
         await ticketProvider.updateTicket(existingEcoTicket.id, ecoTicketData);
       } else {
-        // Create new Economy ticket
         await ticketProvider.createTicket(ecoTicketData);
       }
     } else if (existingEcoTicket != null) {
-      // Delete Economy ticket if it exists but no longer needed
       if (existingEcoTicket.quantitySold > 0) {
         throw Exception(
           'Cannot delete Economy ticket. ${existingEcoTicket.quantitySold} ticket(s) have already been sold.',
@@ -1094,7 +995,6 @@ class _EditEventScreenState extends State<EditEventScreen> {
         listen: false,
       ).createHeaders();
 
-      // Convert string IDs to GUIDs for the backend
       final guidIds = imageIds.map((id) => id).toList();
 
       final response = await http.put(
@@ -1109,7 +1009,6 @@ class _EditEventScreenState extends State<EditEventScreen> {
         );
       }
     } catch (e) {
-      print('Error replacing gallery images: $e');
       rethrow;
     }
   }
@@ -1119,7 +1018,6 @@ class _EditEventScreenState extends State<EditEventScreen> {
       return;
     }
 
-    // Validate start time is before end time if dates are the same
     if (_dateController.text.isNotEmpty &&
         _startTimeController.text.isNotEmpty &&
         _endTimeController.text.isNotEmpty) {
@@ -1129,9 +1027,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
           final startDateStr = dateRangeParts[0].trim();
           final endDateStr = dateRangeParts[1].trim();
 
-          // If start and end dates are the same, validate times
           if (startDateStr == endDateStr) {
-            // Parse times (handle AM/PM format)
             int formatTimeToMinutes(String timeStr) {
               final parts = timeStr.split(' ');
               final timePart = parts[0];
@@ -1148,7 +1044,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
                 }
               }
 
-              return hour * 60 + minute; // Convert to minutes for comparison
+              return hour * 60 + minute;
             }
 
             final startTimeMinutes = formatTimeToMinutes(
@@ -1171,9 +1067,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
             }
           }
         }
-      } catch (e) {
-        print("Error validating time: $e");
-      }
+      } catch (e) {}
     }
 
     setState(() {
@@ -1184,20 +1078,16 @@ class _EditEventScreenState extends State<EditEventScreen> {
       final eventProvider = Provider.of<EventProvider>(context, listen: false);
       final event = widget.event;
 
-      // Parse date range from controller (format: "YYYY-MM-DD - YYYY-MM-DD")
       final dateRangeParts = _dateController.text.split(' - ');
       String startDateStr;
       String endDateStr;
 
       if (dateRangeParts.length == 2) {
-        // Date range format
         startDateStr = dateRangeParts[0].trim();
         endDateStr = dateRangeParts[1].trim();
       } else {
-        // Single date format (fallback for old data)
         final dateStr = _dateController.text.trim();
         if (dateStr.contains('/')) {
-          // Convert from display format to ISO format if needed
           final parts = dateStr.split('/');
           if (parts.length == 3) {
             startDateStr =
@@ -1208,25 +1098,20 @@ class _EditEventScreenState extends State<EditEventScreen> {
         } else {
           startDateStr = dateStr;
         }
-        endDateStr = startDateStr; // Use same date for end if only one provided
+        endDateStr = startDateStr;
       }
 
-      // Calculate capacity based on event type (paid/free)
       int calculatedCapacity;
       if (_isPaid) {
-        // For paid events, capacity = VIP tickets + Economy tickets
         final vipCount = int.tryParse(_vipCountController.text) ?? 0;
         final ecoCount = int.tryParse(_ecoCountController.text) ?? 0;
         calculatedCapacity = vipCount + ecoCount;
       } else {
-        // For free events, use the capacity field
         calculatedCapacity = int.tryParse(_capacityController.text) ?? 0;
       }
 
-      // Handle cover image - use existing ID if no new one is selected
       String? coverImageId;
       if (_mainImage != null) {
-        // New cover image selected - upload it
         final imageProvider = Provider.of<EventImageProvider>(
           context,
           listen: false,
@@ -1240,23 +1125,19 @@ class _EditEventScreenState extends State<EditEventScreen> {
         };
         final mainImageResponse = await imageProvider.insert(mainImageRequest);
         coverImageId = mainImageResponse.id;
-        print("New cover image uploaded with ID: $coverImageId");
       } else {
-        // No new cover image - use existing one
         coverImageId = _existingCoverImageId;
-        print("Using existing cover image ID: $coverImageId");
       }
 
-      // Prepare update data matching EventUpdateRequestDto
       final updateData = {
         'id': event['id'],
         'title': _nameController.text,
         'description': _descriptionController.text,
         'location': _venueController.text,
-        'startDate': startDateStr, // Format: "YYYY-MM-DD"
-        'endDate': endDateStr, // Format: "YYYY-MM-DD"
-        'startTime': _startTimeController.text, // Format: "HH:MM"
-        'endTime': _endTimeController.text, // Format: "HH:MM"
+        'startDate': startDateStr,
+        'endDate': endDateStr,
+        'startTime': _startTimeController.text,
+        'endTime': _endTimeController.text,
         'capacity': calculatedCapacity,
         'currentAttendees': event['currentAttendees'] ?? 0,
         'availableTicketsCount': calculatedCapacity,
@@ -1264,29 +1145,21 @@ class _EditEventScreenState extends State<EditEventScreen> {
         'isFeatured': event['isFeatured'] ?? false,
         'type': event['type'] ?? 'Public',
         'isPublished': true,
-        'isPaid': _isPaid, // Set based on free/paid selection
+        'isPaid': _isPaid,
         'categoryId': _selectedCategoryId ?? event['categoryId'],
         'coverImageId': coverImageId,
       };
 
       await eventProvider.updateEvent(event['id'], updateData);
 
-      // Handle gallery images - combine new and existing ones
       final imageProvider = Provider.of<EventImageProvider>(
         context,
         listen: false,
       );
       List<String> finalGalleryImageIds = [];
 
-      print(
-        "Processing gallery images - New: ${_additionalImages.length}, Existing IDs: ${_existingGalleryImageIds.length}",
-      );
-
-      // Process each of the 3 gallery image slots
-      // For each slot: if new image is selected, upload it; otherwise, preserve existing image for that slot
       for (int i = 0; i < 3; i++) {
         if (i < _additionalImages.length) {
-          // New image selected for this slot - upload it
           final additionalImage = _additionalImages[i];
           final bytes = await File(additionalImage.path).readAsBytes();
           final base64Image = base64Encode(bytes);
@@ -1299,29 +1172,14 @@ class _EditEventScreenState extends State<EditEventScreen> {
           final imageResponse = await imageProvider.insert(imageRequest);
           if (imageResponse.id != null && imageResponse.id!.isNotEmpty) {
             finalGalleryImageIds.add(imageResponse.id!);
-            print("Added new image at slot $i with ID: ${imageResponse.id}");
           }
         } else if (i < _existingGalleryImageIds.length) {
-          // No new image for this slot, but existing image exists - preserve it
           finalGalleryImageIds.add(_existingGalleryImageIds[i]);
-          print(
-            "Preserved existing image at slot $i with ID: ${_existingGalleryImageIds[i]}",
-          );
         }
-        // If neither new nor existing image for this slot, skip it (slot remains empty)
       }
 
-      print(
-        "Final gallery image IDs count: ${finalGalleryImageIds.length} (New: ${_additionalImages.length}, Preserved: ${finalGalleryImageIds.length - _additionalImages.length})",
-      );
-      print("Final gallery image IDs: $finalGalleryImageIds");
-
-      // Replace gallery images with the final list (includes new uploads + preserved existing ones)
-      // Backend will only remove images that are NOT in this list
       await _replaceGalleryImages(event['id'], finalGalleryImageIds);
 
-      // Handle tickets based on event type change (paid/free)
-      // Use endDateStr for ticket sale end date (tickets should be available until event ends)
       await _handleTicketTypeChange(event['id'], endDateStr);
 
       if (!mounted) return;
@@ -1333,7 +1191,6 @@ class _EditEventScreenState extends State<EditEventScreen> {
         ),
       );
 
-      // Navigate back with success flag
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
