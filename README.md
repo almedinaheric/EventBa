@@ -13,6 +13,8 @@
 
 
 **Stripe Test Card:**
-- Card Number: 4111 1111 1111 1111
-- Expiry: 11/29
-- CVC: 111
+- Card Number: 4242 4242 4242 4242
+- Expiry: 12/32
+- CVC: 123
+- ZIP: any (e.g. 10000)
+
