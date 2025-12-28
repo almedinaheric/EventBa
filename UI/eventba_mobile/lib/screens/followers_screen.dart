@@ -18,6 +18,7 @@ class _FollowersScreenState extends State<FollowersScreen> {
   late List<BasicUser> followers;
   final UserProvider _userProvider = UserProvider();
   final Map<String, bool> _isFollowingMap = {};
+  final Map<String, String?> _profileImages = {};
 
   @override
   void initState() {
@@ -25,7 +26,23 @@ class _FollowersScreenState extends State<FollowersScreen> {
     followers = widget.followers;
     for (var user in followers) {
       _isFollowingMap[user.id] = false;
+      if (user.profileImage?.data != null) {
+        _profileImages[user.id] = user.profileImage!.data;
+      } else {
+        _loadUserProfileImage(user.id);
+      }
     }
+  }
+
+  Future<void> _loadUserProfileImage(String userId) async {
+    try {
+      final user = await _userProvider.getById(userId);
+      if (user.profileImage?.data != null) {
+        setState(() {
+          _profileImages[userId] = user.profileImage!.data;
+        });
+      }
+    } catch (e) {}
   }
 
   void _toggleFollow(String userId) async {
@@ -76,7 +93,9 @@ class _FollowersScreenState extends State<FollowersScreen> {
                 final isFollowing = _isFollowingMap[follower.id] ?? false;
                 return FollowerCard(
                   name: follower.fullName,
-                  avatar: follower.profileImage?.data ?? '',
+                  avatar:
+                      _profileImages[follower.id] ??
+                      follower.profileImage?.data,
                   organizerId: follower.id,
                   isFollowing: isFollowing,
                   onFollowToggle: () => _toggleFollow(follower.id),
@@ -89,7 +108,7 @@ class _FollowersScreenState extends State<FollowersScreen> {
 
 class FollowerCard extends StatefulWidget {
   final String name;
-  final String avatar;
+  final String? avatar;
   final String organizerId;
   final String bio;
   final bool isFollowing;
@@ -98,7 +117,7 @@ class FollowerCard extends StatefulWidget {
   const FollowerCard({
     super.key,
     required this.name,
-    required this.avatar,
+    this.avatar,
     required this.organizerId,
     this.bio = '',
     required this.isFollowing,

@@ -89,16 +89,12 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
         lastNameController.text = user.lastName;
         emailController.text = user.email;
         phoneController.text = user.phoneNumber ?? '';
-        
+
         _selectedCategoryIds = user.interests.isNotEmpty
             ? user.interests.map((interest) => interest.id).toList()
             : [];
-        print("Loaded user interests: ${user.interests.length} categories");
-        print("Selected category IDs: $_selectedCategoryIds");
       });
-    } catch (e) {
-      
-    }
+    } catch (e) {}
   }
 
   @override
@@ -192,14 +188,17 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
                 errorMessage: _phoneErrorMessage,
                 onChanged: (text) {
                   setState(() {
-                    _isPhoneValid =
-                        text.trim().isNotEmpty &&
-                        RegExp(
-                          r'^[+]*[(]{0,1}[0-9]{1,4}[)]{0,1}[-\s\./0-9]*$',
-                        ).hasMatch(text);
-                    _phoneErrorMessage = _isPhoneValid
-                        ? null
-                        : 'Enter a valid phone number';
+                    if (text.trim().isEmpty) {
+                      _isPhoneValid = true;
+                      _phoneErrorMessage = null;
+                    } else {
+                      _isPhoneValid = RegExp(
+                        r'^[+]*[(]{0,1}[0-9]{1,4}[)]{0,1}[-\s\./0-9]*$',
+                      ).hasMatch(text);
+                      _phoneErrorMessage = _isPhoneValid
+                          ? null
+                          : 'Enter a valid phone number';
+                    }
                   });
                 },
               ),
@@ -331,12 +330,17 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
           ).hasMatch(emailController.text);
       _emailErrorMessage = _isEmailValid ? null : 'Enter a valid email';
 
-      _isPhoneValid =
-          phoneController.text.trim().isNotEmpty &&
-          RegExp(
-            r'^[+]*[(]{0,1}[0-9]{1,4}[)]{0,1}[-\s\./0-9]*$',
-          ).hasMatch(phoneController.text);
-      _phoneErrorMessage = _isPhoneValid ? null : 'Enter a valid phone number';
+      if (phoneController.text.trim().isEmpty) {
+        _isPhoneValid = true;
+        _phoneErrorMessage = null;
+      } else {
+        _isPhoneValid = RegExp(
+          r'^[+]*[(]{0,1}[0-9]{1,4}[)]{0,1}[-\s\./0-9]*$',
+        ).hasMatch(phoneController.text);
+        _phoneErrorMessage = _isPhoneValid
+            ? null
+            : 'Enter a valid phone number';
+      }
     });
 
     if (_isFirstNameValid &&
@@ -364,7 +368,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
               content: Text('Profile saved successfully!'),
             ),
           );
-          
+
           Navigator.pop(context);
         }
       } catch (e) {
@@ -423,7 +427,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
               content: Text('Password changed successfully!'),
             ),
           );
-          
+
           Navigator.pop(context);
         }
       } catch (e) {

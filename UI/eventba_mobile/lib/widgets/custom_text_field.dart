@@ -68,12 +68,13 @@ class CustomTextField extends StatelessWidget {
             decoration: InputDecoration(
               hintText: hint,
               errorText: isValid ? null : errorMessage,
+              errorMaxLines: 2,
+              errorStyle: const TextStyle(fontSize: 12, height: 1.2),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
               ),
-              filled: true, 
-              fillColor:
-                  const Color(0xFFF9FBFF), 
+              filled: true,
+              fillColor: const Color(0xFFF9FBFF),
               suffixIcon: isPassword
                   ? IconButton(
                       icon: Icon(

@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:eventba_mobile/widgets/master_screen.dart';
@@ -83,15 +81,13 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
           ? const Center(child: Text('No public events found.'))
           : ListView.separated(
               controller: _scrollController,
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
               itemCount: _events.length + (_hasMore ? 1 : 0),
               separatorBuilder: (_, __) => const SizedBox(height: 8),
               itemBuilder: (context, index) {
                 if (index == _events.length) {
-                  
                   final screenWidth = MediaQuery.of(context).size.width;
-                  final buttonWidth =
-                      screenWidth - 32; 
+                  final buttonWidth = screenWidth - 32;
 
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 16),
@@ -109,7 +105,7 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
                 return EventCard(
                   imageData: event.coverImage?.data,
                   eventName: event.title,
-                  location: event.location ?? 'Location TBA',
+                  location: event.location,
                   date: event.startDate,
                   height: 160,
                   isPaid: event.isPaid,

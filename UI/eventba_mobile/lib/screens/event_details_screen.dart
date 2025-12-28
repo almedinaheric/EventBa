@@ -52,7 +52,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       );
       final userProvider = Provider.of<UserProvider>(context, listen: false);
 
-      
       final event = await eventProvider.getById(widget.eventId);
 
       print('=== EVENT LOADED DEBUG ===');
@@ -74,7 +73,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
         _event = event;
       });
 
-      
       try {
         final currentUser = await userProvider.getProfile();
 
@@ -87,7 +85,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           "User favorite events IDs: ${currentUser.favoriteEvents.map((e) => e.id).toList()}",
         );
 
-        
         final isEventFavorited = currentUser.favoriteEvents.any(
           (favEvent) => favEvent.id == event.id,
         );
@@ -99,44 +96,34 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           isFavorited = isEventFavorited;
         });
 
-        
         try {
           final organizer = await userProvider.getById(event.organizerId);
           setState(() {
             _organizer = organizer;
           });
 
-          
           setState(() {
             isFollowing = currentUser.following.any(
               (u) => u.id == organizer.id,
             );
           });
-        } catch (e) {
-          
-        }
-      } catch (e) {
-        
-      }
+        } catch (e) {}
+      } catch (e) {}
 
-      
       final tickets = await ticketProvider.getTicketsForEvent(widget.eventId);
       setState(() {
         _tickets = tickets;
 
         if (event.isPaid) {
-          
           _totalTicketsLeft = tickets.fold(
             0,
             (sum, ticket) => sum + ticket.quantityAvailable,
           );
         } else {
-          
           _totalTicketsLeft = event.capacity - event.currentAttendees;
         }
       });
     } catch (e) {
-      
     } finally {
       setState(() {
         _isLoading = false;
@@ -155,10 +142,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
       await eventProvider.toggleFavoriteEvent(widget.eventId);
 
-      
       await Future.delayed(const Duration(milliseconds: 500));
 
-      
       final updatedUser = await userProvider.getProfile();
       print(
         "After toggle - User favorite events count: ${updatedUser.favoriteEvents.length}",
@@ -218,7 +203,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   void _showImageDialog(int initialIndex) {
     if (_event == null) return;
 
-    
     List<String> allImages = [];
     print('=== IMAGE DIALOG DEBUG ===');
     print(
@@ -281,8 +265,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                         return InteractiveViewer(
                           minScale: 0.5,
                           maxScale: 4.0,
-                          panEnabled:
-                              false, 
+                          panEnabled: false,
                           scaleEnabled: true,
                           child: Center(
                             child: Image.memory(
@@ -395,12 +378,10 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     onPressed: () async {
                       try {
                         if (_event!.isPaid && _tickets.isNotEmpty) {
-                          
                           final freeTicket = _tickets.firstWhere(
                             (t) => t.price == 0,
                           );
 
-                          
                           final ticketPurchaseProvider =
                               Provider.of<TicketPurchaseProvider>(
                                 context,
@@ -412,8 +393,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                             'eventId': widget.eventId,
                           });
                         } else {
-                          
-                          
                           Navigator.pop(context);
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
@@ -427,7 +406,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                         }
 
                         Navigator.pop(context);
-                        
+
                         _loadEventData();
 
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -570,10 +549,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   children: [
                     const SizedBox(height: 16),
 
-                    
                     Builder(
                       builder: (context) {
-                        
                         List<String> allImages = [];
                         if (_event!.coverImage?.data != null) {
                           allImages.add(_event!.coverImage!.data!);
@@ -673,7 +650,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
                     const SizedBox(height: 16),
 
-                    
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -787,7 +763,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
                     const SizedBox(height: 24),
 
-                    
                     const Text(
                       "Organized by",
                       style: TextStyle(
@@ -918,7 +893,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
                     const SizedBox(height: 24),
 
-                    
                     if (_event!.isPaid) ...[
                       const Text(
                         "Tickets",
@@ -954,7 +928,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
                     const SizedBox(height: 16),
 
-                    
                     if (_event!.type == EventType.Private)
                       InkWell(
                         onTap: _showQuestionDialog,
@@ -980,13 +953,11 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     if (_event!.type == EventType.Private)
                       const SizedBox(height: 8),
 
-                    
                     if (_event!.isPaid && _tickets.isNotEmpty)
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
                           onPressed: () {
-                            
                             final hasFreeTickets = _tickets.any(
                               (t) => t.price == 0,
                             );
@@ -995,10 +966,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                             );
 
                             if (hasFreeTickets && !hasPaidTickets) {
-                              
                               _showReserveDialog();
                             } else {
-                              
                               Navigator.push(
                                 context,
                                 PageRouteBuilder(
@@ -1047,7 +1016,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                                 reverseTransitionDuration: Duration.zero,
                               ),
                             ).then((_) {
-                              
                               _loadEventData();
                             });
                           },

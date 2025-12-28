@@ -64,7 +64,7 @@ class _CategoryEventsScreenState extends State<CategoryEventsScreen> {
                 padding: const EdgeInsets.all(16),
                 children: [
                   ..._buildEventCardsList(),
-                  const SizedBox(height: 48), 
+                  const SizedBox(height: 16),
                 ],
               ),
             )

@@ -64,7 +64,7 @@ class _RecommendedEventsScreenState extends State<RecommendedEventsScreen> {
           : _events.isEmpty
           ? const Center(child: Text('No recommended events found.'))
           : ListView.separated(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
               itemCount: _events.length,
               separatorBuilder: (_, __) => const SizedBox(height: 8),
               itemBuilder: (context, index) {

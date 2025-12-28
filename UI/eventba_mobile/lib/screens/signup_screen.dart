@@ -49,10 +49,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       final categories = await Provider.of<CategoryProvider>(
         context,
         listen: false,
-      ).get(authorized: false, filter: {
-        'page': 1,
-        'pageSize': 1000,
-      });
+      ).get(authorized: false, filter: {'page': 1, 'pageSize': 1000});
       categories.result.sort((a, b) => a.name.length.compareTo(b.name.length));
       setState(() {
         _categories = categories.result;
@@ -76,7 +73,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
       return;
     }
     if (_passwordController.text.isEmpty || !_isPasswordValid) {
-      _showError("Password must be at least 8 characters long and include an uppercase letter, a lowercase letter, and a number.");
+      _showError(
+        "Password must be at least 8 characters long and include an uppercase letter, a lowercase letter, and a number.",
+      );
+      return;
+    }
+    if (_selectedCategoryIds.isEmpty) {
+      _showError("Please select at least one category you're interested in.");
       return;
     }
 
@@ -110,10 +113,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => const MasterScreenWidget(
-            initialIndex: 0,
-            child: HomeScreen(),
-          ),
+          builder: (context) =>
+              const MasterScreenWidget(initialIndex: 0, child: HomeScreen()),
         ),
       );
     } catch (e) {
@@ -126,13 +127,21 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(
-        SnackBar(
-            behavior: SnackBarBehavior.floating,
-            content: Text(message)
-        ));
+    final screenWidth = MediaQuery.of(context).size.width;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        width: screenWidth * 0.9,
+        content: Text(
+          message,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          softWrap: true,
+          textAlign: TextAlign.center,
+        ),
+        duration: const Duration(seconds: 4),
+      ),
+    );
   }
 
   void _togglePasswordVisibility() {
@@ -149,7 +158,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            
             Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
@@ -161,7 +169,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ],
               ),
             ),
-            
+
             const Center(
               child: Text(
                 'Sign Up',

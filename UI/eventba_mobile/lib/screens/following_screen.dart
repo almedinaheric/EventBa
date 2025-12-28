@@ -17,11 +17,30 @@ class FollowingScreen extends StatefulWidget {
 class _FollowingScreenState extends State<FollowingScreen> {
   late List<BasicUser> following;
   final UserProvider userProvider = UserProvider();
+  final Map<String, String?> _profileImages = {};
 
   @override
   void initState() {
     super.initState();
     following = List.from(widget.following);
+    for (var user in following) {
+      if (user.profileImage?.data != null) {
+        _profileImages[user.id] = user.profileImage!.data;
+      } else {
+        _loadUserProfileImage(user.id);
+      }
+    }
+  }
+
+  Future<void> _loadUserProfileImage(String userId) async {
+    try {
+      final user = await userProvider.getById(userId);
+      if (user.profileImage?.data != null) {
+        setState(() {
+          _profileImages[userId] = user.profileImage!.data;
+        });
+      }
+    } catch (e) {}
   }
 
   Future<void> _handleUnfollow(String userId) async {
@@ -66,7 +85,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
                 final user = following[index];
                 return FollowerCard(
                   name: user.fullName,
-                  avatar: user.profileImage?.data ?? '',
+                  avatar: _profileImages[user.id] ?? user.profileImage?.data,
                   organizerId: user.id,
                   onUnfollow: () async {
                     await _handleUnfollow(user.id);
@@ -80,7 +99,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
 
 class FollowerCard extends StatefulWidget {
   final String name;
-  final String avatar;
+  final String? avatar;
   final String organizerId;
   final String bio;
   final Future<void> Function() onUnfollow;
@@ -88,7 +107,7 @@ class FollowerCard extends StatefulWidget {
   const FollowerCard({
     super.key,
     required this.name,
-    required this.avatar,
+    this.avatar,
     required this.organizerId,
     this.bio = '',
     required this.onUnfollow,

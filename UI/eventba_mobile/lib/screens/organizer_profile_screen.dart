@@ -4,7 +4,9 @@ import 'package:eventba_mobile/widgets/master_screen.dart';
 import 'package:eventba_mobile/utils/image_helpers.dart';
 import 'package:eventba_mobile/widgets/event_card.dart';
 import 'package:eventba_mobile/providers/event_provider.dart';
+import 'package:eventba_mobile/providers/user_provider.dart';
 import 'package:eventba_mobile/models/event/basic_event.dart';
+import 'package:eventba_mobile/models/user/user.dart';
 import 'package:eventba_mobile/models/enums/event_status.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -28,15 +30,27 @@ class OrganizerProfileScreen extends StatefulWidget {
 }
 
 class _OrganizerProfileScreenState extends State<OrganizerProfileScreen> {
-  int selectedIndex = 0; 
+  int selectedIndex = 0;
   List<BasicEvent> _upcomingEvents = [];
   List<BasicEvent> _pastEvents = [];
   bool _isLoading = true;
+  User? _user;
 
   @override
   void initState() {
     super.initState();
+    _loadUser();
     _loadEvents();
+  }
+
+  Future<void> _loadUser() async {
+    try {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final user = await userProvider.getById(widget.userId);
+      setState(() {
+        _user = user;
+      });
+    } catch (e) {}
   }
 
   Future<void> _loadEvents() async {
@@ -55,7 +69,6 @@ class _OrganizerProfileScreenState extends State<OrganizerProfileScreen> {
         _isLoading = false;
       });
     } catch (e) {
-      print("Error loading events: $e");
       setState(() {
         _isLoading = false;
       });
@@ -76,35 +89,28 @@ class _OrganizerProfileScreenState extends State<OrganizerProfileScreen> {
         children: [
           const SizedBox(height: 24),
 
-          
           CircleAvatar(
             radius: 50,
             backgroundColor: Colors.grey[300],
-            child: widget.avatarUrl.startsWith('assets/')
-                ? CircleAvatar(
-                    radius: 50,
-                    backgroundImage: AssetImage(widget.avatarUrl),
-                  )
-                : ClipOval(
-                    child: ImageHelpers.getProfileImage(
-                      widget.avatarUrl,
-                      height: 100,
-                      width: 100,
-                    ),
-                  ),
+            child: ClipOval(
+              child: ImageHelpers.getProfileImage(
+                _user?.profileImage?.data ?? widget.avatarUrl,
+                height: 100,
+                width: 100,
+              ),
+            ),
           ),
-          
+
           Text(
-            widget.name,
+            _user?.fullName ?? widget.name,
             style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
 
-          
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 32),
             child: Text(
-              widget.bio,
+              _user?.bio ?? widget.bio,
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 14, color: Colors.black87),
             ),
@@ -112,7 +118,6 @@ class _OrganizerProfileScreenState extends State<OrganizerProfileScreen> {
 
           const SizedBox(height: 24),
 
-          
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 16),
             child: Align(
@@ -126,7 +131,6 @@ class _OrganizerProfileScreenState extends State<OrganizerProfileScreen> {
 
           const SizedBox(height: 12),
 
-          
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
@@ -193,7 +197,6 @@ class _OrganizerProfileScreenState extends State<OrganizerProfileScreen> {
 
           const SizedBox(height: 12),
 
-          
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -270,7 +273,7 @@ class _OrganizerProfileScreenState extends State<OrganizerProfileScreen> {
       child: EventCard(
         imageData: event.coverImage?.data,
         eventName: event.title,
-        location: event.location ?? 'Location TBA',
+        location: event.location,
         date: event.startDate,
         isPaid: event.isPaid,
         height: 160,

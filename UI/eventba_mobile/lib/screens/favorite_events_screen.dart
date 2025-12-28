@@ -51,7 +51,7 @@ class _FavoriteEventsScreenState extends State<FavoriteEventsScreen> {
                 padding: const EdgeInsets.all(16),
                 children: [
                   ..._buildEventCardsList(),
-                  const SizedBox(height: 60),
+                  const SizedBox(height: 16),
                 ],
               ),
             )
