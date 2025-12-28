@@ -12,13 +12,21 @@ namespace EventBa.Services.Services;
 
 public class RecommendedEventService : IRecommendedEventService
 {
+    private const int MaxEvents = 10_000;
+    private const int MaxRecommendations = 10;
+    private const int MaxSeedEvents = 5;
+    private const float FavoritePurchaseWeight = 1.5f;
+    private const float InterestWeight = 1.2f;
+    private const float DefaultScore = 0.5f;
+
     private readonly EventBaDbContext _context;
     private readonly IMapper _mapper;
-    static MLContext? _mlContext = null;
-    static readonly object isLocked = new object();
-    static ITransformer? modeltr = null;
-    static Dictionary<uint, uint>? _eventIdToIndexMap = null;
-    static Dictionary<uint, uint>? _indexToEventIdMap = null;
+
+    private static readonly object _lock = new();
+    private static MLContext? _ml;
+    private static ITransformer? _model;
+    private static Dictionary<uint, uint>? _eventToIndex;
+    private static Dictionary<uint, uint>? _indexToEvent;
 
     public RecommendedEventService(EventBaDbContext context, IMapper mapper)
     {
@@ -28,605 +36,39 @@ public class RecommendedEventService : IRecommendedEventService
 
     public void TrainModel()
     {
-        lock (isLocked)
+        lock (_lock)
         {
-            try
+            if (_ml != null && _model != null)
+                return;
+
+            _ml ??= new MLContext();
+
+            var trainingData = CollectTrainingData();
+            if (trainingData.Count < 2)
             {
-                if (_mlContext == null || modeltr == null)
-                {
-                    if (_mlContext == null)
-                    {
-                        _mlContext = new MLContext();
-                    }
-
-                    var data = new List<EventEntry>();
-
-                    try
-                    {
-                        var favoriteCoOccurrences = _context.Users
-                            .Include(u => u.FavoriteEvents)
-                            .ToList()
-                            .Where(u => u.FavoriteEvents != null && u.FavoriteEvents.Count > 1);
-
-                        foreach (var user in favoriteCoOccurrences)
-                        {
-                            if (user.FavoriteEvents == null) continue;
-                            
-                            foreach (var event1 in user.FavoriteEvents)
-                            {
-                                var relatedEvents = user.FavoriteEvents.Where(e => e != null && e.Id != event1.Id);
-                                foreach (var event2 in relatedEvents)
-                                {
-                                    if (event2 == null) continue;
-                                    
-                                    var eventId1 = (uint)Math.Abs(event1.Id.GetHashCode());
-                                    var eventId2 = (uint)Math.Abs(event2.Id.GetHashCode());
-                                    
-                                    if (eventId1 == 0) eventId1 = 1;
-                                    if (eventId2 == 0) eventId2 = 1;
-                                    if (eventId1 == eventId2) continue;
-                                    
-                                    data.Add(new EventEntry
-                                    {
-                                        EventID = eventId1,
-                                        CoEventID = eventId2,
-                                        Label = 1.0f
-                                    });
-                                }
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Error processing favorite events: {ex.Message}");
-                    }
-
-                    try
-                    {
-                        var purchaseCoOccurrences = _context.Users
-                            .Include(u => u.TicketPurchases)
-                            .ThenInclude(tp => tp.Event)
-                            .ToList()
-                            .Where(u => u.TicketPurchases != null && u.TicketPurchases.Count > 1);
-
-                        foreach (var user in purchaseCoOccurrences)
-                        {
-                            if (user.TicketPurchases == null) continue;
-                            
-                            var userEvents = user.TicketPurchases
-                                .Where(tp => tp.Event != null)
-                                .Select(tp => tp.Event!)
-                                .DistinctBy(e => e.Id)
-                                .ToList();
-                            
-                            foreach (var event1 in userEvents)
-                            {
-                                var relatedEvents = userEvents.Where(e => e != null && e.Id != event1.Id);
-                                foreach (var event2 in relatedEvents)
-                                {
-                                    if (event2 == null) continue;
-                                    
-                                    var eventId1 = (uint)Math.Abs(event1.Id.GetHashCode());
-                                    var eventId2 = (uint)Math.Abs(event2.Id.GetHashCode());
-                                    
-                                    if (eventId1 == 0) eventId1 = 1;
-                                    if (eventId2 == 0) eventId2 = 1;
-                                    if (eventId1 == eventId2) continue;
-                                    
-                                    data.Add(new EventEntry
-                                    {
-                                        EventID = eventId1,
-                                        CoEventID = eventId2,
-                                        Label = 1.0f
-                                    });
-                                }
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Error processing ticket purchases: {ex.Message}");
-                    }
-
-                    try
-                    {
-                        var eventsByCategory = _context.Events
-                            .Include(e => e.Category)
-                            .Where(e => e.IsPublished && e.Category != null)
-                            .ToList()
-                            .GroupBy(e => e.CategoryId);
-
-                        foreach (var categoryGroup in eventsByCategory)
-                        {
-                            var eventsInCategory = categoryGroup.Where(e => e != null).ToList();
-                            if (eventsInCategory.Count > 1)
-                            {
-                                foreach (var event1 in eventsInCategory)
-                                {
-                                    var relatedEvents = eventsInCategory.Where(e => e != null && e.Id != event1.Id).Take(5);
-                                    foreach (var event2 in relatedEvents)
-                                    {
-                                        if (event2 == null) continue;
-                                        
-                                        var eventId1 = (uint)Math.Abs(event1.Id.GetHashCode());
-                                        var eventId2 = (uint)Math.Abs(event2.Id.GetHashCode());
-                                        
-                                        if (eventId1 == 0) eventId1 = 1;
-                                        if (eventId2 == 0) eventId2 = 1;
-                                        if (eventId1 == eventId2) continue;
-                                        
-                                        data.Add(new EventEntry
-                                        {
-                                            EventID = eventId1,
-                                            CoEventID = eventId2,
-                                            Label = 0.7f
-                                        });
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Error processing events by category: {ex.Message}");
-                    }
-
-                    try
-                    {
-                        var userInterests = _context.Users
-                            .Include(u => u.Categories)
-                            .ToList()
-                            .Where(u => u.Categories != null && u.Categories.Any());
-
-                        foreach (var user in userInterests)
-                        {
-                            if (user.Categories == null) continue;
-                            
-                            var userCategoryIds = user.Categories.Select(c => c.Id).ToList();
-                            var eventsInUserCategories = _context.Events
-                                .Where(e => e.IsPublished && e.Category != null && userCategoryIds.Contains(e.CategoryId))
-                                .ToList();
-
-                            if (eventsInUserCategories.Count > 1)
-                            {
-                                foreach (var event1 in eventsInUserCategories)
-                                {
-                                    var relatedEvents = eventsInUserCategories.Where(e => e != null && e.Id != event1.Id).Take(3);
-                                    foreach (var event2 in relatedEvents)
-                                    {
-                                        if (event2 == null) continue;
-                                        
-                                        var eventId1 = (uint)Math.Abs(event1.Id.GetHashCode());
-                                        var eventId2 = (uint)Math.Abs(event2.Id.GetHashCode());
-                                        
-                                        if (eventId1 == 0) eventId1 = 1;
-                                        if (eventId2 == 0) eventId2 = 1;
-                                        if (eventId1 == eventId2) continue;
-                                        
-                                        data.Add(new EventEntry
-                                        {
-                                            EventID = eventId1,
-                                            CoEventID = eventId2,
-                                            Label = 0.8f
-                                        });
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Error processing user interests: {ex.Message}");
-                    }
-
-                    var validData = data.Where(d => d.EventID > 0 && d.CoEventID > 0 && d.EventID != d.CoEventID).ToList();
-
-                    if (validData.Count == 0)
-                    {
-                        Console.WriteLine("No valid training data available. Model training skipped.");
-                        return;
-                    }
-
-                    if (validData.Count < 2)
-                    {
-                        Console.WriteLine($"Insufficient valid training data ({validData.Count} entries). Need at least 2 entries. Model training skipped.");
-                        return;
-                    }
-
-                    var uniqueData = validData
-                        .GroupBy(d => new { d.EventID, d.CoEventID })
-                        .Select(g => g.First())
-                        .ToList();
-
-                    if (uniqueData.Count < 2)
-                    {
-                        Console.WriteLine($"Insufficient unique training data ({uniqueData.Count} entries). Need at least 2 unique pairs. Model training skipped.");
-                        return;
-                    }
-
-                    var allEventIds = uniqueData
-                        .Select(d => d.EventID)
-                        .Concat(uniqueData.Select(d => d.CoEventID))
-                        .Distinct()
-                        .OrderBy(id => id)
-                        .ToList();
-
-                    var eventIdToIndex = new Dictionary<uint, uint>();
-                    uint index = 1;
-                    foreach (var eventId in allEventIds)
-                    {
-                        eventIdToIndex[eventId] = index++;
-                    }
-
-                    if (eventIdToIndex.Count > 10000)
-                    {
-                        Console.WriteLine($"Too many unique events ({eventIdToIndex.Count}). Maximum is 10000. Model training skipped.");
-                        return;
-                    }
-
-                    var mappedData = uniqueData.Select(d => new EventEntry
-                    {
-                        EventID = eventIdToIndex[d.EventID],
-                        CoEventID = eventIdToIndex[d.CoEventID],
-                        Label = d.Label
-                    }).ToList();
-
-                    Console.WriteLine($"Training model with {mappedData.Count} valid training entries (from {data.Count} total entries).");
-                    Console.WriteLine($"Using {eventIdToIndex.Count} unique events mapped to indices 1-{eventIdToIndex.Count}.");
-
-                    _eventIdToIndexMap = eventIdToIndex;
-                    _indexToEventIdMap = eventIdToIndex.ToDictionary(kvp => kvp.Value, kvp => kvp.Key);
-
-                    var trainData = _mlContext.Data.LoadFromEnumerable(mappedData);
-                    MatrixFactorizationTrainer.Options options = new MatrixFactorizationTrainer.Options
-                    {
-                        MatrixColumnIndexColumnName = nameof(EventEntry.EventID),
-                        MatrixRowIndexColumnName = nameof(EventEntry.CoEventID),
-                        LabelColumnName = nameof(EventEntry.Label),
-                        LossFunction = MatrixFactorizationTrainer.LossFunctionType.SquareLossOneClass,
-                        Alpha = 0.01,
-                        Lambda = 0.025,
-                        NumberOfIterations = 100,
-                        C = 0.00001
-                    };
-
-                    var est = _mlContext.Recommendation().Trainers.MatrixFactorization(options);
-                    modeltr = est.Fit(trainData);
-                    
-                    Console.WriteLine($"Model trained successfully with {mappedData.Count} training entries.");
-                }
+                Console.WriteLine("Insufficient training data. Skipping model training.");
+                return;
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error training recommendation model: {ex.Message}");
-                Console.WriteLine($"Stack trace: {ex.StackTrace}");
-                throw;
-            }
+
+            var mappedData = MapEventsToIndices(trainingData);
+            if (mappedData.Count < 2)
+                return;
+
+            var dataView = _ml.Data.LoadFromEnumerable(mappedData);
+            var trainer = _ml.Recommendation().Trainers.MatrixFactorization(CreateTrainerOptions());
+
+            _model = trainer.Fit(dataView);
+
+            Console.WriteLine($"Model trained with {mappedData.Count} entries.");
         }
     }
 
     public void RetrainModel()
     {
-        lock (isLocked)
+        lock (_lock)
         {
-            modeltr = null;
-            _mlContext = null;
-            _eventIdToIndexMap = null;
-            _indexToEventIdMap = null;
+            ResetModel();
             TrainModel();
-        }
-    }
-
-    public async Task<List<EventResponseDto>> GetRecommendedEventsForUser(Guid userId)
-    {
-        try
-        {
-            Console.WriteLine($"Getting recommendations for user {userId}");
-            var user = await _context.Users
-            .Include(u => u.Categories)
-            .Include(u => u.FavoriteEvents)
-                .ThenInclude(e => e.Category)
-            .Include(u => u.TicketPurchases)
-                .ThenInclude(tp => tp.Event)
-                    .ThenInclude(e => e.Category)
-            .FirstOrDefaultAsync(u => u.Id == userId);
-
-        if (user == null)
-            return new List<EventResponseDto>();
-
-        var cachedRecommendations = await _context.RecommendedEvents
-            .Where(re => re.UserId == userId)
-            .Include(re => re.Event)
-            .ThenInclude(e => e.Category)
-            .Include(re => re.Event)
-            .ThenInclude(e => e.CoverImage)
-            .Include(re => re.Event)
-            .ThenInclude(e => e.EventGalleryImages)
-            .Include(re => re.Event)
-            .ThenInclude(e => e.Tickets)
-            .ToListAsync();
-
-        if (cachedRecommendations.Any())
-        {
-            var cachedEvents = cachedRecommendations
-                .Where(re => re.Event != null && re.Event.IsPublished)
-                .Select(re => re.Event!)
-                .ToList();
-            
-            if (cachedEvents.Any())
-            {
-                return _mapper.Map<List<EventResponseDto>>(cachedEvents);
-            }
-        }
-
-        var recommendedEvents = new List<Event>();
-
-        var favoriteEventIds = user.FavoriteEvents?.Select(fe => fe.Id).ToList() ?? new List<Guid>();
-        var purchasedEventIds = user.TicketPurchases?.Select(tp => tp.EventId).ToList() ?? new List<Guid>();
-        var excludedEventIds = favoriteEventIds.Concat(purchasedEventIds).Distinct().ToList();
-
-        var userInterestCategoryIds = user.Categories?.Select(c => c.Id).ToList() ?? new List<Guid>();
-        Console.WriteLine($"User {userId} has {userInterestCategoryIds.Count} interest categories: {string.Join(", ", userInterestCategoryIds)}");
-
-        var favoriteEventCategories = user.FavoriteEvents?
-            .Where(e => e != null && e.Category != null)
-            .Select(e => e.CategoryId)
-            .Distinct()
-            .ToList() ?? new List<Guid>();
-        Console.WriteLine($"User {userId} has favorited events in {favoriteEventCategories.Count} categories: {string.Join(", ", favoriteEventCategories)}");
-
-        var attendedEventCategories = user.TicketPurchases?
-            .Where(tp => tp != null && tp.Event != null && tp.Event.Category != null)
-            .Select(tp => tp.Event!.CategoryId)
-            .Distinct()
-            .ToList() ?? new List<Guid>();
-        Console.WriteLine($"User {userId} has attended events in {attendedEventCategories.Count} categories: {string.Join(", ", attendedEventCategories)}");
-
-        var allRelevantCategoryIds = favoriteEventCategories
-            .Concat(attendedEventCategories)
-            .Concat(userInterestCategoryIds)
-            .Distinct()
-            .ToList();
-
-        if (!allRelevantCategoryIds.Any())
-        {
-            Console.WriteLine($"User {userId} has no categories (interests, favorites, or attended) for recommendations");
-            return new List<EventResponseDto>();
-        }
-
-        Console.WriteLine($"Total relevant categories for user {userId}: {allRelevantCategoryIds.Count}");
-
-        var categoryBasedEvents = await _context.Events
-            .Include(e => e.Category)
-            .Include(e => e.CoverImage)
-            .Include(e => e.EventGalleryImages)
-            .Include(e => e.Tickets)
-            .Where(e => e.IsPublished &&
-                       e.OrganizerId != userId &&
-                       allRelevantCategoryIds.Contains(e.CategoryId) &&
-                       !excludedEventIds.Contains(e.Id))
-            .ToListAsync();
-
-        Console.WriteLine($"Found {categoryBasedEvents.Count} events in relevant categories for user {userId}");
-
-        var userInteractedEvents = user.FavoriteEvents
-            .Concat(user.TicketPurchases.Where(tp => tp.Event != null).Select(tp => tp.Event!))
-            .Where(e => e != null)
-            .DistinctBy(e => e.Id)
-            .ToList();
-
-        if (modeltr != null && _mlContext != null && _eventIdToIndexMap != null && categoryBasedEvents.Any())
-        {
-            Console.WriteLine($"Using ML to rank {categoryBasedEvents.Count} events for user {userId}");
-            
-            try
-            {
-                var predictionResults = new List<Tuple<Event, float>>();
-                var seedEvents = new List<Event>();
-
-                if (userInteractedEvents.Any())
-                {
-                    seedEvents = userInteractedEvents.Take(5).ToList();
-                    Console.WriteLine($"Using {seedEvents.Count} user-interacted events as ML seeds");
-                }
-                else
-                {
-                    foreach (var categoryId in userInterestCategoryIds)
-                    {
-                        var popularEventsInCategory = await _context.Events
-                            .Include(e => e.EventStatistics)
-                            .Where(e => e.IsPublished && 
-                                       e.CategoryId == categoryId && 
-                                       e.OrganizerId != userId &&
-                                       !excludedEventIds.Contains(e.Id))
-                            .OrderByDescending(e => e.EventStatistics != null && e.EventStatistics.Any()
-                                ? e.EventStatistics.Sum(es => es.TotalFavorites)
-                                : 0)
-                            .Take(2)
-                            .ToListAsync();
-
-                        seedEvents.AddRange(popularEventsInCategory);
-                    }
-
-                    seedEvents = seedEvents.DistinctBy(e => e.Id).Take(5).ToList();
-                    Console.WriteLine($"New user - using {seedEvents.Count} popular events in interest categories as ML seeds");
-                }
-
-                if (!seedEvents.Any())
-                {
-                    Console.WriteLine($"No seed events available for ML - falling back to category-based");
-                    recommendedEvents = categoryBasedEvents.Take(10).ToList();
-                }
-                else
-                {
-                    foreach (var candidateEvent in categoryBasedEvents)
-                    {
-                        float totalScore = 0f;
-                        int predictionCount = 0;
-
-                        foreach (var seedEvent in seedEvents)
-                        {
-                            try
-                            {
-                                var seedEventHash = (uint)Math.Abs(seedEvent.Id.GetHashCode());
-                                var candidateEventHash = (uint)Math.Abs(candidateEvent.Id.GetHashCode());
-                                
-                                if (seedEventHash == 0) seedEventHash = 1;
-                                if (candidateEventHash == 0) candidateEventHash = 1;
-                                
-                                if (!_eventIdToIndexMap.ContainsKey(seedEventHash) ||
-                                    !_eventIdToIndexMap.ContainsKey(candidateEventHash))
-                                {
-                                    continue;
-                                }
-                                
-                                var predictionEngine = _mlContext.Model.CreatePredictionEngine<EventEntry, CoEventPrediction>(modeltr);
-                                var prediction = predictionEngine.Predict(new EventEntry
-                                {
-                                    EventID = _eventIdToIndexMap[seedEventHash],
-                                    CoEventID = _eventIdToIndexMap[candidateEventHash]
-                                });
-
-                                totalScore += prediction.Score;
-                                predictionCount++;
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine($"Error predicting for seed event {seedEvent.Id}: {ex.Message}");
-                                continue;
-                            }
-                        }
-
-                        if (predictionCount > 0)
-                        {
-                            var averageScore = totalScore / predictionCount;
-                            
-                            var isInFavoritesOrAttended = favoriteEventCategories.Contains(candidateEvent.CategoryId) || 
-                                                          attendedEventCategories.Contains(candidateEvent.CategoryId);
-                            var isInUserInterests = userInterestCategoryIds.Contains(candidateEvent.CategoryId);
-                            
-                            float finalScore;
-                            if (isInFavoritesOrAttended)
-                            {
-                                finalScore = averageScore * 1.5f;
-                            }
-                            else if (isInUserInterests)
-                            {
-                                finalScore = averageScore * 1.2f;
-                            }
-                            else
-                            {
-                                finalScore = averageScore;
-                            }
-                            
-                            predictionResults.Add(new Tuple<Event, float>(candidateEvent, finalScore));
-                        }
-                        else
-                        {
-                            var isInFavoritesOrAttended = favoriteEventCategories.Contains(candidateEvent.CategoryId) || 
-                                                          attendedEventCategories.Contains(candidateEvent.CategoryId);
-                            var isInUserInterests = userInterestCategoryIds.Contains(candidateEvent.CategoryId);
-                            
-                            float baseScore;
-                            if (isInFavoritesOrAttended)
-                            {
-                                baseScore = 1.5f;
-                            }
-                            else if (isInUserInterests)
-                            {
-                                baseScore = 1.0f;
-                            }
-                            else
-                            {
-                                baseScore = 0.5f;
-                            }
-                            
-                            predictionResults.Add(new Tuple<Event, float>(candidateEvent, baseScore));
-                        }
-                    }
-
-                    recommendedEvents = predictionResults
-                        .OrderByDescending(x => x.Item2)
-                        .Take(10)
-                        .Select(x => x.Item1)
-                        .Where(e => e != null)
-                        .ToList();
-
-                    Console.WriteLine($"ML-ranked recommendations: {recommendedEvents.Count} events for user {userId}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error in ML ranking for user {userId}: {ex.Message}");
-                Console.WriteLine($"Stack trace: {ex.StackTrace}");
-                recommendedEvents = categoryBasedEvents.Take(10).ToList();
-            }
-        }
-        else
-        {
-            Console.WriteLine($"ML not available - using pure category-based recommendations for user {userId}");
-            recommendedEvents = categoryBasedEvents.Take(10).ToList();
-        }
-
-        var finalRecommendations = recommendedEvents
-            .Where(e => e != null)
-            .DistinctBy(e => e.Id)
-            .Take(10)
-            .ToList();
-
-        Console.WriteLine($"Final recommendations for user {userId}: {finalRecommendations.Count} events");
-
-        if (finalRecommendations.Any())
-        {
-            foreach (var recommendedEvent in finalRecommendations)
-            {
-                try
-                {
-                    var existingRecommendation = await _context.RecommendedEvents
-                        .FirstOrDefaultAsync(re => re.UserId == userId && re.EventId == recommendedEvent.Id);
-
-                    if (existingRecommendation == null)
-                    {
-                        var createdAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-                        
-                        _context.RecommendedEvents.Add(new RecommendedEvent
-                        {
-                            UserId = userId,
-                            EventId = recommendedEvent.Id,
-                            CreatedAt = createdAt
-                        });
-                        Console.WriteLine($"Added recommendation: User {userId} -> Event {recommendedEvent.Id} ({recommendedEvent.Title})");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error saving recommendation for event {recommendedEvent.Id}: {ex.Message}");
-                    continue;
-                }
-            }
-
-            try
-            {
-                var savedCount = await _context.SaveChangesAsync();
-                Console.WriteLine($"Saved {savedCount} recommendations to database for user {userId}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error saving recommendations to database: {ex.Message}");
-            }
-        }
-        else
-        {
-            Console.WriteLine($"No recommendations generated for user {userId}");
-        }
-
-            return _mapper.Map<List<EventResponseDto>>(finalRecommendations);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error in GetRecommendedEventsForUser for user {userId}: {ex.Message}");
-            Console.WriteLine($"Stack trace: {ex.StackTrace}");
-            throw;
         }
     }
 
@@ -637,24 +79,487 @@ public class RecommendedEventService : IRecommendedEventService
 
     public async Task DeleteRecommendationsForUser(Guid userId)
     {
-        var userRecommendations = await _context.RecommendedEvents
-            .Where(re => re.UserId == userId)
+        var recommendations = await _context.RecommendedEvents
+            .Where(r => r.UserId == userId)
             .ToListAsync();
-        
-        if (userRecommendations.Any())
+
+        if (!recommendations.Any())
+            return;
+
+        _context.RecommendedEvents.RemoveRange(recommendations);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task<List<EventResponseDto>> GetRecommendedEventsForUser(Guid userId)
+    {
+        try
         {
-            _context.RecommendedEvents.RemoveRange(userRecommendations);
-            await _context.SaveChangesAsync();
-            Console.WriteLine($"Deleted {userRecommendations.Count} cached recommendations for user {userId} - will regenerate on next fetch");
+            var user = await LoadUserWithRelations(userId);
+            if (user == null)
+                return [];
+
+            var cachedRecommendations = await LoadCachedRecommendations(userId);
+            if (cachedRecommendations.Any())
+                return _mapper.Map<List<EventResponseDto>>(cachedRecommendations);
+
+            var recommendations = await GenerateRecommendations(user, userId);
+            return _mapper.Map<List<EventResponseDto>>(recommendations);
         }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in GetRecommendedEventsForUser for user {userId}: {ex.Message}");
+
+            var fallbackCached = await LoadCachedRecommendations(userId);
+            if (fallbackCached.Any())
+            {
+                Console.WriteLine($"Returning cached recommendations as fallback for user {userId}");
+                return _mapper.Map<List<EventResponseDto>>(fallbackCached);
+            }
+
+            return [];
+        }
+    }
+
+    private async Task<List<Event>> GenerateRecommendations(User user, Guid userId)
+    {
+        var excludedEventIds = GetExcludedEventIds(user);
+        var relevantCategoryIds = GetRelevantCategoryIds(user);
+
+        if (!relevantCategoryIds.Any())
+            return [];
+
+        var candidateEvents = await LoadCandidateEvents(userId, relevantCategoryIds, excludedEventIds);
+        if (!candidateEvents.Any())
+            return [];
+
+        var recommendedEvents = IsModelAvailable()
+            ? await RankEventsWithMl(user, candidateEvents, excludedEventIds)
+            : candidateEvents.Take(MaxRecommendations).ToList();
+
+        if (recommendedEvents.Any())
+        {
+            await CacheRecommendationsSafely(userId, recommendedEvents);
+        }
+
+        return recommendedEvents;
+    }
+
+    private async Task<List<Event>> RankEventsWithMl(
+        User user,
+        List<Event> candidates,
+        List<Guid> excludedIds)
+    {
+        var seedEvents = GetSeedEvents(user);
+        var categoryMultipliers = BuildCategoryMultipliers(user);
+
+        var predictionEngine = _ml!.Model.CreatePredictionEngine<EventEntry, CoEventPrediction>(_model!);
+        var scoredEvents = new List<(Event Event, float Score)>();
+
+        foreach (var candidate in candidates)
+        {
+            var mlScore = CalculateMlScore(seedEvents, candidate, predictionEngine);
+            var contentMultiplier = GetContentMultiplier(candidate, categoryMultipliers);
+            var finalScore = mlScore * contentMultiplier;
+
+            scoredEvents.Add((candidate, finalScore));
+        }
+
+        return scoredEvents
+            .OrderByDescending(x => x.Score)
+            .Take(MaxRecommendations)
+            .Select(x => x.Event)
+            .ToList();
+    }
+
+    private float CalculateMlScore(
+        List<Event> seedEvents,
+        Event candidate,
+        PredictionEngine<EventEntry, CoEventPrediction> predictionEngine)
+    {
+        if (!seedEvents.Any())
+            return DefaultScore;
+
+        float totalScore = 0;
+        int predictionCount = 0;
+
+        foreach (var seed in seedEvents)
+        {
+            var seedHash = Hash(seed.Id);
+            var candidateHash = Hash(candidate.Id);
+
+            if (!_eventToIndex!.ContainsKey(seedHash) || !_eventToIndex.ContainsKey(candidateHash))
+                continue;
+
+            var prediction = predictionEngine.Predict(new EventEntry
+            {
+                EventID = _eventToIndex[seedHash],
+                CoEventID = _eventToIndex[candidateHash]
+            });
+
+            totalScore += prediction.Score;
+            predictionCount++;
+        }
+
+        return predictionCount > 0 ? totalScore / predictionCount : DefaultScore;
+    }
+
+    private CategoryMultipliers BuildCategoryMultipliers(User user)
+    {
+        return new CategoryMultipliers
+        {
+            FavoriteCategoryIds = user.FavoriteEvents?
+                .Where(e => e.Category != null)
+                .Select(e => e.CategoryId)
+                .Distinct()
+                .ToHashSet() ?? new HashSet<Guid>(),
+
+            PurchasedCategoryIds = user.TicketPurchases?
+                .Where(tp => tp.Event?.Category != null)
+                .Select(tp => tp.Event!.CategoryId)
+                .Distinct()
+                .ToHashSet() ?? new HashSet<Guid>(),
+
+            InterestCategoryIds = user.Categories?
+                .Select(c => c.Id)
+                .ToHashSet() ?? new HashSet<Guid>()
+        };
+    }
+
+    private float GetContentMultiplier(Event candidate, CategoryMultipliers multipliers)
+    {
+        if (multipliers.FavoriteCategoryIds.Contains(candidate.CategoryId) ||
+            multipliers.PurchasedCategoryIds.Contains(candidate.CategoryId))
+        {
+            return FavoritePurchaseWeight;
+        }
+
+        if (multipliers.InterestCategoryIds.Contains(candidate.CategoryId))
+        {
+            return InterestWeight;
+        }
+
+        return 1.0f;
+    }
+
+    private List<Event> GetSeedEvents(User user)
+    {
+        return user.FavoriteEvents
+            .Concat(user.TicketPurchases.Where(tp => tp.Event != null).Select(tp => tp.Event!))
+            .DistinctBy(e => e.Id)
+            .Take(MaxSeedEvents)
+            .ToList();
+    }
+
+    private bool IsModelAvailable()
+    {
+        return _model != null && _ml != null && _eventToIndex != null;
+    }
+
+    private async Task<User?> LoadUserWithRelations(Guid userId)
+    {
+        return await _context.Users
+            .Include(u => u.Categories)
+            .Include(u => u.FavoriteEvents)
+                .ThenInclude(e => e.Category)
+            .Include(u => u.TicketPurchases)
+                .ThenInclude(tp => tp.Event)
+                    .ThenInclude(e => e.Category)
+            .FirstOrDefaultAsync(u => u.Id == userId);
+    }
+
+    private async Task<List<Event>> LoadCachedRecommendations(Guid userId)
+    {
+        var cached = await _context.RecommendedEvents
+            .Where(r => r.UserId == userId)
+            .Include(r => r.Event)
+                .ThenInclude(e => e.Category)
+            .Include(r => r.Event)
+                .ThenInclude(e => e.CoverImage)
+            .Include(r => r.Event)
+                .ThenInclude(e => e.EventGalleryImages)
+            .Include(r => r.Event)
+                .ThenInclude(e => e.Tickets)
+            .ToListAsync();
+
+        return cached
+            .Where(r => r.Event != null && r.Event.IsPublished)
+            .Select(r => r.Event!)
+            .ToList();
+    }
+
+    private async Task<List<Event>> LoadCandidateEvents(
+        Guid userId,
+        List<Guid> categoryIds,
+        List<Guid> excludedIds)
+    {
+        return await _context.Events
+            .Include(e => e.Category)
+            .Include(e => e.CoverImage)
+            .Include(e => e.EventGalleryImages)
+            .Include(e => e.Tickets)
+            .Where(e =>
+                e.IsPublished &&
+                e.OrganizerId != userId &&
+                categoryIds.Contains(e.CategoryId) &&
+                !excludedIds.Contains(e.Id))
+            .ToListAsync();
+    }
+
+    private static List<Guid> GetExcludedEventIds(User user)
+    {
+        var favoriteIds = user.FavoriteEvents?.Select(e => e.Id) ?? Enumerable.Empty<Guid>();
+        var purchasedIds = user.TicketPurchases?.Select(tp => tp.EventId) ?? Enumerable.Empty<Guid>();
+
+        return favoriteIds
+            .Concat(purchasedIds)
+            .Distinct()
+            .ToList();
+    }
+
+    private static List<Guid> GetRelevantCategoryIds(User user)
+    {
+        var favoriteCategories = user.FavoriteEvents?
+            .Where(e => e.Category != null)
+            .Select(e => e.CategoryId) ?? Enumerable.Empty<Guid>();
+
+        var attendedCategories = user.TicketPurchases?
+            .Where(tp => tp.Event?.Category != null)
+            .Select(tp => tp.Event!.CategoryId) ?? Enumerable.Empty<Guid>();
+
+        var interestCategories = user.Categories?
+            .Select(c => c.Id) ?? Enumerable.Empty<Guid>();
+
+        return favoriteCategories
+            .Concat(attendedCategories)
+            .Concat(interestCategories)
+            .Distinct()
+            .ToList();
+    }
+
+    private async Task CacheRecommendationsSafely(Guid userId, List<Event> events)
+    {
+        if (!events.Any())
+            return;
+
+        try
+        {
+            await CacheRecommendations(userId, events);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error caching recommendations for user {userId}: {ex.Message}");
+        }
+    }
+
+    private async Task CacheRecommendations(Guid userId, List<Event> events)
+    {
+        if (!events.Any())
+            return;
+
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            var existingRecommendations = await _context.RecommendedEvents
+                .Where(r => r.UserId == userId)
+                .ToListAsync();
+
+            var existingEventIds = existingRecommendations.Select(r => r.EventId).ToHashSet();
+            var newEventIds = events.Select(e => e.Id).ToHashSet();
+
+            if (existingEventIds.SetEquals(newEventIds))
+            {
+                await transaction.CommitAsync();
+                return;
+            }
+
+            if (existingRecommendations.Any())
+            {
+                _context.RecommendedEvents.RemoveRange(existingRecommendations);
+                await _context.SaveChangesAsync();
+            }
+
+            var newRecommendations = events.Select(ev => new RecommendedEvent
+            {
+                UserId = userId,
+                EventId = ev.Id,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            }).ToList();
+
+            await _context.RecommendedEvents.AddRangeAsync(newRecommendations);
+            await _context.SaveChangesAsync();
+
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
+    }
+
+    private void ResetModel()
+    {
+        _ml = null;
+        _model = null;
+        _eventToIndex = null;
+        _indexToEvent = null;
+    }
+
+    private List<EventEntry> CollectTrainingData()
+    {
+        var data = new List<EventEntry>();
+
+        AddUserFavoritesToTrainingData(data);
+        AddUserPurchasesToTrainingData(data);
+        AddCategoryRelationsToTrainingData(data);
+        AddUserInterestRelationsToTrainingData(data);
+
+        return data
+            .Where(d => d.EventID > 0 && d.CoEventID > 0 && d.EventID != d.CoEventID)
+            .DistinctBy(d => new { d.EventID, d.CoEventID })
+            .ToList();
+    }
+
+    private void AddUserFavoritesToTrainingData(List<EventEntry> data)
+    {
+        var users = _context.Users
+            .Include(u => u.FavoriteEvents)
+            .Where(u => u.FavoriteEvents.Count > 1)
+            .ToList();
+
+        foreach (var user in users)
+            AddEventPairs(data, user.FavoriteEvents, 1.0f);
+    }
+
+    private void AddUserPurchasesToTrainingData(List<EventEntry> data)
+    {
+        var users = _context.Users
+            .Include(u => u.TicketPurchases)
+            .ThenInclude(tp => tp.Event)
+            .Where(u => u.TicketPurchases.Count > 1)
+            .ToList();
+
+        foreach (var user in users)
+        {
+            var events = user.TicketPurchases
+                .Select(tp => tp.Event)
+                .Where(e => e != null)
+                .DistinctBy(e => e!.Id)
+                .ToList()!;
+
+            AddEventPairs(data, events, 1.0f);
+        }
+    }
+
+    private void AddCategoryRelationsToTrainingData(List<EventEntry> data)
+    {
+        var categoryGroups = _context.Events
+            .Where(e => e.IsPublished && e.CategoryId != null)
+            .GroupBy(e => e.CategoryId)
+            .ToList();
+
+        foreach (var group in categoryGroups)
+            AddEventPairs(data, group.Take(6).ToList(), 0.7f);
+    }
+
+    private void AddUserInterestRelationsToTrainingData(List<EventEntry> data)
+    {
+        var users = _context.Users
+            .Include(u => u.Categories)
+            .Where(u => u.Categories.Any())
+            .ToList();
+
+        foreach (var user in users)
+        {
+            var categoryIds = user.Categories.Select(c => c.Id).ToList();
+            var events = _context.Events
+                .Where(e => e.IsPublished && categoryIds.Contains(e.CategoryId))
+                .ToList();
+
+            AddEventPairs(data, events.Take(4).ToList(), 0.8f);
+        }
+    }
+
+    private static void AddEventPairs(
+        List<EventEntry> data,
+        IEnumerable<Event> events,
+        float label)
+    {
+        var eventList = events.ToList();
+
+        foreach (var event1 in eventList)
+        {
+            foreach (var event2 in eventList.Where(e => e.Id != event1.Id))
+            {
+                var id1 = Hash(event1.Id);
+                var id2 = Hash(event2.Id);
+
+                if (id1 == id2)
+                    continue;
+
+                data.Add(new EventEntry
+                {
+                    EventID = id1,
+                    CoEventID = id2,
+                    Label = label
+                });
+            }
+        }
+    }
+
+    private List<EventEntry> MapEventsToIndices(List<EventEntry> data)
+    {
+        var uniqueEventIds = data
+            .SelectMany(d => new[] { d.EventID, d.CoEventID })
+            .Distinct()
+            .Take(MaxEvents)
+            .ToList();
+
+        _eventToIndex = uniqueEventIds
+            .Select((id, index) => new { id, index })
+            .ToDictionary(x => x.id, x => (uint)x.index + 1);
+
+        _indexToEvent = _eventToIndex.ToDictionary(k => k.Value, v => v.Key);
+
+        return data.Select(d => new EventEntry
+        {
+            EventID = _eventToIndex[d.EventID],
+            CoEventID = _eventToIndex[d.CoEventID],
+            Label = d.Label
+        }).ToList();
+    }
+
+    private static MatrixFactorizationTrainer.Options CreateTrainerOptions() => new()
+    {
+        MatrixColumnIndexColumnName = nameof(EventEntry.EventID),
+        MatrixRowIndexColumnName = nameof(EventEntry.CoEventID),
+        LabelColumnName = nameof(EventEntry.Label),
+        LossFunction = MatrixFactorizationTrainer.LossFunctionType.SquareLossOneClass,
+        Alpha = 0.01,
+        Lambda = 0.025,
+        NumberOfIterations = 100,
+        C = 0.00001
+    };
+
+    private static uint Hash(Guid id)
+    {
+        var hash = (uint)Math.Abs(id.GetHashCode());
+        return hash == 0 ? 1u : hash;
+    }
+
+    private class CategoryMultipliers
+    {
+        public HashSet<Guid> FavoriteCategoryIds { get; set; } = new();
+        public HashSet<Guid> PurchasedCategoryIds { get; set; } = new();
+        public HashSet<Guid> InterestCategoryIds { get; set; } = new();
     }
 
     public class EventEntry
     {
-        [KeyType(count: 10000)]
+        [KeyType(count: MaxEvents)]
         public uint EventID { get; set; }
 
-        [KeyType(count: 10000)]
+        [KeyType(count: MaxEvents)]
         public uint CoEventID { get; set; }
 
         public float Label { get; set; }
@@ -665,4 +570,3 @@ public class RecommendedEventService : IRecommendedEventService
         public float Score { get; set; }
     }
 }
-

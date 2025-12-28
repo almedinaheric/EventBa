@@ -260,9 +260,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     width: size.width * 0.3,
                     outlined: true,
                     small: true,
-                    onPressed: () {
+                    onPressed: () async {
                       // Close dialog first
                       Navigator.pop(context);
+
+                      // Call logout endpoint to clear recommendations
+                      try {
+                        final userProvider = Provider.of<UserProvider>(
+                          context,
+                          listen: false,
+                        );
+                        await userProvider.logout();
+                      } catch (e) {
+                        print('Error calling logout endpoint: $e');
+                      }
 
                       // Clear authentication credentials
                       Authorization.email = null;

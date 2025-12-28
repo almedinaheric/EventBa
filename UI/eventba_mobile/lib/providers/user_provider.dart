@@ -151,6 +151,24 @@ class UserProvider extends BaseProvider<User> {
     }
   }
 
+  Future<bool> logout() async {
+    var url = "${baseUrl}User/logout";
+    var uri = Uri.parse(url);
+    var headers = createHeaders();
+
+    try {
+      var response = await http.post(uri, headers: headers);
+      if (isValidResponse(response)) {
+        return true;
+      } else {
+        return false;
+      }
+    } catch (e) {
+      print("Error during logout: $e");
+      return false;
+    }
+  }
+
   void clearUser() {
     // Clear any cached user data if needed
   }

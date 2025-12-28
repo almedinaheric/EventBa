@@ -12,11 +12,13 @@ public class UserController : BaseCRUDController<UserResponseDto, UserSearchObje
     UserUpdateRequestDto>
 {
     private readonly IUserService _userService;
+    private readonly IRecommendedEventService _recommendedEventService;
 
     public UserController(ILogger<BaseCRUDController<UserResponseDto, UserSearchObject, UserInsertRequestDto,
-        UserUpdateRequestDto>> logger, IUserService service) : base(logger, service)
+        UserUpdateRequestDto>> logger, IUserService service, IRecommendedEventService recommendedEventService) : base(logger, service)
     {
         _userService = service;
+        _recommendedEventService = recommendedEventService;
     }
 
     [AllowAnonymous]
@@ -101,7 +103,6 @@ public class UserController : BaseCRUDController<UserResponseDto, UserSearchObje
     [AllowAnonymous]
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequestDto request)
     {
-        // Validate that code is provided
         if (string.IsNullOrWhiteSpace(request.Code))
         {
             return BadRequest(new { message = "Reset code must be provided." });
@@ -109,5 +110,24 @@ public class UserController : BaseCRUDController<UserResponseDto, UserSearchObje
 
         await _userService.ResetPasswordAsync(request.Email, request.Code, request.NewPassword);
         return Ok(new { message = "Password has been reset successfully." });
+    }
+
+    [HttpPost("logout")]
+    [Authorize]
+    public async Task<IActionResult> Logout()
+    {
+        try
+        {
+            var user = await _userService.GetUserAsync();
+            if (user != null)
+            {
+                await _recommendedEventService.DeleteRecommendationsForUser(user.Id);
+            }
+            return Ok(new { message = "Logged out successfully. Recommendations cleared." });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = $"Error during logout: {ex.Message}" });
+        }
     }
 }

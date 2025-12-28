@@ -52,17 +52,6 @@ public class BasicAuthenticationHandler : AuthenticationHandler<AuthenticationSc
             return AuthenticateResult.Fail("Incorrect email or password");
         }
 
-        // Delete cached recommendations for this user on login to force regeneration
-        // This ensures fresh recommendations based on latest data and model
-        try
-        {
-            await _recommendedEventService.DeleteRecommendationsForUser(user.Id);
-        }
-        catch (Exception ex)
-        {
-            // Log but don't fail authentication if recommendation deletion fails
-            Logger.LogWarning(ex, "Failed to delete recommendations for user {UserId} on login", user.Id);
-        }
 
         var claims = CreateClaims(user);
         var identity = new ClaimsIdentity(claims, Scheme.Name);
