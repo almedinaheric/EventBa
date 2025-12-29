@@ -66,7 +66,6 @@ class _HomeScreenState extends State<HomeScreen> {
       final result = await provider.getRecommendedEvents();
       return result;
     } catch (e) {
-      print('Error fetching recommended events: $e');
       return [];
     }
   }
@@ -76,7 +75,6 @@ class _HomeScreenState extends State<HomeScreen> {
       final result = await provider.getPublicEvents();
       return result;
     } catch (e) {
-      print('Error fetching public events: $e');
       return [];
     }
   }
@@ -86,7 +84,6 @@ class _HomeScreenState extends State<HomeScreen> {
       final result = await provider.getPrivateEvents();
       return result;
     } catch (e) {
-      print('Error fetching private events: $e');
       return [];
     }
   }
@@ -98,7 +95,6 @@ class _HomeScreenState extends State<HomeScreen> {
       final result = await provider.get(filter: {'page': 1, 'pageSize': 1000});
       return result.result;
     } catch (e) {
-      print('Error fetching categories: $e');
       return [];
     }
   }
@@ -135,7 +131,6 @@ class _HomeScreenState extends State<HomeScreen> {
         _isSearchLoading = false;
       });
     } catch (e) {
-      print('Error searching events: $e');
       setState(() {
         _searchResults = [];
         _isSearchLoading = false;
@@ -399,7 +394,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return EventCard(
       imageData: event.coverImage?.data,
       eventName: event.title,
-      location: event.location ?? 'Location TBA',
+      location: event.location,
       date: event.startDate,
       height: 160,
 
@@ -577,7 +572,7 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         const Text(
           'Search Results',
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
             color: Colors.black87,

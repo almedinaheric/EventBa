@@ -31,7 +31,6 @@ class TicketTypeBadge extends StatelessWidget {
       ),
       child: Row(
         children: [
-          
           Expanded(
             flex: 2,
             child: Text(
@@ -39,8 +38,6 @@ class TicketTypeBadge extends StatelessWidget {
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
           ),
-
-          
           Expanded(
             flex: 1,
             child: Text(
@@ -52,8 +49,6 @@ class TicketTypeBadge extends StatelessWidget {
               ),
             ),
           ),
-
-          
           Expanded(
             flex: 1,
             child: Align(

@@ -99,7 +99,6 @@ class _EditEventScreenState extends State<EditEventScreen> {
     try {
       final eventProvider = Provider.of<EventProvider>(context, listen: false);
       final eventId = widget.event['id'];
-      print("Fetching event $eventId from backend to get gallery image IDs...");
 
       final url = "${eventProvider.baseUrl}Event/$eventId";
       final uri = Uri.parse(url);
@@ -109,8 +108,6 @@ class _EditEventScreenState extends State<EditEventScreen> {
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final jsonData = jsonDecode(response.body);
         final galleryImageIds = jsonData['galleryImageIds'];
-
-        print("Raw JSON galleryImageIds: $galleryImageIds");
 
         if (galleryImageIds != null && galleryImageIds is List) {
           final fetchedIds = galleryImageIds
@@ -123,23 +120,10 @@ class _EditEventScreenState extends State<EditEventScreen> {
             setState(() {
               _existingGalleryImageIds = fetchedIds;
             });
-            print(
-              "Fetched ${fetchedIds.length} gallery image IDs from backend JSON: $fetchedIds",
-            );
-          } else {
-            print("WARNING: galleryImageIds array is empty");
           }
-        } else {
-          print(
-            "WARNING: galleryImageIds not found in JSON response or not a list",
-          );
         }
-      } else {
-        print("Error fetching event: ${response.statusCode}");
       }
-    } catch (e) {
-      print("Error fetching gallery image IDs: $e");
-    }
+    } catch (e) {}
   }
 
   Future<void> _loadCategories() async {
@@ -156,7 +140,6 @@ class _EditEventScreenState extends State<EditEventScreen> {
       );
       _categories = result.result;
     } catch (e) {
-      print("Error loading categories: $e");
     } finally {
       setState(() {
         _categoriesLoading = false;
@@ -176,10 +159,8 @@ class _EditEventScreenState extends State<EditEventScreen> {
     }
 
     _existingCoverImageId = widget.event['coverImageId'];
-    print("Loaded existing cover image ID: $_existingCoverImageId");
 
     final galleryImages = widget.event['galleryImages'];
-    print("Loading gallery images from event data: $galleryImages");
     if (galleryImages != null && galleryImages is List) {
       _existingGalleryImageData = galleryImages
           .map((e) {
@@ -193,30 +174,15 @@ class _EditEventScreenState extends State<EditEventScreen> {
           .whereType<String>()
           .where((e) => e.isNotEmpty)
           .toList();
-      print("Loaded ${_existingGalleryImageData.length} gallery images");
-    } else {
-      print("No gallery images found or invalid format");
     }
 
     final galleryImageIds = widget.event['galleryImageIds'];
-    print("Loading gallery image IDs from event data: $galleryImageIds");
     if (galleryImageIds != null && galleryImageIds is List) {
       _existingGalleryImageIds = galleryImageIds
           .map((e) => e?.toString())
           .whereType<String>()
           .where((e) => e.isNotEmpty)
           .toList();
-      print(
-        "Loaded ${_existingGalleryImageIds.length} gallery image IDs: $_existingGalleryImageIds",
-      );
-    } else {
-      print("No gallery image IDs found in event data");
-
-      if (_existingGalleryImageData.isNotEmpty) {
-        print(
-          "WARNING: Gallery images exist but no IDs found. Will need to fetch event from backend.",
-        );
-      }
     }
   }
 
@@ -558,7 +524,6 @@ class _EditEventScreenState extends State<EditEventScreen> {
         });
       }
     } catch (e) {
-      print('Error picking main image: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -598,7 +563,6 @@ class _EditEventScreenState extends State<EditEventScreen> {
         });
       }
     } catch (e) {
-      print('Error picking additional image: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -854,9 +818,6 @@ class _EditEventScreenState extends State<EditEventScreen> {
 
       if (_existingGalleryImageData.isNotEmpty &&
           _existingGalleryImageIds.isEmpty) {
-        print(
-          "Gallery image IDs missing, fetching from backend before processing...",
-        );
         await _fetchGalleryImageIds();
       }
 
@@ -865,11 +826,6 @@ class _EditEventScreenState extends State<EditEventScreen> {
         listen: false,
       );
       List<String> finalGalleryImageIds = [];
-
-      print(
-        "Processing gallery images - New: ${_additionalImages.length}, Existing IDs: ${_existingGalleryImageIds.length}",
-      );
-      print("Existing gallery image IDs: $_existingGalleryImageIds");
 
       for (int i = 0; i < 3; i++) {
         if (i < _additionalImages.length) {
@@ -885,20 +841,11 @@ class _EditEventScreenState extends State<EditEventScreen> {
           final imageResponse = await imageProvider.insert(imageRequest);
           if (imageResponse.id != null && imageResponse.id!.isNotEmpty) {
             finalGalleryImageIds.add(imageResponse.id!);
-            print("Added new image at slot $i with ID: ${imageResponse.id}");
           }
         } else if (i < _existingGalleryImageIds.length) {
           finalGalleryImageIds.add(_existingGalleryImageIds[i]);
-          print(
-            "Preserved existing image at slot $i with ID: ${_existingGalleryImageIds[i]}",
-          );
         }
       }
-
-      print(
-        "Final gallery image IDs count: ${finalGalleryImageIds.length} (New: ${_additionalImages.length}, Preserved: ${finalGalleryImageIds.length - _additionalImages.length})",
-      );
-      print("Final gallery image IDs: $finalGalleryImageIds");
 
       await _replaceGalleryImages(event['id'], finalGalleryImageIds);
 
@@ -915,7 +862,6 @@ class _EditEventScreenState extends State<EditEventScreen> {
 
       Navigator.pop(context, true);
     } catch (e) {
-      print('Error updating event: $e');
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -956,9 +902,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
           }
         }
       });
-    } catch (e) {
-      print("Error loading existing tickets: $e");
-    }
+    } catch (e) {}
   }
 
   Future<void> _handleTicketTypeChange(String eventId, String eventDate) async {
@@ -979,7 +923,6 @@ class _EditEventScreenState extends State<EditEventScreen> {
         await _updateTicketsForPaidEvent(eventId, eventDate, ticketProvider);
       }
     } catch (e) {
-      print("Error handling ticket type change: $e");
       rethrow;
     }
   }
@@ -1214,7 +1157,6 @@ class _EditEventScreenState extends State<EditEventScreen> {
         );
       }
     } catch (e) {
-      print('Error replacing gallery images: $e');
       rethrow;
     }
   }

@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import 'package:eventba_mobile/providers/event_provider.dart';
 import 'package:eventba_mobile/providers/user_provider.dart';
 import 'package:eventba_mobile/models/event/event.dart';
-import 'package:eventba_mobile/models/enums/event_status.dart';
 import 'my_event_details_screen.dart';
 
 class MyEventsScreen extends StatefulWidget {
@@ -34,9 +33,7 @@ class _MyEventsScreenState extends State<MyEventsScreen> {
       setState(() {
         _isAdmin = user.role.name.toLowerCase() == 'admin';
       });
-    } catch (e) {
-      print("Failed to check user role: $e");
-    }
+    } catch (e) {}
   }
 
   @override
@@ -59,7 +56,6 @@ class _MyEventsScreenState extends State<MyEventsScreen> {
       if (mounted) {
         setState(() {
           if (_isAdmin) {
-            // For admin, filter to show only upcoming events based on date
             final today = DateTime.now();
             final todayDateOnly = DateTime(today.year, today.month, today.day);
             _events = events.where((event) {
@@ -80,7 +76,6 @@ class _MyEventsScreenState extends State<MyEventsScreen> {
         });
       }
     } catch (e) {
-      print("Failed to load my events: $e");
       if (mounted) {
         setState(() {
           _isLoading = false;

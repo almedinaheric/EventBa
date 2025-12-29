@@ -35,20 +35,16 @@ class _EventStatisticsScreenState extends State<EventStatisticsScreen> {
     try {
       final eventProvider = Provider.of<EventProvider>(context, listen: false);
 
-      
       final event = await eventProvider.getById(widget.eventId);
       final eventEndDateTime = DateTime.parse(
         '${event.endDate} ${event.endTime}',
       );
       final isPast = eventEndDateTime.isBefore(DateTime.now());
 
-      
       Map<String, dynamic>? statistics;
       try {
         statistics = await eventProvider.getEventStatistics(widget.eventId);
-      } catch (e) {
-        print("Failed to load statistics: $e");
-      }
+      } catch (e) {}
 
       setState(() {
         _event = event;
@@ -57,7 +53,6 @@ class _EventStatisticsScreenState extends State<EventStatisticsScreen> {
         _isLoading = false;
       });
     } catch (e) {
-      print("Error loading statistics: $e");
       setState(() {
         _isLoading = false;
       });
@@ -94,7 +89,6 @@ class _EventStatisticsScreenState extends State<EventStatisticsScreen> {
               : _statistics!['averageRating'].toString())
         : 'N/A';
 
-    
     if (!_isPast) {
       return MasterScreenWidget(
         title: "Event Statistics",
@@ -207,7 +201,6 @@ class _EventStatisticsScreenState extends State<EventStatisticsScreen> {
               : _statistics!['averageRating'].toString())
         : 'N/A';
 
-    
     String formatDate(String dateStr) {
       try {
         final date = DateTime.parse(dateStr);
@@ -229,7 +222,6 @@ class _EventStatisticsScreenState extends State<EventStatisticsScreen> {
       }
     }
 
-    
     final report =
         '''
 EVENT STATISTICS REPORT

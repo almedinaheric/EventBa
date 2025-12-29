@@ -52,7 +52,6 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
   void _confirmPayment() async {
     if (_isProcessing) return;
 
-    
     if (_ticketCounts.values.every((count) => count == 0)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -68,7 +67,6 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
     });
 
     try {
-      
       bool allFree = true;
       for (var entry in _ticketCounts.entries) {
         if (entry.value > 0 && _ticketMap[entry.key]!.price > 0) {
@@ -78,10 +76,8 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
       }
 
       if (allFree) {
-        
         await _processFreeTickets();
       } else {
-        
         await _processStripePayment();
       }
     } catch (e) {
@@ -109,13 +105,7 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
         'amount': _totalPrice,
         'currency': 'usd',
       });
-      print(
-        'Payment record created: amount=$_totalPrice, eventId=${widget.eventId}',
-      );
-    } catch (e) {
-      print('Error creating payment record: $e');
-      
-    }
+    } catch (e) {}
   }
 
   Future<void> _processTicketPurchases() async {
@@ -124,30 +114,17 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
       listen: false,
     );
 
-    
     for (var entry in _ticketCounts.entries) {
       if (entry.value > 0) {
         final ticket = _ticketMap[entry.key];
-        print(
-          'Processing ${entry.value} ticket(s) of type: ${ticket?.ticketType ?? entry.key}',
-        );
 
         for (int i = 0; i < entry.value; i++) {
           try {
-            print(
-              'Creating ticket purchase ${i + 1}/${entry.value} for ticketId: ${entry.key}',
-            );
             await ticketPurchaseProvider.insert({
               'ticketId': entry.key,
               'eventId': widget.eventId,
             });
-            print(
-              '✓ Ticket purchase created: ticketId=${entry.key}, count=${i + 1}/${entry.value}',
-            );
           } catch (e) {
-            print(
-              '✗ Error creating ticket purchase ${i + 1}/${entry.value} for ticketId=${entry.key}: $e',
-            );
             throw Exception(
               'Failed to create ticket purchase for ${ticket?.ticketType ?? entry.key}: $e',
             );
@@ -155,7 +132,6 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
         }
       }
     }
-    print('All ticket purchases created successfully');
   }
 
   Future<void> _processFreeTickets() async {
@@ -172,7 +148,6 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
       listen: false,
     );
 
-    
     String ticketId = '';
     int totalQuantity = 0;
 
@@ -186,11 +161,6 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
     }
 
     try {
-      print(
-        'Creating payment intent: amount=${_totalPrice}, ticketId=$ticketId, eventId=${widget.eventId}, quantity=$totalQuantity',
-      );
-
-      
       final paymentIntentData = await paymentProvider.createPaymentIntent(
         amount: _totalPrice,
         currency: 'usd',
@@ -199,31 +169,20 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
         quantity: totalQuantity,
       );
 
-      print('Payment intent created: ${paymentIntentData.toString()}');
-
-      
       if (paymentIntentData['clientSecret'] == null) {
         throw Exception(
           'Invalid payment intent response: missing clientSecret',
         );
       }
 
-      
       if (paymentIntentData['publishableKey'] != null) {
         final backendPublishableKey =
             paymentIntentData['publishableKey'] as String;
         if (backendPublishableKey.isNotEmpty &&
             stripe.Stripe.publishableKey != backendPublishableKey) {
-          print('Updating Stripe publishable key from backend');
           stripe.Stripe.publishableKey = backendPublishableKey;
         }
       }
-
-      
-      print('Initializing payment sheet...');
-      print(
-        'Using Stripe publishable key: ${stripe.Stripe.publishableKey.substring(0, 20)}...',
-      );
 
       await stripe.Stripe.instance.initPaymentSheet(
         paymentSheetParameters: stripe.SetupPaymentSheetParameters(
@@ -233,16 +192,10 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
         ),
       );
 
-      print('Presenting payment sheet...');
-      
       await stripe.Stripe.instance.presentPaymentSheet();
 
-      print('Payment successful! Creating payment record...');
-      
       await _createPaymentRecord();
 
-      print('Creating ticket purchases...');
-      
       await _processTicketPurchases();
 
       setState(() {
@@ -254,8 +207,6 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
       setState(() {
         _isProcessing = false;
       });
-
-      print('Stripe error: ${e.error.code} - ${e.error.localizedMessage}');
 
       if (e.error.code != stripe.FailureCode.Canceled) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -273,7 +224,6 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
         _isProcessing = false;
       });
 
-      print('Payment error: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           behavior: SnackBarBehavior.floating,
@@ -498,7 +448,6 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
                     ],
                   ),
                 ),
-                
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -525,7 +474,7 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
                   onPressed: _isProcessing ? () {} : _confirmPayment,
                   width: double.infinity,
                 ),
-                const SizedBox(height: 24), 
+                const SizedBox(height: 24),
               ],
             ),
           );

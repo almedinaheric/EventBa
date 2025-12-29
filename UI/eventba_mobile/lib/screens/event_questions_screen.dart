@@ -35,7 +35,7 @@ class _EventQuestionsScreenState extends State<EventQuestionsScreen> {
         context,
         listen: false,
       );
-      
+
       final questions = await questionProvider.getQuestionsForEvent(
         widget.eventId,
       );
@@ -44,7 +44,6 @@ class _EventQuestionsScreenState extends State<EventQuestionsScreen> {
         _isLoading = false;
       });
     } catch (e) {
-      print("Error loading questions: $e");
       setState(() {
         _isLoading = false;
       });

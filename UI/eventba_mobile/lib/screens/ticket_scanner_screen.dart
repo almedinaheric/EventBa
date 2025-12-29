@@ -43,14 +43,9 @@ class _TicketScannerScreenState extends State<TicketScannerScreen> {
       _isSimulator = true;
     } else {
       try {
-        
         if (Platform.isIOS) {
-          
-          
-          _isSimulator =
-              false; 
+          _isSimulator = false;
         } else if (Platform.isAndroid) {
-          
           final model = Platform.environment['ANDROID_MODEL'] ?? '';
           _isSimulator =
               model.toLowerCase().contains('sdk') ||
@@ -60,7 +55,6 @@ class _TicketScannerScreenState extends State<TicketScannerScreen> {
           _isSimulator = false;
         }
       } catch (e) {
-        
         _isSimulator = false;
       }
     }
@@ -77,7 +71,6 @@ class _TicketScannerScreenState extends State<TicketScannerScreen> {
     final List<Barcode> barcodes = capture.barcodes;
     for (final barcode in barcodes) {
       if (barcode.rawValue != null && !_isValidating) {
-        
         String ticketCode = barcode.rawValue!;
         if (ticketCode.contains('|TICKET:')) {
           final parts = ticketCode.split('|TICKET:');
@@ -111,9 +104,7 @@ class _TicketScannerScreenState extends State<TicketScannerScreen> {
       if (mounted) {
         try {
           await controller?.stop();
-        } catch (e) {
-          
-        }
+        } catch (e) {}
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             behavior: SnackBarBehavior.floating,
@@ -121,7 +112,6 @@ class _TicketScannerScreenState extends State<TicketScannerScreen> {
             backgroundColor: Colors.green,
           ),
         );
-        
         Future.delayed(const Duration(seconds: 2), () {
           if (mounted) {
             setState(() {
@@ -130,9 +120,7 @@ class _TicketScannerScreenState extends State<TicketScannerScreen> {
             });
             try {
               controller?.start();
-            } catch (e) {
-              
-            }
+            } catch (e) {}
           }
         });
       }
@@ -148,12 +136,9 @@ class _TicketScannerScreenState extends State<TicketScannerScreen> {
             backgroundColor: Colors.red,
           ),
         );
-        
         try {
           controller?.start();
-        } catch (startError) {
-          
-        }
+        } catch (startError) {}
       }
     }
   }

@@ -1,6 +1,6 @@
-import 'package:eventba_mobile/screens/notification_details_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:eventba_mobile/models/notification/notification.dart' as notification_model;
+import 'package:eventba_mobile/models/notification/notification.dart'
+    as notification_model;
 
 class NotificationCard extends StatelessWidget {
   final notification_model.Notification notification;
@@ -27,7 +27,9 @@ class NotificationCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: isUnread ? Colors.blue.withOpacity(0.05) : Colors.white,
           border: Border.all(
-            color: isUnread ? Colors.blue.withOpacity(0.3) : const Color(0xFFBDBDBD),
+            color: isUnread
+                ? Colors.blue.withOpacity(0.3)
+                : const Color(0xFFBDBDBD),
             width: isUnread ? 2 : 1,
           ),
           borderRadius: BorderRadius.circular(12),
@@ -41,11 +43,9 @@ class NotificationCard extends StatelessWidget {
         ),
         child: Stack(
           children: [
-            
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                
                 Stack(
                   children: [
                     Container(
@@ -60,7 +60,6 @@ class NotificationCard extends StatelessWidget {
                         size: 32,
                       ),
                     ),
-                    
                     if (isUnread)
                       Positioned(
                         top: 0,
@@ -77,8 +76,6 @@ class NotificationCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(width: 12),
-
-                
                 Expanded(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -86,7 +83,6 @@ class NotificationCard extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          
                           if (notification.isImportant)
                             Container(
                               padding: const EdgeInsets.symmetric(
@@ -118,7 +114,6 @@ class NotificationCard extends StatelessWidget {
                                 ],
                               ),
                             ),
-                          
                           if (isUnread)
                             Container(
                               padding: const EdgeInsets.symmetric(
@@ -146,7 +141,9 @@ class NotificationCard extends StatelessWidget {
                         notification.title,
                         style: TextStyle(
                           fontSize: 16,
-                          fontWeight: isUnread ? FontWeight.bold : FontWeight.w600,
+                          fontWeight: isUnread
+                              ? FontWeight.bold
+                              : FontWeight.w600,
                           color: Colors.black,
                         ),
                       ),
@@ -163,20 +160,14 @@ class NotificationCard extends StatelessWidget {
                 ),
 
                 const SizedBox(width: 8),
-
-                
                 Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
                       time,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey,
-                      ),
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
                     ),
                     const SizedBox(height: 8),
-                    
                     if (onDelete != null)
                       GestureDetector(
                         onTap: onDelete,

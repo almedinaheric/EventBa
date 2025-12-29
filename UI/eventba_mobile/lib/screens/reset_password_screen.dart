@@ -70,7 +70,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         ),
       );
 
-      
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => const LoginScreen()),
@@ -175,7 +174,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                             ? null
                             : 'Password must be at least 8 characters long and include an uppercase letter, a lowercase letter, and a number.';
 
-                        
                         if (_isConfirmPasswordValid &&
                             text != _passwordController.text) {
                           _isConfirmPasswordValid = false;

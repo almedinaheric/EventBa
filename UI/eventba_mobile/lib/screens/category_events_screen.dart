@@ -39,7 +39,6 @@ class _CategoryEventsScreenState extends State<CategoryEventsScreen> {
         _isLoading = false;
       });
     } catch (e) {
-      print("Failed to load events: $e");
       setState(() {
         _isLoading = false;
       });

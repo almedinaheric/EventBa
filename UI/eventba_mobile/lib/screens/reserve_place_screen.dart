@@ -29,7 +29,6 @@ class _ReservePlaceScreenState extends State<ReservePlaceScreen> {
   @override
   void initState() {
     super.initState();
-    
     _quantity = widget.availablePlaces > 0 ? 1 : 0;
     _loadFreeTicket();
   }
@@ -42,7 +41,6 @@ class _ReservePlaceScreenState extends State<ReservePlaceScreen> {
       );
       final tickets = await ticketProvider.getTicketsForEvent(widget.eventId);
 
-      
       final freeTicket = tickets.firstWhere(
         (ticket) => ticket.price == 0,
         orElse: () => throw Exception("No free ticket found for this event"),
@@ -108,24 +106,16 @@ class _ReservePlaceScreenState extends State<ReservePlaceScreen> {
         listen: false,
       );
 
-      
       for (int i = 0; i < _quantity; i++) {
         try {
-          print(
-            'Creating reservation ${i + 1}/$_quantity for event ${widget.eventId}',
-          );
           await ticketPurchaseProvider.insert({
             'ticketId': _freeTicketId,
             'eventId': widget.eventId,
           });
-          print('✓ Reservation ${i + 1}/$_quantity created successfully');
         } catch (e) {
-          print('✗ Error creating reservation ${i + 1}/$_quantity: $e');
           throw Exception('Failed to create reservation: $e');
         }
       }
-
-      print('All reservations created successfully');
 
       setState(() {
         _isProcessing = false;
@@ -172,9 +162,8 @@ class _ReservePlaceScreenState extends State<ReservePlaceScreen> {
             PrimaryButton(
               text: 'Ok',
               onPressed: () {
-                Navigator.pop(context); 
-                Navigator.pop(context); 
-                
+                Navigator.pop(context);
+                Navigator.pop(context);
                 Navigator.push(
                   context,
                   PageRouteBuilder(
@@ -326,7 +315,7 @@ class _ReservePlaceScreenState extends State<ReservePlaceScreen> {
                     ],
                   ),
                 ),
-                const Spacer(), 
+                const Spacer(),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -353,7 +342,7 @@ class _ReservePlaceScreenState extends State<ReservePlaceScreen> {
                   onPressed: _isProcessing ? () {} : _reservePlaces,
                   width: double.infinity,
                 ),
-                const SizedBox(height: 24), 
+                const SizedBox(height: 24),
               ],
             ),
           );

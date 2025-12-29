@@ -54,21 +54,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
       final event = await eventProvider.getById(widget.eventId);
 
-      print('=== EVENT LOADED DEBUG ===');
-      print('Event ID: ${event.id}');
-      print(
-        'Cover image: ${event.coverImage?.data != null ? "exists (${event.coverImage!.data!.length} chars)" : "null"}',
-      );
-      print('Gallery images: ${event.galleryImages?.length ?? 0}');
-      if (event.galleryImages != null) {
-        for (var i = 0; i < event.galleryImages!.length; i++) {
-          print(
-            '  Gallery image $i: ${event.galleryImages![i].data != null ? "has data (${event.galleryImages![i].data!.length} chars)" : "no data"}',
-          );
-        }
-      }
-      print('=== END EVENT DEBUG ===');
-
       setState(() {
         _event = event;
       });
@@ -76,21 +61,9 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       try {
         final currentUser = await userProvider.getProfile();
 
-        print("=== FAVORITE CHECK DEBUG ===");
-        print("Event ID: ${event.id}");
-        print(
-          "User favorite events count: ${currentUser.favoriteEvents.length}",
-        );
-        print(
-          "User favorite events IDs: ${currentUser.favoriteEvents.map((e) => e.id).toList()}",
-        );
-
         final isEventFavorited = currentUser.favoriteEvents.any(
           (favEvent) => favEvent.id == event.id,
         );
-
-        print("Is event favorited: $isEventFavorited");
-        print("=== END DEBUG ===");
 
         setState(() {
           isFavorited = isEventFavorited;
@@ -136,35 +109,20 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       final eventProvider = Provider.of<EventProvider>(context, listen: false);
       final userProvider = Provider.of<UserProvider>(context, listen: false);
 
-      print("=== TOGGLE FAVORITE DEBUG ===");
-      print("Before toggle - Event ID: ${widget.eventId}");
-      print("Before toggle - isFavorited: $isFavorited");
-
       await eventProvider.toggleFavoriteEvent(widget.eventId);
 
       await Future.delayed(const Duration(milliseconds: 500));
 
       final updatedUser = await userProvider.getProfile();
-      print(
-        "After toggle - User favorite events count: ${updatedUser.favoriteEvents.length}",
-      );
-      print(
-        "After toggle - User favorite events IDs: ${updatedUser.favoriteEvents.map((e) => e.id).toList()}",
-      );
 
       final isEventFavorited = updatedUser.favoriteEvents.any(
         (favEvent) => favEvent.id == widget.eventId,
       );
 
-      print("After toggle - isEventFavorited: $isEventFavorited");
-      print("=== END TOGGLE DEBUG ===");
-
       setState(() {
         isFavorited = isEventFavorited;
       });
-    } catch (e) {
-      print("Toggle favorite error: $e");
-    }
+    } catch (e) {}
   }
 
   Future<void> _toggleFollow() async {
@@ -204,18 +162,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     if (_event == null) return;
 
     List<String> allImages = [];
-    print('=== IMAGE DIALOG DEBUG ===');
-    print(
-      'Cover image: ${_event!.coverImage?.data != null ? "exists" : "null"}',
-    );
-    print('Gallery images count: ${_event!.galleryImages?.length ?? 0}');
-    if (_event!.galleryImages != null) {
-      for (var i = 0; i < _event!.galleryImages!.length; i++) {
-        print(
-          'Gallery image $i: ${_event!.galleryImages![i].data != null ? "has data" : "no data"}',
-        );
-      }
-    }
 
     if (_event!.coverImage?.data != null) {
       allImages.add(_event!.coverImage!.data!);
@@ -227,8 +173,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
         }
       }
     }
-    print('Total images for dialog: ${allImages.length}');
-    print('=== END DEBUG ===');
 
     if (allImages.isEmpty) return;
 
@@ -557,9 +501,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                         }
                         if (_event!.galleryImages != null &&
                             _event!.galleryImages!.isNotEmpty) {
-                          print(
-                            'Loading gallery images in carousel: ${_event!.galleryImages!.length}',
-                          );
                           for (var galleryImage in _event!.galleryImages!) {
                             if (galleryImage.data != null &&
                                 galleryImage.data!.isNotEmpty) {
@@ -567,7 +508,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                             }
                           }
                         }
-                        print('Total images in carousel: ${allImages.length}');
 
                         if (allImages.isEmpty) {
                           return SizedBox(

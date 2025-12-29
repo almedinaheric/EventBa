@@ -7,7 +7,6 @@ import 'package:eventba_mobile/providers/event_provider.dart';
 import 'package:eventba_mobile/providers/user_provider.dart';
 import 'package:eventba_mobile/models/event/basic_event.dart';
 import 'package:eventba_mobile/models/user/user.dart';
-import 'package:eventba_mobile/models/enums/event_status.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 

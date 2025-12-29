@@ -82,11 +82,9 @@ class EventReviewProvider extends BaseProvider<EventReview> {
         );
         return userReview;
       } catch (e) {
-        
         return null;
       }
     } catch (e) {
-      print("Error fetching user review: $e");
       return null;
     }
   }

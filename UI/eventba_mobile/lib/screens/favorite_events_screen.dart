@@ -31,7 +31,6 @@ class _FavoriteEventsScreenState extends State<FavoriteEventsScreen> {
         _isLoading = false;
       });
     } catch (e) {
-      print("Failed to load favorite events: $e");
       setState(() {
         _isLoading = false;
       });
@@ -104,8 +103,6 @@ class _FavoriteEventsScreenState extends State<FavoriteEventsScreen> {
       setState(() {
         _favoriteEvents.removeWhere((event) => event.id == eventId);
       });
-    } catch (e) {
-      print("Failed to remove from favorites: $e");
-    }
+    } catch (e) {}
   }
 }

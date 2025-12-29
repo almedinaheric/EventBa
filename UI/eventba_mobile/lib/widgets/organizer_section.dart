@@ -57,7 +57,6 @@ class _OrganizerSectionState extends State<OrganizerSection> {
         ),
       );
     } catch (e) {
-      print("Error: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           behavior: SnackBarBehavior.floating,

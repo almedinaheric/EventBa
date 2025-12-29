@@ -945,12 +945,8 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
         'coverImageId': coverImageId,
       };
 
-      print('Creating event with request: $request');
-
       final createdEvent = await eventProvider.insert(request);
       final eventId = createdEvent.id;
-
-      print('Event created with ID: $eventId');
 
       if (_additionalImages.isNotEmpty) {
         List<String> galleryImageIds = [];
@@ -995,7 +991,6 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
         ),
       );
     } catch (e) {
-      print("Failed to create event: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           behavior: SnackBarBehavior.floating,
@@ -1032,11 +1027,7 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
           'Failed to link gallery images: ${response.statusCode}',
         );
       }
-
-      print('Gallery images linked successfully');
-    } catch (e) {
-      print('Error linking gallery images: $e');
-    }
+    } catch (e) {}
   }
 
   Future<void> _createTickets(String eventId) async {
@@ -1073,7 +1064,6 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
               'Failed to create VIP ticket: ${vipResponse.statusCode}',
             );
           }
-          print('VIP ticket created');
         }
 
         if (int.parse(_ecoCountController.text.trim()) > 0) {
@@ -1099,7 +1089,6 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
               'Failed to create Economy ticket: ${ecoResponse.statusCode}',
             );
           }
-          print('Economy ticket created');
         }
       } else {
         final freeTicketRequest = {
@@ -1124,10 +1113,8 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
             'Failed to create free ticket: ${freeResponse.statusCode}',
           );
         }
-        print('Free ticket created');
       }
     } catch (e) {
-      print('Error creating tickets: $e');
       throw e;
     }
   }

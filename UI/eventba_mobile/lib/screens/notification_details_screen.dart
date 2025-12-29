@@ -290,7 +290,6 @@ class NotificationDetailsScreen extends StatelessWidget {
         ).delete(notification!.id);
         Navigator.of(context).pop(true);
       } catch (e) {
-        print("Error deleting notification: $e");
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             behavior: SnackBarBehavior.floating,

@@ -45,9 +45,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
         try {
           final event = await eventProvider.getById(eventId);
           events[eventId] = event;
-        } catch (e) {
-          print("Failed to load event $eventId: $e");
-        }
+        } catch (e) {}
       }
 
       final upcomingTicketsByEvent = <String, List<TicketPurchase>>{};
@@ -81,17 +79,20 @@ class _TicketsScreenState extends State<TicketsScreen> {
         }
       }
 
-      setState(() {
-        _upcomingTicketsByEvent = upcomingTicketsByEvent;
-        _pastTicketsByEvent = pastTicketsByEvent;
-        _events = events;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _upcomingTicketsByEvent = upcomingTicketsByEvent;
+          _pastTicketsByEvent = pastTicketsByEvent;
+          _events = events;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      print("Failed to load tickets: $e");
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 

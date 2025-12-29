@@ -43,15 +43,12 @@ class _EventReviewsScreenState extends State<EventReviewsScreen> {
 
       final reviews = await reviewProvider.getReviewsForEvent(widget.eventId!);
 
-      
       final usersMap = <String, User>{};
       for (final review in reviews) {
         try {
           final user = await userProvider.getById(review.userId);
           usersMap[review.userId] = user;
-        } catch (e) {
-          print("Failed to load user ${review.userId}: $e");
-        }
+        } catch (e) {}
       }
 
       setState(() {
@@ -60,7 +57,6 @@ class _EventReviewsScreenState extends State<EventReviewsScreen> {
         _isLoading = false;
       });
     } catch (e) {
-      print("Error loading reviews: $e");
       setState(() {
         _isLoading = false;
       });

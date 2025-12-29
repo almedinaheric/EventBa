@@ -50,15 +50,11 @@ class PaymentProvider extends BaseProvider<Payment> {
       'quantity': quantity,
     });
 
-    print('Payment intent request: $body');
     var response = await http.post(uri, headers: headers, body: body);
-    print('Payment intent response status: ${response.statusCode}');
-    print('Payment intent response body: ${response.body}');
 
     if (isValidResponse(response)) {
       return jsonDecode(response.body);
     } else {
-      
       try {
         final errorData = jsonDecode(response.body);
         final errorMessage =

@@ -66,8 +66,6 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
         _isAdmin = user.role.name.toLowerCase() == 'admin';
       });
     } catch (e) {
-      print("Failed to check user role: $e");
-      
       setState(() {
         _isAdmin = false;
       });
@@ -77,7 +75,6 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    
     _checkUserRole().then((_) {
       if (mounted) {
         _fetchUnreadNotifications();
@@ -97,9 +94,7 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
           _unreadNotificationCount = count;
         });
       }
-    } catch (e) {
-      print("Failed to fetch unread notification count: $e");
-    }
+    } catch (e) {}
   }
 
   void _onBottomNavTap(int index) {
@@ -136,7 +131,7 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
               ? AppBarType.titleLeftIconRight
               : AppBarType.titleCenterIconRight,
           title: index == 0 ? null : _getTitleForIndex(index),
-          showBottomNavBar: !_isAdmin, 
+          showBottomNavBar: !_isAdmin,
           initialIndex: index,
           child: screen,
         ),
@@ -188,7 +183,6 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
             ],
           ),
           actions: [
-            
             if (!_isAdmin)
               Stack(
                 children: [
@@ -284,7 +278,6 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
 
   @override
   Widget build(BuildContext context) {
-    
     final shouldShowBottomNav = widget.showBottomNavBar && !_isAdmin;
 
     return Scaffold(

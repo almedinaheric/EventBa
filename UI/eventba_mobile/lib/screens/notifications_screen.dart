@@ -37,7 +37,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         _isLoading = false;
       });
     } catch (e) {
-      print("Failed to load notifications: $e");
       setState(() {
         _isLoading = false;
       });
@@ -70,7 +69,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         }
       });
     } catch (e) {
-      print("Failed to mark notification as read: $e");
       _showErrorSnackBar("Failed to mark notification as read");
     }
   }
@@ -109,7 +107,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           _notifications.removeWhere((n) => n.id == notification.id);
         });
       } catch (e) {
-        print("Failed to delete notification: $e");
         _showErrorSnackBar("Failed to delete notification");
       }
     }
@@ -232,7 +229,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         }).toList();
       });
     } catch (e) {
-      print("Failed to mark all as read: $e");
       _showErrorSnackBar("Failed to mark all notifications as read");
     }
   }

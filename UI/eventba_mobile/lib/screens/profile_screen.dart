@@ -70,26 +70,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final user = await userProvider.getProfile();
 
-      print("=== PROFILE IMAGE DEBUG ===");
-      print("Profile image: ${user.profileImage != null ? 'exists' : 'null'}");
-      if (user.profileImage != null) {
-        print("Profile image ID: ${user.profileImage!.id}");
-        print(
-          "Profile image data: ${user.profileImage!.data != null ? 'exists (${user.profileImage!.data!.length} chars)' : 'null'}",
-        );
-        print("Profile image contentType: ${user.profileImage!.contentType}");
-      }
-      print("=== END DEBUG ===");
-
       int eventsCount = 0;
       try {
         final response = await _fetchEventsCount();
         if (response['count'] != null) {
           eventsCount = response['count'];
         }
-      } catch (e) {
-        print("Failed to load events count: $e");
-      }
+      } catch (e) {}
 
       setState(() {
         _user = user;
@@ -98,7 +85,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _hasLoadedOnce = true;
       });
     } catch (e) {
-      print("Failed to load user profile: $e");
       setState(() {
         _isLoading = false;
       });
@@ -162,15 +148,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final imageResponse = await imageProvider.insert(imageRequest);
 
       if (imageResponse.id == null || imageResponse.id!.isEmpty) {
-        print("Image response: ${imageResponse.toString()}");
-        print("Image response ID: ${imageResponse.id}");
         throw Exception(
           'Image upload failed: No image ID returned from server',
         );
       }
 
       final imageId = imageResponse.id!;
-      print("Image uploaded successfully with ID: $imageId");
 
       final updateUrl = "${userProvider.baseUrl}User/${_user!.id}";
       final updateUri = Uri.parse(updateUrl);
@@ -213,7 +196,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         throw Exception('Failed to update profile image');
       }
     } catch (e) {
-      print("Error uploading profile image: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -269,9 +251,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           listen: false,
                         );
                         await userProvider.logout();
-                      } catch (e) {
-                        print('Error calling logout endpoint: $e');
-                      }
+                      } catch (e) {}
 
                       Authorization.email = null;
                       Authorization.password = null;
@@ -281,9 +261,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           context,
                           listen: false,
                         ).clearUser();
-                      } catch (e) {
-                        print('Error clearing user provider: $e');
-                      }
+                      } catch (e) {}
 
                       if (context.mounted) {
                         Navigator.pushAndRemoveUntil(

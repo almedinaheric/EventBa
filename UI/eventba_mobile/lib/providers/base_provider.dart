@@ -124,11 +124,8 @@ abstract class BaseProvider<T> with ChangeNotifier {
     var uri = Uri.parse(url);
     var headers = await createHeaders();
 
-    print(uri);
-
     var response = await http.delete(uri, headers: headers);
 
-    print(response.body);
     if (isValidResponse(response)) {
       var data = jsonDecode(response.body);
       return fromJson(data);
@@ -147,9 +144,6 @@ abstract class BaseProvider<T> with ChangeNotifier {
     } else if (response.statusCode == 401) {
       throw Exception("Unauthorized");
     } else {
-      print("Error response status: ${response.statusCode}");
-      print("Error response body: ${response.body}");
-
       try {
         final errorData = jsonDecode(response.body);
         if (errorData is Map) {

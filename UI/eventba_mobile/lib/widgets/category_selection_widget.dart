@@ -32,8 +32,6 @@ class _CategorySelectionWidgetState extends State<CategorySelectionWidget> {
   @override
   void didUpdateWidget(CategorySelectionWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    
-    
     if (oldWidget.selectedCategoryIds.length !=
             widget.selectedCategoryIds.length ||
         !oldWidget.selectedCategoryIds.every(

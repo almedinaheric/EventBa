@@ -43,7 +43,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         ),
       );
 
-      
       Navigator.push(
         context,
         MaterialPageRoute(

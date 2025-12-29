@@ -42,19 +42,12 @@ class _SupportScreenState extends State<SupportScreen> {
         listen: false,
       );
 
-      print("Submitting support question...");
-      print("Question: ${questionController.text.trim()}");
-
       final request = {
         'question': questionController.text.trim(),
         'isQuestionForAdmin': true,
       };
 
-      print("Request payload: $request");
-
-      final result = await questionProvider.insert(request);
-
-      print("Question submitted successfully: $result");
+      await questionProvider.insert(request);
 
       if (!mounted) return;
 
@@ -64,12 +57,9 @@ class _SupportScreenState extends State<SupportScreen> {
           content: Text("Question submitted successfully!"),
         ),
       );
-      
-      Navigator.pop(context); 
-    } catch (e, stackTrace) {
-      print("Error submitting question: $e");
-      print("Stack trace: $stackTrace");
 
+      Navigator.pop(context);
+    } catch (e) {
       if (!mounted) return;
 
       String errorMessage = "Failed to submit question";

@@ -38,24 +38,17 @@ class _PastEventDetailsScreenState extends State<PastEventDetailsScreen> {
         listen: false,
       );
 
-      
       final event = await eventProvider.getById(widget.eventId);
 
-      
       Map<String, dynamic>? statistics;
       try {
         statistics = await eventProvider.getEventStatistics(widget.eventId);
-      } catch (e) {
-        print("Failed to load statistics: $e");
-      }
+      } catch (e) {}
 
-      
       List<EventReview> reviews = [];
       try {
         reviews = await reviewProvider.getReviewsForEvent(widget.eventId);
-      } catch (e) {
-        print("Failed to load reviews: $e");
-      }
+      } catch (e) {}
 
       setState(() {
         _event = event;
@@ -64,7 +57,6 @@ class _PastEventDetailsScreenState extends State<PastEventDetailsScreen> {
         _isLoading = false;
       });
     } catch (e) {
-      print("Error loading event data: $e");
       setState(() {
         _isLoading = false;
       });
@@ -141,7 +133,6 @@ class _PastEventDetailsScreenState extends State<PastEventDetailsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 16),
-                    
                     GestureDetector(
                       onTap: () => _showImageDialog(0),
                       child: ClipRRect(
@@ -334,7 +325,6 @@ class _PastEventDetailsScreenState extends State<PastEventDetailsScreen> {
   void _showImageDialog(int initialIndex) {
     if (_event == null) return;
 
-    
     List<String> allImages = [];
 
     if (_event!.coverImage?.data != null) {

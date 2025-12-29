@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'package:flutter/material.dart';
-
 class EmptyTicketsState extends StatelessWidget {
   const EmptyTicketsState({super.key});
 
@@ -11,7 +9,7 @@ class EmptyTicketsState extends StatelessWidget {
 
     return Center(
       child: SizedBox(
-        width: screenWidth * 0.8, 
+        width: screenWidth * 0.8,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [

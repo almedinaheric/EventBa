@@ -210,7 +210,6 @@ class EventProvider extends BaseProvider<Event> {
       );
       return result.result.map((e) => BasicEvent.fromJson(e.toJson())).toList();
     } catch (e) {
-      print('Error searching events: $e');
       return [];
     }
   }

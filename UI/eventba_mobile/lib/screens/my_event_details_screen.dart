@@ -46,9 +46,7 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
       setState(() {
         _isAdmin = user.role.name.toLowerCase() == 'admin';
       });
-    } catch (e) {
-      print("Failed to check user role: $e");
-    }
+    } catch (e) {}
   }
 
   Future<void> _loadEventData() async {
@@ -69,18 +67,13 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
       Map<String, dynamic>? statistics;
       try {
         statistics = await eventProvider.getEventStatistics(widget.eventId);
-        print("Loaded statistics for event ${widget.eventId}: $statistics");
-      } catch (e) {
-        print("Failed to load statistics: $e");
-      }
+      } catch (e) {}
 
       List<EventReview> reviews = [];
       if (isPast) {
         try {
           reviews = await reviewProvider.getReviewsForEvent(widget.eventId);
-        } catch (e) {
-          print("Failed to load reviews: $e");
-        }
+        } catch (e) {}
       }
 
       setState(() {
@@ -91,7 +84,6 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
         _isLoading = false;
       });
     } catch (e) {
-      print("Error loading event data: $e");
       setState(() {
         _isLoading = false;
       });
@@ -119,7 +111,6 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
       }
       return false;
     } catch (e) {
-      print("Error checking purchased tickets: $e");
       return true;
     }
   }
@@ -841,11 +832,6 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
                 0)
             as int;
     final ticketsLeft = _event!.availableTicketsCount;
-
-    print("Quick Stats Debug - Statistics map: $_statistics");
-    print(
-      "Quick Stats - Revenue: $revenue, Tickets Sold: $ticketsSold, Tickets Left: $ticketsLeft",
-    );
 
     return Container(
       padding: const EdgeInsets.all(16),

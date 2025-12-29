@@ -59,33 +59,18 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
       );
       final userProvider = Provider.of<UserProvider>(context, listen: false);
 
-      
       final event = await eventProvider.getById(widget.eventId);
 
-      
       final tickets = await ticketProvider.getTicketsForEvent(widget.eventId);
       var ticketsMap = {for (var t in tickets) t.id: t};
 
-      
-      print("Loaded ticket IDs: ${tickets.map((t) => t.id).toList()}");
-
-      
       final purchasesByTicketId = <String, List<TicketPurchase>>{};
       for (final purchase in widget.purchases) {
-        print("Purchase ticket ID: ${purchase.ticketId}");
-
-        
         if (!ticketsMap.containsKey(purchase.ticketId)) {
           try {
-            print(
-              "Ticket ${purchase.ticketId} not found in event tickets, loading directly...",
-            );
             final ticket = await ticketProvider.getById(purchase.ticketId);
             ticketsMap[purchase.ticketId] = ticket;
-            print("Successfully loaded ticket ${purchase.ticketId}");
-          } catch (e) {
-            print("Failed to load ticket ${purchase.ticketId}: $e");
-          }
+          } catch (e) {}
         }
 
         purchasesByTicketId
@@ -93,37 +78,16 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
             .add(purchase);
       }
 
-      
-      for (var purchase in widget.purchases) {
-        final found = ticketsMap.containsKey(purchase.ticketId);
-        print("Purchase ${purchase.ticketId} found in tickets: $found");
-        if (!found) {
-          
-          final matchingTicket = tickets.firstWhere(
-            (t) => t.id == purchase.ticketId,
-            orElse: () => tickets.first, 
-          );
-          print("Attempting to match purchase to ticket: ${matchingTicket.id}");
-        }
-      }
-
-      
       User? organizer;
       try {
         organizer = await userProvider.getById(event.organizerId);
-      } catch (e) {
-        print("Failed to load organizer: $e");
-      }
+      } catch (e) {}
 
-      
       User? currentUser;
       try {
         currentUser = await userProvider.getProfile();
-      } catch (e) {
-        print("Failed to load current user: $e");
-      }
+      } catch (e) {}
 
-      
       EventReview? userReview;
       if (currentUser != null) {
         try {
@@ -136,22 +100,9 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
             userId: currentUser.id,
           );
         } catch (e) {
-          print("Error loading user review: $e");
-          
           userReview = null;
         }
       }
-
-      
-      print("=== TICKET DETAILS DEBUG ===");
-      print("Total purchases: ${widget.purchases.length}");
-      print("Purchases by ticket ID: ${purchasesByTicketId.length} groups");
-      print("Tickets loaded: ${ticketsMap.length}");
-      for (var entry in purchasesByTicketId.entries) {
-        print("  Ticket ID: ${entry.key}, Purchases: ${entry.value.length}");
-        print("  Ticket found: ${ticketsMap.containsKey(entry.key)}");
-      }
-      print("=== END DEBUG ===");
 
       setState(() {
         _event = event;
@@ -163,7 +114,6 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
         _isLoading = false;
       });
     } catch (e) {
-      print("Failed to load ticket details: $e");
       setState(() {
         _isLoading = false;
       });
@@ -181,7 +131,6 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
 
   String _formatTime(String timeStr) {
     try {
-      
       final parts = timeStr.split(':');
       if (parts.length >= 2) {
         return "${parts[0].padLeft(2, '0')}:${parts[1].padLeft(2, '0')}";
@@ -345,7 +294,6 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      
                       GestureDetector(
                         onTap: () => _showImageDialog(0),
                         child: ClipRRect(
@@ -366,8 +314,6 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                         ),
                       ),
                       const SizedBox(height: 24),
-
-                      
                       Column(
                         children: [
                           Row(
@@ -408,8 +354,6 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                       ),
 
                       const SizedBox(height: 24),
-
-                      
                       if (_organizer != null)
                         OrganizerSection(
                           organizerId: _organizer!.id,
@@ -434,8 +378,6 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                         textAlign: TextAlign.justify,
                       ),
                       const SizedBox(height: 24),
-
-                      
                       if (_purchasesByTicketId.isNotEmpty)
                         ..._purchasesByTicketId.entries.expand((entry) {
                           final ticketId = entry.key;
@@ -443,10 +385,6 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                           final ticket = _tickets[ticketId];
 
                           if (ticket == null) {
-                            print(
-                              "WARNING: Ticket not found for ID: $ticketId. Available ticket IDs: ${_tickets.keys.toList()}",
-                            );
-                            
                             return purchases.map((purchase) {
                               final priceText = purchase.pricePaid > 0
                                   ? "\$${purchase.pricePaid.toStringAsFixed(2)}"
@@ -503,8 +441,6 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                         ),
 
                       const SizedBox(height: 16),
-
-                      
                       if (_isEventPast())
                         Padding(
                           padding: const EdgeInsets.only(bottom: 24),
@@ -526,7 +462,6 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
             ],
           ),
 
-          
           if (_selectedQRCode != null && _selectedTicketCode != null)
             Container(
               color: Colors.black.withOpacity(0.5),
@@ -551,7 +486,6 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
   void _showImageDialog(int initialIndex) {
     if (_event == null) return;
 
-    
     List<String> allImages = [];
 
     if (_event!.coverImage?.data != null) {
