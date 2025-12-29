@@ -9,7 +9,7 @@ public interface IEventService : ICRUDService<EventResponseDto, EventSearchObjec
 {
     Task<List<EventResponseDto>> GetMyEvents();
     
-    Task<List<EventResponseDto>> GetEventsByOrganizer(Guid userId);
+    Task<List<EventResponseDto>> GetEventsByOrganizer(Guid userId, bool? isUpcoming = null);
 
     Task<List<EventResponseDto>> GetRecommendedEvents();
     Task<List<EventResponseDto>> GetPublicEvents();

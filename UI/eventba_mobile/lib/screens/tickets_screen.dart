@@ -53,15 +53,28 @@ class _TicketsScreenState extends State<TicketsScreen> {
       final upcomingTicketsByEvent = <String, List<TicketPurchase>>{};
       final pastTicketsByEvent = <String, List<TicketPurchase>>{};
 
+      final today = DateTime.now();
+      final todayDateOnly = DateTime(today.year, today.month, today.day);
+
       for (final purchase in allPurchases) {
         final event = events[purchase.eventId];
         if (event == null) continue;
 
-        if (event.status.name == 'Upcoming') {
+        final eventStartDateParts = event.startDate.split('-');
+        if (eventStartDateParts.length != 3) continue;
+
+        final eventStartDate = DateTime(
+          int.parse(eventStartDateParts[0]),
+          int.parse(eventStartDateParts[1]),
+          int.parse(eventStartDateParts[2]),
+        );
+
+        if (eventStartDate.isAfter(todayDateOnly) ||
+            eventStartDate.isAtSameMomentAs(todayDateOnly)) {
           upcomingTicketsByEvent
               .putIfAbsent(purchase.eventId, () => [])
               .add(purchase);
-        } else if (event.status.name == 'Past') {
+        } else {
           pastTicketsByEvent
               .putIfAbsent(purchase.eventId, () => [])
               .add(purchase);

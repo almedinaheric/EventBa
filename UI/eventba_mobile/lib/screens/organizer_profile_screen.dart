@@ -56,16 +56,18 @@ class _OrganizerProfileScreenState extends State<OrganizerProfileScreen> {
   Future<void> _loadEvents() async {
     try {
       final eventProvider = Provider.of<EventProvider>(context, listen: false);
-      final events = await eventProvider.getEventsByOrganizer(widget.userId);
-
-      final upcoming = events
-          .where((e) => e.status == EventStatus.Upcoming)
-          .toList();
-      final past = events.where((e) => e.status == EventStatus.Past).toList();
+      final upcomingEvents = await eventProvider.getEventsByOrganizer(
+        widget.userId,
+        isUpcoming: true,
+      );
+      final pastEvents = await eventProvider.getEventsByOrganizer(
+        widget.userId,
+        isUpcoming: false,
+      );
 
       setState(() {
-        _upcomingEvents = upcoming;
-        _pastEvents = past;
+        _upcomingEvents = upcomingEvents;
+        _pastEvents = pastEvents;
         _isLoading = false;
       });
     } catch (e) {

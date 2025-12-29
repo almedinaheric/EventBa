@@ -69,9 +69,11 @@ public class TicketService : BaseCRUDService<TicketResponseDto, Ticket, TicketSe
 
     public async Task<List<TicketResponseDto>> GetTicketsForEvent(Guid eventId)
     {
+        var today = DateOnly.FromDateTime(DateTime.Now);
         var tickets = await _context.Tickets
             .Include(x => x.TicketPurchases)
-            .Where(x => x.EventId == eventId && x.Event.Status == EventStatus.Upcoming)
+            .Include(x => x.Event)
+            .Where(x => x.EventId == eventId && x.Event.StartDate >= today)
             .ToListAsync();
 
         return _mapper.Map<List<TicketResponseDto>>(tickets);

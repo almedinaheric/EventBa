@@ -42,7 +42,7 @@ class _MyEventsScreenState extends State<MyEventsScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    
+
     _loadMyEvents();
   }
 
@@ -58,11 +58,21 @@ class _MyEventsScreenState extends State<MyEventsScreen> {
       final events = await eventProvider.getMyEvents();
       if (mounted) {
         setState(() {
-          
           if (_isAdmin) {
-            _events = events
-                .where((event) => event.status == EventStatus.Upcoming)
-                .toList();
+            // For admin, filter to show only upcoming events based on date
+            final today = DateTime.now();
+            final todayDateOnly = DateTime(today.year, today.month, today.day);
+            _events = events.where((event) {
+              final eventStartDateParts = event.startDate.split('-');
+              if (eventStartDateParts.length != 3) return false;
+              final eventStartDate = DateTime(
+                int.parse(eventStartDateParts[0]),
+                int.parse(eventStartDateParts[1]),
+                int.parse(eventStartDateParts[2]),
+              );
+              return eventStartDate.isAfter(todayDateOnly) ||
+                  eventStartDate.isAtSameMomentAs(todayDateOnly);
+            }).toList();
           } else {
             _events = events;
           }
@@ -82,8 +92,8 @@ class _MyEventsScreenState extends State<MyEventsScreen> {
   @override
   Widget build(BuildContext context) {
     return MasterScreenWidget(
-      initialIndex: 4, 
-      showBottomNavBar: !_isAdmin, 
+      initialIndex: 4,
+      showBottomNavBar: !_isAdmin,
       appBarType: AppBarType.iconsSideTitleCenter,
       title: "My Events",
       leftIcon: Icons.arrow_back,
@@ -126,7 +136,7 @@ class _MyEventsScreenState extends State<MyEventsScreen> {
                                 reverseTransitionDuration: Duration.zero,
                               ),
                             );
-                            
+
                             if (mounted) {
                               _loadMyEvents();
                             }

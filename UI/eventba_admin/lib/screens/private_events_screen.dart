@@ -49,8 +49,10 @@ class _PrivateEventsScreenState extends State<PrivateEventsScreen> {
 
     try {
       final eventProvider = Provider.of<EventProvider>(context, listen: false);
+      final isUpcoming = selectedIndex == 0;
       final events = await eventProvider.getPrivateEvents(
         searchTerm: _searchTerm.isNotEmpty ? _searchTerm : null,
+        isUpcoming: isUpcoming,
       );
 
       if (!mounted) return;
@@ -152,6 +154,7 @@ class _PrivateEventsScreenState extends State<PrivateEventsScreen> {
                             setState(() {
                               selectedIndex = 0;
                             });
+                            _loadEvents();
                           },
                           child: Container(
                             decoration: BoxDecoration(
@@ -187,6 +190,7 @@ class _PrivateEventsScreenState extends State<PrivateEventsScreen> {
                             setState(() {
                               selectedIndex = 1;
                             });
+                            _loadEvents();
                           },
                           child: Container(
                             decoration: BoxDecoration(
@@ -228,13 +232,8 @@ class _PrivateEventsScreenState extends State<PrivateEventsScreen> {
   }
 
   Widget _buildEventsList({required bool isUpcoming}) {
-    final filteredEvents = _allEvents.where((event) {
-      if (isUpcoming) {
-        return event.status == EventStatus.Upcoming;
-      } else {
-        return event.status == EventStatus.Past;
-      }
-    }).toList();
+    // Events are already filtered by date on backend, so just use _allEvents
+    final filteredEvents = _allEvents;
 
     if (filteredEvents.isEmpty) {
       return Center(
@@ -314,12 +313,30 @@ class _PrivateEventsScreenState extends State<PrivateEventsScreen> {
         final result = await Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => EventDetailsScreen(
-              eventTitle: event.title,
-              isPublic: false,
-              isPastEvent: event.status == EventStatus.Past,
-              eventData: _eventToMap(event),
-            ),
+            builder: (context) {
+              // Determine if event is past based on date
+              final today = DateTime.now();
+              final todayDateOnly = DateTime(
+                today.year,
+                today.month,
+                today.day,
+              );
+              final eventStartDateParts = event.startDate.split('-');
+              final isPastEvent = eventStartDateParts.length == 3
+                  ? DateTime(
+                      int.parse(eventStartDateParts[0]),
+                      int.parse(eventStartDateParts[1]),
+                      int.parse(eventStartDateParts[2]),
+                    ).isBefore(todayDateOnly)
+                  : false;
+
+              return EventDetailsScreen(
+                eventTitle: event.title,
+                isPublic: false,
+                isPastEvent: isPastEvent,
+                eventData: _eventToMap(event),
+              );
+            },
           ),
         );
 

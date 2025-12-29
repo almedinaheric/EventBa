@@ -47,9 +47,18 @@ class EventProvider extends BaseProvider<Event> {
     }
   }
 
-  Future<List<BasicEvent>> getEventsByOrganizer(String organizerId) async {
+  Future<List<BasicEvent>> getEventsByOrganizer(
+    String organizerId, {
+    bool? isUpcoming,
+  }) async {
     var url = "${baseUrl}Event/organizer/$organizerId";
-    var uri = Uri.parse(url).replace(queryParameters: {'isPublished': 'true'});
+    final queryParams = <String, String>{};
+    if (isUpcoming != null) {
+      queryParams['isUpcoming'] = isUpcoming.toString();
+    }
+    var uri = queryParams.isEmpty
+        ? Uri.parse(url)
+        : Uri.parse(url).replace(queryParameters: queryParams);
     var headers = createHeaders();
     var response = await http.get(uri, headers: headers);
     if (isValidResponse(response)) {
@@ -88,14 +97,7 @@ class EventProvider extends BaseProvider<Event> {
     int pageSize = 10,
   }) async {
     var url = "${baseUrl}Event/public";
-    var uri = Uri.parse(url).replace(
-      queryParameters: {
-        'isPublished': 'true',
-        'status': 'Upcoming',
-        'page': page.toString(),
-        'pageSize': pageSize.toString(),
-      },
-    );
+    var uri = Uri.parse(url);
     var headers = createHeaders();
     var response = await http.get(uri, headers: headers);
     if (isValidResponse(response)) {
@@ -116,14 +118,7 @@ class EventProvider extends BaseProvider<Event> {
     int pageSize = 10,
   }) async {
     var url = "${baseUrl}Event/private";
-    var uri = Uri.parse(url).replace(
-      queryParameters: {
-        'isPublished': 'true',
-        'status': 'Upcoming',
-        'page': page.toString(),
-        'pageSize': pageSize.toString(),
-      },
-    );
+    var uri = Uri.parse(url);
     var headers = createHeaders();
     var response = await http.get(uri, headers: headers);
     if (isValidResponse(response)) {
@@ -144,10 +139,7 @@ class EventProvider extends BaseProvider<Event> {
     dynamic filter,
   }) async {
     var url = "${baseUrl}Event/category/$categoryId";
-    final queryParams = <String, String>{
-      'isPublished': 'true',
-      'status': 'Upcoming',
-    };
+    final queryParams = <String, String>{};
     if (filter != null && filter is Map) {
       filter.forEach((key, value) {
         queryParams[key.toString()] = value.toString();

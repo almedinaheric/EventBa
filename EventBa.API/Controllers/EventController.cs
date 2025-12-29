@@ -39,9 +39,9 @@ public class EventController : BaseCRUDController<EventResponseDto, EventSearchO
     }
     
     [HttpGet("organizer/{organizerId}")]
-    public async Task<ActionResult<List<EventResponseDto>>> GetEventsByOrganizer(Guid organizerId)
+    public async Task<ActionResult<List<EventResponseDto>>> GetEventsByOrganizer(Guid organizerId, [FromQuery] bool? isUpcoming = null)
     {
-        var events = await _eventService.GetEventsByOrganizer(organizerId);
+        var events = await _eventService.GetEventsByOrganizer(organizerId, isUpcoming);
         return Ok(events);
     }
 

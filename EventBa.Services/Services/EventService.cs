@@ -134,6 +134,19 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
         
         query = query.Where(x => x.IsPublished);
 
+        if (search?.IsUpcoming.HasValue == true)
+        {
+            var today = DateOnly.FromDateTime(DateTime.Now);
+            if (search.IsUpcoming.Value)
+            {
+                query = query.Where(x => x.StartDate >= today);
+            }
+            else
+            {
+                query = query.Where(x => x.StartDate < today);
+            }
+        }
+
         try
         {
             var userEmail = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.Email)?.Value;
@@ -168,14 +181,29 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
         return _mapper.Map<List<EventResponseDto>>(events);
     }
     
-    public async Task<List<EventResponseDto>> GetEventsByOrganizer(Guid organizerId)
+    public async Task<List<EventResponseDto>> GetEventsByOrganizer(Guid organizerId, bool? isUpcoming = null)
     {
-        var events = await _context.Events
+        var query = _context.Events
             .Include(x => x.Category)
             .Include(x => x.CoverImage)
             .Include(x => x.Tickets)
-            .Where(x => x.OrganizerId == organizerId)
-            .ToListAsync();
+            .Where(x => x.OrganizerId == organizerId);
+
+        // Filter by date if specified
+        if (isUpcoming.HasValue)
+        {
+            var today = DateOnly.FromDateTime(DateTime.Now);
+            if (isUpcoming.Value)
+            {
+                query = query.Where(x => x.StartDate >= today);
+            }
+            else
+            {
+                query = query.Where(x => x.StartDate < today);
+            }
+        }
+
+        var events = await query.ToListAsync();
 
         return _mapper.Map<List<EventResponseDto>>(events);
     }
@@ -214,8 +242,10 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
         {
         }
 
+        var today = DateOnly.FromDateTime(DateTime.Now);
         var query = _context.Events
-            .Where(e => e.Type == EventType.Public && e.IsPublished);
+            .Where(e => e.Type == EventType.Public && e.IsPublished)
+            .Where(e => e.StartDate >= today); // Only upcoming events
         
         if (currentUser != null)
         {
@@ -242,8 +272,10 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
         {
         }
 
+        var today = DateOnly.FromDateTime(DateTime.Now);
         var query = _context.Events
-            .Where(e => e.Type == EventType.Private && e.IsPublished);
+            .Where(e => e.Type == EventType.Private && e.IsPublished)
+            .Where(e => e.StartDate >= today); // Only upcoming events
         
         if (currentUser != null)
         {
@@ -270,8 +302,10 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
         {
         }
 
+        var today = DateOnly.FromDateTime(DateTime.Now);
         var query = _context.Events
-            .Where(e => e.Category.Id == categoryId && e.IsPublished);
+            .Where(e => e.Category.Id == categoryId && e.IsPublished)
+            .Where(e => e.StartDate >= today); // Only upcoming events
         
         if (currentUser != null)
         {
@@ -303,8 +337,10 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
         if (user == null)
             throw new UserException("User not found");
 
+        var today = DateOnly.FromDateTime(DateTime.Now);
         var publishedFavorites = user.FavoriteEvents
             .Where(e => e.IsPublished)
+            .Where(e => e.StartDate >= today) // Only upcoming events
             .ToList();
 
         return _mapper.Map<List<EventResponseDto>>(publishedFavorites);

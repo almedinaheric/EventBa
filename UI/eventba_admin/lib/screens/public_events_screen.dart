@@ -50,9 +50,12 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
     try {
       final eventProvider = Provider.of<EventProvider>(context, listen: false);
 
+      final isUpcoming = selectedIndex == 0;
+
       if (_searchTerm.isNotEmpty) {
         final publicEvents = await eventProvider.getPublicEvents(
           searchTerm: _searchTerm,
+          isUpcoming: isUpcoming,
         );
 
         if (!mounted) return;
@@ -66,7 +69,9 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
           _isLoading = false;
         });
       } else {
-        final publicEvents = await eventProvider.getPublicEvents();
+        final publicEvents = await eventProvider.getPublicEvents(
+          isUpcoming: isUpcoming,
+        );
         final myEvents = await eventProvider.getMyEvents();
 
         if (!mounted) return;
@@ -79,9 +84,26 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
           }
         }
 
+        // Filter my events by date
+        final today = DateTime.now();
+        final todayDateOnly = DateTime(today.year, today.month, today.day);
         for (var event in myEvents) {
           if (event.isPublished && event.type.name == 'Public') {
-            allEventsMap[event.id] = event;
+            final eventStartDateParts = event.startDate.split('-');
+            if (eventStartDateParts.length == 3) {
+              final eventStartDate = DateTime(
+                int.parse(eventStartDateParts[0]),
+                int.parse(eventStartDateParts[1]),
+                int.parse(eventStartDateParts[2]),
+              );
+              final matchesFilter = isUpcoming
+                  ? (eventStartDate.isAfter(todayDateOnly) ||
+                        eventStartDate.isAtSameMomentAs(todayDateOnly))
+                  : eventStartDate.isBefore(todayDateOnly);
+              if (matchesFilter) {
+                allEventsMap[event.id] = event;
+              }
+            }
           }
         }
 
@@ -181,6 +203,7 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
                             setState(() {
                               selectedIndex = 0;
                             });
+                            _loadEvents();
                           },
                           child: Container(
                             decoration: BoxDecoration(
@@ -216,6 +239,7 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
                             setState(() {
                               selectedIndex = 1;
                             });
+                            _loadEvents();
                           },
                           child: Container(
                             decoration: BoxDecoration(
@@ -257,13 +281,8 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
   }
 
   Widget _buildEventsList({required bool isUpcoming}) {
-    final filteredEvents = _allEvents.where((event) {
-      if (isUpcoming) {
-        return event.status == EventStatus.Upcoming;
-      } else {
-        return event.status == EventStatus.Past;
-      }
-    }).toList();
+    // Events are already filtered by date on backend, so just use _allEvents
+    final filteredEvents = _allEvents;
 
     if (filteredEvents.isEmpty) {
       return Center(
@@ -343,12 +362,30 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
         final result = await Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => EventDetailsScreen(
-              eventTitle: event.title,
-              isPublic: true,
-              isPastEvent: event.status == EventStatus.Past,
-              eventData: _eventToMap(event),
-            ),
+            builder: (context) {
+              // Determine if event is past based on date
+              final today = DateTime.now();
+              final todayDateOnly = DateTime(
+                today.year,
+                today.month,
+                today.day,
+              );
+              final eventStartDateParts = event.startDate.split('-');
+              final isPastEvent = eventStartDateParts.length == 3
+                  ? DateTime(
+                      int.parse(eventStartDateParts[0]),
+                      int.parse(eventStartDateParts[1]),
+                      int.parse(eventStartDateParts[2]),
+                    ).isBefore(todayDateOnly)
+                  : false;
+
+              return EventDetailsScreen(
+                eventTitle: event.title,
+                isPublic: true,
+                isPastEvent: isPastEvent,
+                eventData: _eventToMap(event),
+              );
+            },
           ),
         );
 

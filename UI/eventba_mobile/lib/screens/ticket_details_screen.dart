@@ -502,7 +502,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                           ),
                         ),
 
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 16),
 
                       
                       if (_isEventPast())
@@ -518,7 +518,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                 ),
                         ),
 
-                      const SizedBox(height: 60), 
+                      const SizedBox(height: 16),
                     ],
                   ),
                 ),

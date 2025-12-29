@@ -292,6 +292,7 @@ public class RecommendedEventService : IRecommendedEventService
         List<Guid> categoryIds,
         List<Guid> excludedIds)
     {
+        var today = DateOnly.FromDateTime(DateTime.Now);
         return await _context.Events
             .Include(e => e.Category)
             .Include(e => e.CoverImage)
@@ -301,7 +302,8 @@ public class RecommendedEventService : IRecommendedEventService
                 e.IsPublished &&
                 e.OrganizerId != userId &&
                 categoryIds.Contains(e.CategoryId) &&
-                !excludedIds.Contains(e.Id))
+                !excludedIds.Contains(e.Id) &&
+                e.StartDate >= today)
             .ToListAsync();
     }
 

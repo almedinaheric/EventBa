@@ -49,20 +49,28 @@ class EventProvider extends BaseProvider<Event> {
     }
   }
 
-  Future<List<Event>> getPublicEvents({String? searchTerm}) async {
+  Future<List<Event>> getPublicEvents({
+    String? searchTerm,
+    bool? isUpcoming,
+  }) async {
     final filter = {
       'type': 'Public',
       if (searchTerm != null && searchTerm.isNotEmpty) 'searchTerm': searchTerm,
+      if (isUpcoming != null) 'isUpcoming': isUpcoming.toString(),
     };
 
     final result = await get(filter: filter);
     return result.result;
   }
 
-  Future<List<Event>> getPrivateEvents({String? searchTerm}) async {
+  Future<List<Event>> getPrivateEvents({
+    String? searchTerm,
+    bool? isUpcoming,
+  }) async {
     final filter = {
       'type': 'Private',
       if (searchTerm != null && searchTerm.isNotEmpty) 'searchTerm': searchTerm,
+      if (isUpcoming != null) 'isUpcoming': isUpcoming.toString(),
     };
 
     final result = await get(filter: filter);
