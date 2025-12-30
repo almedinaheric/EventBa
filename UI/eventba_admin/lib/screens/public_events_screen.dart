@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:eventba_admin/widgets/master_screen.dart';
 import 'package:eventba_admin/providers/event_provider.dart';
 import 'package:eventba_admin/models/event/event.dart';
-import 'package:eventba_admin/models/enums/event_status.dart';
 import 'package:eventba_admin/screens/event_details_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -57,12 +56,47 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
           searchTerm: _searchTerm,
           isUpcoming: isUpcoming,
         );
+        final myEvents = await eventProvider.getMyEvents();
 
         if (!mounted) return;
 
-        final publishedEvents = publicEvents
-            .where((event) => event.isPublished)
-            .toList();
+        final allEventsMap = <String, Event>{};
+
+        for (var event in publicEvents) {
+          if (event.isPublished) {
+            allEventsMap[event.id] = event;
+          }
+        }
+
+        final today = DateTime.now();
+        final todayDateOnly = DateTime(today.year, today.month, today.day);
+        final searchTermLower = _searchTerm.toLowerCase();
+        for (var event in myEvents) {
+          if (event.isPublished && event.type.name == 'Public') {
+            final eventStartDateParts = event.startDate.split('-');
+            if (eventStartDateParts.length == 3) {
+              final eventStartDate = DateTime(
+                int.parse(eventStartDateParts[0]),
+                int.parse(eventStartDateParts[1]),
+                int.parse(eventStartDateParts[2]),
+              );
+              final matchesFilter = isUpcoming
+                  ? (eventStartDate.isAfter(todayDateOnly) ||
+                        eventStartDate.isAtSameMomentAs(todayDateOnly))
+                  : eventStartDate.isBefore(todayDateOnly);
+
+              final matchesSearch =
+                  event.title.toLowerCase().contains(searchTermLower) ||
+                  event.description.toLowerCase().contains(searchTermLower);
+
+              if (matchesFilter && matchesSearch) {
+                allEventsMap[event.id] = event;
+              }
+            }
+          }
+        }
+
+        final publishedEvents = allEventsMap.values.toList();
 
         setState(() {
           _allEvents = publishedEvents;
@@ -84,7 +118,6 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
           }
         }
 
-        // Filter my events by date
         final today = DateTime.now();
         final todayDateOnly = DateTime(today.year, today.month, today.day);
         for (var event in myEvents) {
@@ -281,7 +314,6 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
   }
 
   Widget _buildEventsList({required bool isUpcoming}) {
-    // Events are already filtered by date on backend, so just use _allEvents
     final filteredEvents = _allEvents;
 
     if (filteredEvents.isEmpty) {
@@ -363,7 +395,6 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
           context,
           MaterialPageRoute(
             builder: (context) {
-              // Determine if event is past based on date
               final today = DateTime.now();
               final todayDateOnly = DateTime(
                 today.year,

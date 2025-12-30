@@ -125,6 +125,7 @@ public partial class EventBaDbContext : DbContext
                 .HasConversion(
                     v => v.ToString(),
                     v => (EventStatus)Enum.Parse(typeof(EventStatus), v))
+                .HasSentinel((EventStatus)(-1))
                 .HasColumnName("status")
                 .HasColumnType("text");
             entity.Property(e => e.Title)
@@ -135,6 +136,7 @@ public partial class EventBaDbContext : DbContext
                 .HasConversion(
                     v => v.ToString(),
                     v => (EventType)Enum.Parse(typeof(EventType), v))
+                .HasSentinel((EventType)(-1))
                 .HasColumnName("type")
                 .HasColumnType("text");
             entity.Property(e => e.UpdatedAt)
@@ -347,6 +349,7 @@ public partial class EventBaDbContext : DbContext
                 .HasConversion(
                     v => v.ToString(),
                     v => (NotificationStatus)Enum.Parse(typeof(NotificationStatus), v))
+                .HasSentinel((NotificationStatus)(-1))
                 .HasColumnName("status")
                 .HasColumnType("text");
 
@@ -387,6 +390,7 @@ public partial class EventBaDbContext : DbContext
                 .HasConversion(
                     v => v.ToString(),
                     v => (PaymentStatus)Enum.Parse(typeof(PaymentStatus), v))
+                .HasSentinel((PaymentStatus)(-1))
                 .HasColumnName("status")
                 .HasColumnType("text");
             entity.Property(e => e.UpdatedAt)

@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:eventba_admin/widgets/master_screen.dart';
 import 'package:eventba_admin/providers/event_provider.dart';
 import 'package:eventba_admin/models/event/event.dart';
-import 'package:eventba_admin/models/enums/event_status.dart';
 import 'package:eventba_admin/screens/event_details_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -232,7 +231,6 @@ class _PrivateEventsScreenState extends State<PrivateEventsScreen> {
   }
 
   Widget _buildEventsList({required bool isUpcoming}) {
-    // Events are already filtered by date on backend, so just use _allEvents
     final filteredEvents = _allEvents;
 
     if (filteredEvents.isEmpty) {
@@ -314,7 +312,6 @@ class _PrivateEventsScreenState extends State<PrivateEventsScreen> {
           context,
           MaterialPageRoute(
             builder: (context) {
-              // Determine if event is past based on date
               final today = DateTime.now();
               final todayDateOnly = DateTime(
                 today.year,

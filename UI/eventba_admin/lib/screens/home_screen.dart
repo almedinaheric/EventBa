@@ -210,70 +210,55 @@ class _HomeScreenState extends State<HomeScreen> {
         context,
         MaterialPageRoute(builder: (context) => const EventCreationScreen()),
       );
-    }
-    if (screenName == 'Private Events') {
+    } else if (screenName == 'Private Events') {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const PrivateEventsScreen()),
       );
-    }
-    if (screenName == 'Add Notification') {
+    } else if (screenName == 'Add Notification') {
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => const NotificationCreationScreen(),
         ),
       );
-    }
-    if (screenName == 'Users') {
+    } else if (screenName == 'Users') {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const UsersScreen()),
       );
-    }
-    if (screenName == 'Notifications' || screenName == 'Sent Notifications') {
+    } else if (screenName == 'Notifications' ||
+        screenName == 'Sent Notifications') {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const NotificationsScreen()),
       );
-    }
-    if (screenName == 'Support') {
+    } else if (screenName == 'Support') {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const SupportScreen()),
       );
-    }
-    if (screenName == 'Public Events') {
+    } else if (screenName == 'Public Events') {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const PublicEventsScreen()),
       );
-    }
-    if (screenName == 'Generate Report') {
+    } else if (screenName == 'Generate Report') {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const ReportGenerationScreen()),
       );
-    }
-    if (screenName == 'Recommendations') {
+    } else if (screenName == 'Recommendations') {
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => const RecommendationManagementScreen(),
         ),
       );
-    }
-    if (screenName == 'Manage Categories') {
+    } else if (screenName == 'Manage Categories') {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const CategoriesScreen()),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Navigating to $screenName'),
-          duration: const Duration(seconds: 2),
-        ),
       );
     }
   }

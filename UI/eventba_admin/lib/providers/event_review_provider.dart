@@ -18,15 +18,19 @@ class EventReviewProvider extends BaseProvider<EventReview> {
     var headers = createHeaders();
     var response = await http.get(uri, headers: headers);
 
-    if (isValidResponse(response)) {
+    if (response.statusCode >= 200 && response.statusCode < 300) {
       var data = jsonDecode(response.body);
       List<EventReview> reviews = [];
       for (var item in data) {
         reviews.add(fromJson(item));
       }
       return reviews;
+    } else if (response.statusCode == 401) {
+      throw Exception("Unauthorized");
     } else {
-      throw Exception("Unknown error in a GET request");
+      throw Exception(
+        "Failed to load reviews: ${response.statusCode} - ${response.body}",
+      );
     }
   }
 
@@ -41,7 +45,9 @@ class EventReviewProvider extends BaseProvider<EventReview> {
       var data = jsonDecode(response.body);
       return (data['averageRating'] ?? 0.0).toDouble();
     } else {
-      throw Exception("Unknown error in a GET request");
+      throw Exception(
+        "Unknown error in a GET request: ${response.statusCode} - ${response.body}",
+      );
     }
   }
 }

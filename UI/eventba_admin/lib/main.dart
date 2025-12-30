@@ -5,6 +5,7 @@ import 'package:eventba_admin/providers/image_provider.dart';
 import 'package:eventba_admin/providers/ticket_provider.dart';
 import 'package:eventba_admin/providers/user_question_provider.dart';
 import 'package:eventba_admin/providers/notification_provider.dart';
+import 'package:eventba_admin/providers/event_review_provider.dart';
 import 'package:eventba_admin/screens/splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -20,6 +21,7 @@ void main() {
         ChangeNotifierProvider(create: (_) => TicketProvider()),
         ChangeNotifierProvider(create: (_) => UserQuestionProvider()),
         ChangeNotifierProvider(create: (_) => NotificationProvider()),
+        ChangeNotifierProvider(create: (_) => EventReviewProvider()),
       ],
       child: const MyApp(),
     ),

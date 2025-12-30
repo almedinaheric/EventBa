@@ -146,9 +146,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
         context,
         listen: false,
       );
-      final reviews = await reviewProvider.getReviewsForEvent(
-        _currentEventData['id'],
-      );
+      final eventId = _currentEventData['id'].toString();
+      final reviews = await reviewProvider.getReviewsForEvent(eventId);
       setState(() {
         _reviews = reviews;
         _reviewsLoading = false;
@@ -156,6 +155,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     } catch (e) {
       setState(() {
         _reviewsLoading = false;
+        _reviews = [];
       });
     }
   }
@@ -172,6 +172,25 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       final stats = await eventProvider.getEventStatistics(
         _currentEventData['id'],
       );
+
+      double averageRating = stats['averageRating']?.toDouble() ?? 0.0;
+      if (averageRating == 0.0) {
+        try {
+          final reviewProvider = Provider.of<EventReviewProvider>(
+            context,
+            listen: false,
+          );
+          final eventId = _currentEventData['id'].toString();
+          averageRating = await reviewProvider.getAverageRatingForEvent(
+            eventId,
+          );
+        } catch (e) {
+          // Keep the value from statistics if loading fails
+        }
+      }
+
+      stats['averageRating'] = averageRating;
+
       setState(() {
         _statistics = EventStatistics.fromJson(stats);
         _statisticsLoading = false;
@@ -722,7 +741,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     _buildDetailItem(
                       Icons.access_time,
                       "Time",
-                      "${_currentEventData['startTime'] ?? 'N/A'} - ${_currentEventData['endTime'] ?? 'N/A'}",
+                      "${_formatTime(_currentEventData['startTime'])} - ${_formatTime(_currentEventData['endTime'])}",
                     ),
                   ],
                 ),
@@ -977,7 +996,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 padding: const EdgeInsets.only(bottom: 8.0),
                 child: _buildTicketOption(
                   ticket.ticketType.toUpperCase(),
-                  '${ticket.price.toStringAsFixed(2)} KM',
+                  '\$${ticket.price.toStringAsFixed(2)}',
                   ticket.quantityAvailable,
                   ticket.quantitySold,
                 ),
@@ -1090,7 +1109,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                       child: Column(
                         children: [
                           Text(
-                            "${_statistics?.totalRevenue.toStringAsFixed(2) ?? '0.00'} KM",
+                            "\$${_statistics?.totalRevenue.toStringAsFixed(2) ?? '0.00'}",
                             style: const TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
@@ -1166,6 +1185,24 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               ),
       ],
     );
+  }
+
+  String _formatTime(String? time) {
+    if (time == null || time.isEmpty || time == 'N/A') {
+      return 'N/A';
+    }
+
+    try {
+      final parts = time.split(':');
+      if (parts.length >= 2) {
+        final hour = parts[0].padLeft(2, '0');
+        final minute = parts[1].padLeft(2, '0');
+        return '$hour:$minute';
+      }
+      return time;
+    } catch (e) {
+      return time;
+    }
   }
 
   String _getReviewerName(EventReview review) {

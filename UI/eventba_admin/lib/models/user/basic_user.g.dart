@@ -8,9 +8,9 @@ part of 'basic_user.dart';
 
 BasicUser _$BasicUserFromJson(Map<String, dynamic> json) => BasicUser(
       id: json['id'] as String,
-      firstName: json['firstName'] as String,
-      lastName: json['lastName'] as String,
-      email: json['email'] as String,
+      firstName: json['firstName'] as String?,
+      lastName: json['lastName'] as String?,
+      email: json['email'] as String?,
       fullName: json['fullName'] as String?,
     );
 
