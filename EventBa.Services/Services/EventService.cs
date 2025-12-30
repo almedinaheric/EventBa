@@ -18,12 +18,14 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
 {
     private readonly EventBaDbContext _context;
     public IMapper _mapper { get; set; }
-    
+
     private readonly IUserService _userService;
     private readonly IRecommendedEventService _recommendedEventService;
     private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public EventService(EventBaDbContext context, IMapper mapper, IUserService userService, IRecommendedEventService recommendedEventService, IHttpContextAccessor httpContextAccessor) : base(context, mapper)
+    public EventService(EventBaDbContext context, IMapper mapper, IUserService userService,
+        IRecommendedEventService recommendedEventService, IHttpContextAccessor httpContextAccessor) : base(context,
+        mapper)
     {
         _context = context;
         _mapper = mapper;
@@ -31,7 +33,7 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
         _recommendedEventService = recommendedEventService;
         _httpContextAccessor = httpContextAccessor;
     }
-    
+
     public override async Task BeforeInsert(Event entity, EventInsertRequestDto insert)
     {
         entity.Organizer = await _userService.GetUserEntityAsync();
@@ -41,62 +43,51 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
     {
         var set = _context.Set<Event>();
         var entity = await set.FindAsync(id);
-        
+
         if (entity == null)
             throw new UserException("Event not found");
-        
+
         var oldCoverImageId = entity.CoverImageId;
-        
+
         _mapper.Map(update, entity);
-        
-        if (update.CoverImageId.HasValue && oldCoverImageId.HasValue && 
+
+        if (update.CoverImageId.HasValue && oldCoverImageId.HasValue &&
             update.CoverImageId.Value != oldCoverImageId.Value)
         {
             var oldCoverImage = await _context.Images.FindAsync(oldCoverImageId.Value);
-            if (oldCoverImage != null)
-            {
-                _context.Images.Remove(oldCoverImage);
-            }
+            if (oldCoverImage != null) _context.Images.Remove(oldCoverImage);
         }
         else if (!update.CoverImageId.HasValue && oldCoverImageId.HasValue)
         {
             entity.CoverImageId = oldCoverImageId;
         }
-        
+
         await _context.SaveChangesAsync();
         var entityWithIncludes = await AddInclude(_context.Set<Event>().Where(e => e.Id == id))
             .FirstOrDefaultAsync();
-        
-        if (entityWithIncludes != null)
-        {
-            return _mapper.Map<EventResponseDto>(entityWithIncludes);
-        }
-        
+
+        if (entityWithIncludes != null) return _mapper.Map<EventResponseDto>(entityWithIncludes);
+
         return _mapper.Map<EventResponseDto>(entity);
     }
 
     public override async Task<EventResponseDto> Insert(EventInsertRequestDto insert)
     {
         var result = await base.Insert(insert);
-        
-        var entityWithIncludes = await AddInclude(_context.Set<Event>().Where(e => e.Id == Guid.Parse(result.Id.ToString())))
-            .FirstOrDefaultAsync();
-        
-        if (entityWithIncludes != null)
-        {
-            result = _mapper.Map<EventResponseDto>(entityWithIncludes);
-        }
-        
+
+        var entityWithIncludes =
+            await AddInclude(_context.Set<Event>().Where(e => e.Id == Guid.Parse(result.Id.ToString())))
+                .FirstOrDefaultAsync();
+
+        if (entityWithIncludes != null) result = _mapper.Map<EventResponseDto>(entityWithIncludes);
+
         return result;
     }
 
     public override async Task<EventResponseDto> Delete(Guid id)
     {
         var entity = await _context.Events.FindAsync(id);
-        if (entity == null)
-        {
-            throw new UserException("Event not found");
-        }
+        if (entity == null) throw new UserException("Event not found");
 
         entity.IsPublished = false;
         await _context.SaveChangesAsync();
@@ -106,45 +97,38 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
     public override IQueryable<Event> AddInclude(IQueryable<Event> query, EventSearchObject? search = null)
     {
         query = query.Include(x => x.Organizer)
-                    .Include(x => x.Category)
-                    .Include(x => x.CoverImage)
-                    .Include(x => x.EventGalleryImages)
-                        .ThenInclude(x => x.Image)
-                    .Include(x => x.EventReviews)
-                    .Include(x => x.Tickets);
+            .Include(x => x.Category)
+            .Include(x => x.CoverImage)
+            .Include(x => x.EventGalleryImages)
+            .ThenInclude(x => x.Image)
+            .Include(x => x.EventReviews)
+            .Include(x => x.Tickets);
 
         return query;
     }
 
     public override IQueryable<Event> AddFilter(IQueryable<Event> query, EventSearchObject? search = null)
     {
-        if (search?.Type.HasValue == true)
-        {
-            query = query.Where(x => x.Type == search.Type.Value);
-        }
-        
+        if (search?.Type.HasValue == true) query = query.Where(x => x.Type == search.Type.Value);
+
         if (!string.IsNullOrWhiteSpace(search?.SearchTerm))
         {
             var searchTerm = search.SearchTerm.ToLower();
-            query = query.Where(x => 
-                x.Title.ToLower().Contains(searchTerm) || 
+            query = query.Where(x =>
+                x.Title.ToLower().Contains(searchTerm) ||
                 (x.Description != null && x.Description.ToLower().Contains(searchTerm))
             );
         }
-        
+
         query = query.Where(x => x.IsPublished);
 
         if (search?.IsUpcoming.HasValue == true)
         {
             var today = DateOnly.FromDateTime(DateTime.Now);
             if (search.IsUpcoming.Value)
-            {
                 query = query.Where(x => x.StartDate >= today);
-            }
             else
-            {
                 query = query.Where(x => x.StartDate < today);
-            }
         }
 
         try
@@ -153,10 +137,7 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
             if (!string.IsNullOrEmpty(userEmail))
             {
                 var currentUser = _context.Users.FirstOrDefault(u => u.Email.Equals(userEmail));
-                if (currentUser != null)
-                {
-                    query = query.Where(x => x.OrganizerId != currentUser.Id);
-                }
+                if (currentUser != null) query = query.Where(x => x.OrganizerId != currentUser.Id);
             }
         }
         catch
@@ -180,7 +161,7 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
 
         return _mapper.Map<List<EventResponseDto>>(events);
     }
-    
+
     public async Task<List<EventResponseDto>> GetEventsByOrganizer(Guid organizerId, bool? isUpcoming = null)
     {
         var query = _context.Events
@@ -189,25 +170,20 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
             .Include(x => x.Tickets)
             .Where(x => x.OrganizerId == organizerId);
 
-        // Filter by date if specified
         if (isUpcoming.HasValue)
         {
             var today = DateOnly.FromDateTime(DateTime.Now);
             if (isUpcoming.Value)
-            {
                 query = query.Where(x => x.StartDate >= today);
-            }
             else
-            {
                 query = query.Where(x => x.StartDate < today);
-            }
         }
 
         var events = await query.ToListAsync();
 
         return _mapper.Map<List<EventResponseDto>>(events);
     }
-    
+
     public override async Task<EventResponseDto> GetById(Guid id)
     {
         var entity = await _context.Events
@@ -215,7 +191,7 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
             .Include(x => x.Category)
             .Include(x => x.CoverImage)
             .Include(x => x.EventGalleryImages)
-                .ThenInclude(egi => egi.Image)
+            .ThenInclude(egi => egi.Image)
             .Include(x => x.EventReviews)
             .Include(x => x.Tickets)
             .FirstOrDefaultAsync(x => x.Id == id);
@@ -225,12 +201,13 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
 
         return _mapper.Map<EventResponseDto>(entity);
     }
+
     public async Task<List<EventResponseDto>> GetRecommendedEvents()
     {
         var currentUser = await _userService.GetUserAsync();
         return await _recommendedEventService.GetRecommendedEventsForUser(currentUser.Id);
     }
-    
+
     public async Task<List<EventResponseDto>> GetPublicEvents()
     {
         User? currentUser = null;
@@ -245,12 +222,9 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
         var today = DateOnly.FromDateTime(DateTime.Now);
         var query = _context.Events
             .Where(e => e.Type == EventType.Public && e.IsPublished)
-            .Where(e => e.StartDate >= today); // Only upcoming events
-        
-        if (currentUser != null)
-        {
-            query = query.Where(e => e.OrganizerId != currentUser.Id);
-        }
+            .Where(e => e.StartDate >= today);
+
+        if (currentUser != null) query = query.Where(e => e.OrganizerId != currentUser.Id);
 
         var publicEvents = await query
             .Include(e => e.Category)
@@ -275,12 +249,9 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
         var today = DateOnly.FromDateTime(DateTime.Now);
         var query = _context.Events
             .Where(e => e.Type == EventType.Private && e.IsPublished)
-            .Where(e => e.StartDate >= today); // Only upcoming events
-        
-        if (currentUser != null)
-        {
-            query = query.Where(e => e.OrganizerId != currentUser.Id);
-        }
+            .Where(e => e.StartDate >= today);
+
+        if (currentUser != null) query = query.Where(e => e.OrganizerId != currentUser.Id);
 
         var privateEvents = await query
             .Include(e => e.Category)
@@ -305,12 +276,9 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
         var today = DateOnly.FromDateTime(DateTime.Now);
         var query = _context.Events
             .Where(e => e.Category.Id == categoryId && e.IsPublished)
-            .Where(e => e.StartDate >= today); // Only upcoming events
-        
-        if (currentUser != null)
-        {
-            query = query.Where(e => e.OrganizerId != currentUser.Id);
-        }
+            .Where(e => e.StartDate >= today);
+
+        if (currentUser != null) query = query.Where(e => e.OrganizerId != currentUser.Id);
 
         var events = await query
             .Include(e => e.Category)
@@ -320,18 +288,18 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
 
         return _mapper.Map<List<EventResponseDto>>(events);
     }
-    
+
     public async Task<List<EventResponseDto>> GetUserFavoriteEventsAsync()
     {
         var currentUser = await _userService.GetUserAsync();
 
         var user = await _context.Users
             .Include(u => u.FavoriteEvents)
-                .ThenInclude(e => e.Category)
+            .ThenInclude(e => e.Category)
             .Include(u => u.FavoriteEvents)
-                .ThenInclude(e => e.CoverImage)
+            .ThenInclude(e => e.CoverImage)
             .Include(u => u.FavoriteEvents)
-                .ThenInclude(e => e.Tickets)
+            .ThenInclude(e => e.Tickets)
             .FirstOrDefaultAsync(u => u.Id == currentUser.Id);
 
         if (user == null)
@@ -340,7 +308,7 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
         var today = DateOnly.FromDateTime(DateTime.Now);
         var publishedFavorites = user.FavoriteEvents
             .Where(e => e.IsPublished)
-            .Where(e => e.StartDate >= today) // Only upcoming events
+            .Where(e => e.StartDate >= today)
             .ToList();
 
         return _mapper.Map<List<EventResponseDto>>(publishedFavorites);
@@ -364,18 +332,14 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
         var isAlreadyFavorite = user.FavoriteEvents.Any(e => e.Id == eventId);
 
         if (isAlreadyFavorite)
-        {
             user.FavoriteEvents.Remove(targetEvent);
-        }
         else
-        {
             user.FavoriteEvents.Add(targetEvent);
-        }
 
         await _context.SaveChangesAsync();
         return true;
     }
-    
+
     public async Task<EventStatisticsResponseDto> GetEventStatistics(Guid eventId)
     {
         var eventEntity = await _context.Events
@@ -389,21 +353,17 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
             return null;
 
         var currentUser = await _userService.GetUserEntityAsync();
-        
+
         if (currentUser.Role == null)
-        {
             currentUser = await _context.Users
                 .Include(u => u.Role)
                 .FirstOrDefaultAsync(u => u.Id == currentUser.Id);
-        }
-        
+
         var isAdmin = currentUser?.Role?.Name == RoleName.Admin;
         var isOrganizer = eventEntity.OrganizerId == currentUser.Id;
 
         if (!isAdmin && !isOrganizer)
-        {
             throw new UserException("You do not have permission to view statistics for this event.");
-        }
 
         var eventEndDateTime = new DateTime(
             eventEntity.EndDate.Year,
@@ -435,8 +395,8 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
             {
                 var soldTickets = eventEntity.Tickets.Sum(x => x.TicketPurchases.Count);
                 var revenue = eventEntity.Tickets.Sum(x => x.TicketPurchases.Sum(p => p.PricePaid));
-                var averageRating = eventEntity.EventReviews.Any() 
-                    ? (double)eventEntity.EventReviews.Average(x => x.Rating) 
+                var averageRating = eventEntity.EventReviews.Any()
+                    ? (double)eventEntity.EventReviews.Average(x => x.Rating)
                     : 0.0;
 
                 var newStat = new EventStatistic
@@ -481,12 +441,9 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
     public async Task AddGalleryImages(Guid eventId, List<Guid> imageIds)
     {
         var eventEntity = await _context.Events.FindAsync(eventId);
-        if (eventEntity == null)
-        {
-            throw new UserException("Event not found");
-        }
-        
-        int order = 0;
+        if (eventEntity == null) throw new UserException("Event not found");
+
+        var order = 0;
         foreach (var imageId in imageIds)
         {
             var image = await _context.Images.FindAsync(imageId);
@@ -494,10 +451,10 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
             {
                 image.ImageType = ImageType.EventGallery;
                 image.EventId = eventId;
-                
+
                 var existingLink = await _context.EventGalleryImages
                     .FirstOrDefaultAsync(x => x.EventId == eventId && x.ImageId == imageId);
-                
+
                 if (existingLink == null)
                 {
                     var now = DateTime.Now;
@@ -522,38 +479,29 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
         var eventEntity = await _context.Events
             .Include(e => e.EventGalleryImages)
             .FirstOrDefaultAsync(e => e.Id == eventId);
-            
-        if (eventEntity == null)
-        {
-            throw new UserException("Event not found");
-        }
+
+        if (eventEntity == null) throw new UserException("Event not found");
 
         var existingGalleryImages = eventEntity.EventGalleryImages.ToList();
-        
+
         var imagesToKeep = imageIds.ToHashSet();
         var imagesToRemove = existingGalleryImages
             .Where(egi => !imagesToKeep.Contains(egi.ImageId))
             .ToList();
-        
+
         foreach (var galleryImage in imagesToRemove)
         {
             var image = await _context.Images.FindAsync(galleryImage.ImageId);
-            if (image != null)
-            {
-                _context.Images.Remove(image);
-            }
+            if (image != null) _context.Images.Remove(image);
             _context.EventGalleryImages.Remove(galleryImage);
         }
 
         var imagesToReAdd = existingGalleryImages
             .Where(egi => imagesToKeep.Contains(egi.ImageId))
             .ToList();
-        foreach (var galleryImage in imagesToReAdd)
-        {
-            _context.EventGalleryImages.Remove(galleryImage);
-        }
+        foreach (var galleryImage in imagesToReAdd) _context.EventGalleryImages.Remove(galleryImage);
 
-        int order = 0;
+        var order = 0;
         foreach (var imageId in imageIds)
         {
             var image = await _context.Images.FindAsync(imageId);
@@ -561,7 +509,7 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
             {
                 image.ImageType = ImageType.EventGallery;
                 image.EventId = eventId;
-                
+
                 var now = DateTime.Now;
                 var galleryImage = new EventGalleryImage
                 {

@@ -19,18 +19,19 @@ public class UserService :
 {
     private readonly EventBaDbContext _context;
     public IMapper _mapper { get; set; }
-    
+
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IRabbitMQProducer _rabbitMQProducer;
 
-    public UserService(EventBaDbContext context, IMapper mapper, IHttpContextAccessor httpContextAccessor, IRabbitMQProducer rabbitMQProducer) : base(context, mapper)
+    public UserService(EventBaDbContext context, IMapper mapper, IHttpContextAccessor httpContextAccessor,
+        IRabbitMQProducer rabbitMQProducer) : base(context, mapper)
     {
         _context = context;
         _mapper = mapper;
         _httpContextAccessor = httpContextAccessor;
         _rabbitMQProducer = rabbitMQProducer;
     }
-    
+
     public override IQueryable<User> AddInclude(IQueryable<User> query, UserSearchObject? search = null)
     {
         return query
@@ -42,57 +43,45 @@ public class UserService :
             .Include(u => u.Events)
             .Include(u => u.FavoriteEvents);
     }
-    
+
     public override IQueryable<User> AddFilter(IQueryable<User> query, UserSearchObject? search = null)
     {
-        if (search?.ExcludeAdmins == true)
-        {
-            query = query.Where(u => u.Role.Name != Model.Enums.RoleName.Admin);
-        }
-        
+        if (search?.ExcludeAdmins == true) query = query.Where(u => u.Role.Name != Model.Enums.RoleName.Admin);
+
         if (!string.IsNullOrWhiteSpace(search?.SearchTerm))
         {
             var searchTerm = search.SearchTerm.ToLower();
-            query = query.Where(u => 
-                u.FirstName.ToLower().Contains(searchTerm) || 
+            query = query.Where(u =>
+                u.FirstName.ToLower().Contains(searchTerm) ||
                 u.LastName.ToLower().Contains(searchTerm) ||
                 u.Email.ToLower().Contains(searchTerm)
             );
         }
-        
+
         if (!string.IsNullOrWhiteSpace(search?.FirstName))
-        {
             query = query.Where(u => u.FirstName.ToLower().Contains(search.FirstName.ToLower()));
-        }
-        
+
         if (!string.IsNullOrWhiteSpace(search?.LastName))
-        {
             query = query.Where(u => u.LastName.ToLower().Contains(search.LastName.ToLower()));
-        }
-        
+
         if (!string.IsNullOrWhiteSpace(search?.Email))
-        {
             query = query.Where(u => u.Email.ToLower().Contains(search.Email.ToLower()));
-        }
-        
+
         return query;
     }
-    
+
     public override async Task BeforeInsert(User entity, UserInsertRequestDto insert)
     {
         entity.PasswordSalt = GenerateSalt();
         entity.PasswordHash = GenerateHash(entity.PasswordSalt, insert.Password);
-        
+
         if (insert.InterestCategoryIds != null && insert.InterestCategoryIds.Any())
         {
             var categories = await _context.Categories
                 .Where(c => insert.InterestCategoryIds.Contains(c.Id))
                 .ToListAsync();
-            
-            foreach (var category in categories)
-            {
-                entity.Categories.Add(category);
-            }
+
+            foreach (var category in categories) entity.Categories.Add(category);
         }
     }
 
@@ -102,30 +91,27 @@ public class UserService :
         var entity = await set
             .Include(u => u.ProfileImage)
             .FirstOrDefaultAsync(u => u.Id == id);
-        
+
         if (entity == null)
             throw new UserException("User not found");
-        
+
         var oldProfileImageId = entity.ProfileImageId;
-        
+
         _mapper.Map(update, entity);
-        
-        if (update.ProfileImageId.HasValue && oldProfileImageId.HasValue && 
+
+        if (update.ProfileImageId.HasValue && oldProfileImageId.HasValue &&
             update.ProfileImageId.Value != oldProfileImageId.Value)
         {
             var oldProfileImage = await _context.Images.FindAsync(oldProfileImageId.Value);
-            if (oldProfileImage != null)
-            {
-                _context.Images.Remove(oldProfileImage);
-            }
+            if (oldProfileImage != null) _context.Images.Remove(oldProfileImage);
         }
         else if (!update.ProfileImageId.HasValue && oldProfileImageId.HasValue)
         {
             entity.ProfileImageId = oldProfileImageId;
         }
-        
+
         await BeforeUpdate(entity, update);
-        
+
         await _context.SaveChangesAsync();
         return _mapper.Map<UserResponseDto>(entity);
     }
@@ -139,10 +125,7 @@ public class UserService :
             .Query()
             .ToList();
 
-        foreach (var category in existingUserInterests)
-        {
-            entity.Categories.Remove(category);
-        }
+        foreach (var category in existingUserInterests) entity.Categories.Remove(category);
 
         if (newCategoryIds.Any())
         {
@@ -151,12 +134,8 @@ public class UserService :
                 .ToListAsync();
 
             foreach (var category in newCategories)
-            {
                 if (entity.Categories.All(c => c.Id != category.Id))
-                {
                     entity.Categories.Add(category);
-                }
-            }
         }
     }
 
@@ -165,14 +144,12 @@ public class UserService :
         try
         {
             var result = await base.Insert(insert);
-            var entityWithIncludes = await AddInclude(_context.Set<User>().Where(u => u.Id == Guid.Parse(result.Id.ToString())))
-                .FirstOrDefaultAsync();
-            
-            if (entityWithIncludes != null)
-            {
-                result = _mapper.Map<UserResponseDto>(entityWithIncludes);
-            }
-        
+            var entityWithIncludes =
+                await AddInclude(_context.Set<User>().Where(u => u.Id == Guid.Parse(result.Id.ToString())))
+                    .FirstOrDefaultAsync();
+
+            if (entityWithIncludes != null) result = _mapper.Map<UserResponseDto>(entityWithIncludes);
+
             return result;
         }
         catch (Exception ex)
@@ -180,7 +157,7 @@ public class UserService :
             throw;
         }
     }
-    
+
     public override async Task<UserResponseDto> GetById(Guid id)
     {
         var query = _context.Users.AsQueryable();
@@ -201,7 +178,7 @@ public class UserService :
         rng.GetBytes(saltBytes);
         return Convert.ToBase64String(saltBytes);
     }
-    
+
     public static string GenerateHash(string salt, string password)
     {
         var src = Convert.FromBase64String(salt);
@@ -233,7 +210,7 @@ public class UserService :
 
         return _mapper.Map<UserResponseDto>(entity);
     }
-    
+
     public async Task<UserResponseDto> GetUserAsync()
     {
         var userIdClaim = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.Email)?.Value;
@@ -244,13 +221,13 @@ public class UserService :
         var query = _context.Users.AsQueryable();
         query = AddInclude(query);
         var user = await query.FirstOrDefaultAsync(u => u.Email.Equals(userIdClaim));
-        
+
         if (user == null)
             throw new UserException("User not found");
 
         return _mapper.Map<UserResponseDto>(user);
     }
-    
+
     public async Task<User> GetUserEntityAsync()
     {
         var userIdClaim = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.Email)?.Value;
@@ -259,13 +236,13 @@ public class UserService :
             throw new UserException("User is not authenticated");
 
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Email.Equals(userIdClaim));
-        
+
         if (user == null)
             throw new UserException("User not found");
 
         return user;
     }
-    
+
     public async Task<UserResponseDto> FollowUser(Guid userId)
     {
         var targetUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
@@ -290,7 +267,7 @@ public class UserService :
         await _context.SaveChangesAsync();
         return _mapper.Map<UserResponseDto>(currentUser);
     }
-    
+
     public async Task<UserResponseDto> UnfollowUser(Guid userId)
     {
         var targetUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
@@ -316,7 +293,7 @@ public class UserService :
         await _context.SaveChangesAsync();
         return _mapper.Map<UserResponseDto>(currentUser);
     }
-    
+
     public async Task ChangePasswordAsync(ChangePasswordRequestDto request)
     {
         var userEmail = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.Email)?.Value;
@@ -344,22 +321,19 @@ public class UserService :
     {
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
 
-        if (user == null)
-        {
-            return;
-        }
+        if (user == null) return;
 
         var random = new Random();
         var code = random.Next(100000, 999999).ToString();
         user.PasswordResetCode = code;
-        
+
         user.PasswordResetCodeExpiry = DateTime.UtcNow.AddHours(24);
 
         await _context.SaveChangesAsync();
 
         try
         {
-            var emailModel = new Model.Helpers.EmailModel
+            var emailModel = new EmailModel
             {
                 Sender = Environment.GetEnvironmentVariable("SMTP_USERNAME") ?? "noreply@eventba.com",
                 Recipient = user.Email,
@@ -397,10 +371,7 @@ EventBa Team
         if (user.PasswordResetCodeExpiry == null || user.PasswordResetCodeExpiry < DateTime.UtcNow)
             return false;
 
-        if (user.PasswordResetCode != null && user.PasswordResetCode == code)
-        {
-            return true;
-        }
+        if (user.PasswordResetCode != null && user.PasswordResetCode == code) return true;
 
         return false;
     }
@@ -427,7 +398,7 @@ EventBa Team
 
         try
         {
-            var emailModel = new Model.Helpers.EmailModel
+            var emailModel = new EmailModel
             {
                 Sender = Environment.GetEnvironmentVariable("SMTP_USERNAME") ?? "noreply@eventba.com",
                 Recipient = user.Email,
@@ -448,7 +419,6 @@ EventBa Team
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Failed to send confirmation email via RabbitMQ: {ex.Message}");
         }
     }
 }

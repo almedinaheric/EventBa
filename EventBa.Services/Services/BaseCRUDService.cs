@@ -9,7 +9,7 @@ public class BaseCRUDService<T, TDb, TSearch, TInsert, TUpdate> : BaseService<T,
 {
     private readonly EventBaDbContext _context;
     private readonly IMapper _mapper;
-    
+
     public BaseCRUDService(EventBaDbContext context, IMapper mapper) : base(context, mapper)
     {
         _context = context;
@@ -27,7 +27,7 @@ public class BaseCRUDService<T, TDb, TSearch, TInsert, TUpdate> : BaseService<T,
     public virtual async Task<T> Insert(TInsert insert)
     {
         var set = _context.Set<TDb>();
-        TDb entity = _mapper.Map<TDb>(insert);
+        var entity = _mapper.Map<TDb>(insert);
         set.Add(entity);
         await BeforeInsert(entity, insert);
         await _context.SaveChangesAsync();
@@ -48,10 +48,7 @@ public class BaseCRUDService<T, TDb, TSearch, TInsert, TUpdate> : BaseService<T,
     {
         var set = _context.Set<TDb>();
         var entity = await set.FindAsync(id);
-        if (entity == null)
-        {
-            return _mapper.Map<T>(null);
-        }
+        if (entity == null) return _mapper.Map<T>(null);
 
         _context.Remove(entity);
         await _context.SaveChangesAsync();

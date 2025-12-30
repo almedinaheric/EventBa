@@ -28,11 +28,9 @@ public class BaseService<T, TDb, TSearch> : IService<T, TSearch>
         var totalCount = await query.CountAsync();
 
         if (search?.Page.HasValue == true && search?.PageSize.HasValue == true)
-        {
             query = query
                 .Skip(search.PageSize.Value * ((search.Page.Value > 0 ? search.Page.Value : 1) - 1))
                 .Take(search.PageSize.Value);
-        }
 
         var list = await query.ToListAsync();
         var items = _mapper.Map<List<T>>(list);

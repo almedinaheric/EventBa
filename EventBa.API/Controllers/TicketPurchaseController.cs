@@ -8,13 +8,16 @@ using Microsoft.AspNetCore.Mvc;
 namespace EventBa.API.Controllers;
 
 [ApiController]
-public class TicketPurchaseController : BaseCRUDController<TicketPurchaseResponseDto, TicketPurchaseSearchObject, TicketPurchaseInsertRequestDto,
+public class TicketPurchaseController : BaseCRUDController<TicketPurchaseResponseDto, TicketPurchaseSearchObject,
+    TicketPurchaseInsertRequestDto,
     TicketPurchaseUpdateRequestDto>
 {
     private readonly ITicketPurchaseService _ticketPurchaseService;
 
-    public TicketPurchaseController(ILogger<BaseCRUDController<TicketPurchaseResponseDto, TicketPurchaseSearchObject, TicketPurchaseInsertRequestDto,
-        TicketPurchaseUpdateRequestDto>> logger, ITicketPurchaseService service) : base(logger, service)
+    public TicketPurchaseController(
+        ILogger<BaseCRUDController<TicketPurchaseResponseDto, TicketPurchaseSearchObject, TicketPurchaseInsertRequestDto
+            ,
+            TicketPurchaseUpdateRequestDto>> logger, ITicketPurchaseService service) : base(logger, service)
     {
         _ticketPurchaseService = service;
     }
@@ -29,7 +32,7 @@ public class TicketPurchaseController : BaseCRUDController<TicketPurchaseRespons
 
     [HttpPost("validate/{eventId}")]
     [Authorize]
-    public async Task<IActionResult> ValidateTicket([FromRoute] Guid eventId, [FromBody] ValidateTicketRequest request)
+    public async Task<IActionResult> ValidateTicket([FromRoute] Guid eventId, [FromBody] ValidateTicketRequestDto request)
     {
         try
         {
@@ -41,9 +44,4 @@ public class TicketPurchaseController : BaseCRUDController<TicketPurchaseRespons
             return BadRequest(new { message = ex.Message });
         }
     }
-}
-
-public class ValidateTicketRequest
-{
-    public string TicketCode { get; set; } = null!;
 }

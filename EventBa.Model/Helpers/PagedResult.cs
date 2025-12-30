@@ -11,7 +11,7 @@ public class PagedResult<T>
         Meta = new Meta(totalCount, pageNumber, pageSize);
         Result.AddRange(items);
     }
-    
+
     public static PagedResult<T> Create(List<T> items, int pageNumber, int pageSize, int totalCount)
     {
         return new PagedResult<T>(items, totalCount, pageNumber, pageSize);

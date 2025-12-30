@@ -47,7 +47,7 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.AddSecurityDefinition("basicAuth", new OpenApiSecurityScheme()
     {
-        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+        Type = SecuritySchemeType.Http,
         Scheme = "basic"
     });
 
@@ -88,13 +88,11 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// Train recommendation model on startup
 using (var scope = app.Services.CreateScope())
 {
     var dataContext = scope.ServiceProvider.GetRequiredService<EventBaDbContext>();
     dataContext.Database.EnsureCreated();
     dataContext.Database.Migrate();
-
     var recommenderService = scope.ServiceProvider.GetRequiredService<IRecommendedEventService>();
     try
     {
@@ -102,7 +100,6 @@ using (var scope = app.Services.CreateScope())
     }
     catch (Exception ex)
     {
-        // Log error but don't crash the application if model training fails
         Console.WriteLine($"Error training recommendation model: {ex.Message}");
     }
 }

@@ -16,7 +16,8 @@ public class EventReviewService : BaseCRUDService<EventReviewResponseDto, EventR
     public IMapper _mapper { get; set; }
     private readonly IUserService _userService;
 
-    public EventReviewService(EventBaDbContext context, IMapper mapper, IUserService userService) : base(context, mapper)
+    public EventReviewService(EventBaDbContext context, IMapper mapper, IUserService userService) : base(context,
+        mapper)
     {
         _context = context;
         _mapper = mapper;
@@ -28,13 +29,14 @@ public class EventReviewService : BaseCRUDService<EventReviewResponseDto, EventR
         entity.User = await _userService.GetUserEntityAsync();
     }
 
-    public override IQueryable<EventReview> AddInclude(IQueryable<EventReview> query, EventReviewSearchObject? search = null)
+    public override IQueryable<EventReview> AddInclude(IQueryable<EventReview> query,
+        EventReviewSearchObject? search = null)
     {
         query = query.Include(x => x.User)
-                    .Include(x => x.Event);
+            .Include(x => x.Event);
         return query;
     }
-    
+
     public async Task<List<EventReviewResponseDto>> GetReviewsForEvent(Guid eventId)
     {
         var reviews = await _context.EventReviews

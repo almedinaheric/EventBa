@@ -33,16 +33,16 @@ public class TicketService : BaseCRUDService<TicketResponseDto, Ticket, TicketSe
     {
         var set = _context.Set<Ticket>();
         var entity = await set.FindAsync(id);
-        
+
         if (entity == null)
             throw new UserException("Ticket not found");
-        
+
         var originalQuantity = entity.Quantity;
         var originalQuantityAvailable = entity.QuantityAvailable;
         var originalQuantitySold = entity.QuantitySold;
-        
+
         _mapper.Map(update, entity);
-        
+
         var quantityDifference = update.Quantity - originalQuantity;
         if (quantityDifference != 0)
         {
@@ -53,9 +53,9 @@ public class TicketService : BaseCRUDService<TicketResponseDto, Ticket, TicketSe
         {
             entity.QuantityAvailable = originalQuantityAvailable;
         }
-        
+
         entity.QuantitySold = originalQuantitySold;
-        
+
         await _context.SaveChangesAsync();
         return _mapper.Map<TicketResponseDto>(entity);
     }
@@ -63,7 +63,7 @@ public class TicketService : BaseCRUDService<TicketResponseDto, Ticket, TicketSe
     public override IQueryable<Ticket> AddInclude(IQueryable<Ticket> query, TicketSearchObject? search = null)
     {
         query = query.Include(x => x.Event)
-                    .Include(x => x.TicketPurchases);
+            .Include(x => x.TicketPurchases);
         return query;
     }
 

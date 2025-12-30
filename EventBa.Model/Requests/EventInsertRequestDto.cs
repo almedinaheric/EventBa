@@ -18,7 +18,7 @@ public class EventInsertRequestDto
     public EventType Type { get; set; }
     public bool IsPublished { get; set; }
     public bool IsPaid { get; set; }
-    
+
     public Guid CategoryId { get; set; }
     public Guid? CoverImageId { get; set; }
 }

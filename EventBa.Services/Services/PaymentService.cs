@@ -29,15 +29,11 @@ public class PaymentService : BaseCRUDService<PaymentResponseDto, Payment, Payme
         var currentUser = await _userService.GetUserEntityAsync();
         entity.User = currentUser;
         entity.UserId = currentUser.Id;
-        
+
         if (!insert.Status.HasValue)
-        {
             entity.Status = PaymentStatus.Paid;
-        }
         else
-        {
             entity.Status = insert.Status.Value;
-        }
     }
 
     public async Task<List<PaymentResponseDto>> GetMyPayments()

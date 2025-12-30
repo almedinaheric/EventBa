@@ -15,7 +15,8 @@ public class UserController : BaseCRUDController<UserResponseDto, UserSearchObje
     private readonly IRecommendedEventService _recommendedEventService;
 
     public UserController(ILogger<BaseCRUDController<UserResponseDto, UserSearchObject, UserInsertRequestDto,
-        UserUpdateRequestDto>> logger, IUserService service, IRecommendedEventService recommendedEventService) : base(logger, service)
+            UserUpdateRequestDto>> logger, IUserService service,
+        IRecommendedEventService recommendedEventService) : base(logger, service)
     {
         _userService = service;
         _recommendedEventService = recommendedEventService;
@@ -26,7 +27,7 @@ public class UserController : BaseCRUDController<UserResponseDto, UserSearchObje
     {
         return _service.Insert(insert);
     }
-    
+
     [HttpGet("{id}")]
     [Authorize]
     public override async Task<UserResponseDto> GetById([FromRoute] Guid id)
@@ -42,7 +43,7 @@ public class UserController : BaseCRUDController<UserResponseDto, UserSearchObje
         var profile = await _userService.GetUserAsync();
         return Ok(profile);
     }
-    
+
     [HttpGet("profile/admin")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetAdminProfile()
@@ -50,7 +51,7 @@ public class UserController : BaseCRUDController<UserResponseDto, UserSearchObje
         var profile = await _userService.GetUserAsync();
         return Ok(profile);
     }
-    
+
     [HttpGet("profile/customer")]
     [Authorize(Roles = "Customer")]
     public async Task<IActionResult> GetCustomerProfile()
@@ -70,7 +71,7 @@ public class UserController : BaseCRUDController<UserResponseDto, UserSearchObje
     {
         return Ok(await _userService.UnfollowUser(userId));
     }
-    
+
     [HttpPost("change-password")]
     [Authorize]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequestDto request)
@@ -92,10 +93,7 @@ public class UserController : BaseCRUDController<UserResponseDto, UserSearchObje
     public async Task<IActionResult> ValidateResetCode([FromBody] ValidateResetCodeRequestDto request)
     {
         var isValid = await _userService.ValidateResetCodeAsync(request.Email, request.Code);
-        if (isValid)
-        {
-            return Ok(new { valid = true, message = "Code is valid." });
-        }
+        if (isValid) return Ok(new { valid = true, message = "Code is valid." });
         return BadRequest(new { valid = false, message = "Invalid or expired code." });
     }
 
@@ -104,9 +102,7 @@ public class UserController : BaseCRUDController<UserResponseDto, UserSearchObje
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequestDto request)
     {
         if (string.IsNullOrWhiteSpace(request.Code))
-        {
             return BadRequest(new { message = "Reset code must be provided." });
-        }
 
         await _userService.ResetPasswordAsync(request.Email, request.Code, request.NewPassword);
         return Ok(new { message = "Password has been reset successfully." });
@@ -119,10 +115,7 @@ public class UserController : BaseCRUDController<UserResponseDto, UserSearchObje
         try
         {
             var user = await _userService.GetUserAsync();
-            if (user != null)
-            {
-                await _recommendedEventService.DeleteRecommendationsForUser(user.Id);
-            }
+            if (user != null) await _recommendedEventService.DeleteRecommendationsForUser(user.Id);
             return Ok(new { message = "Logged out successfully. Recommendations cleared." });
         }
         catch (Exception ex)

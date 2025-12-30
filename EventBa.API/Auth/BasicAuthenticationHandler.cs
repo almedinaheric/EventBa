@@ -14,11 +14,11 @@ public class BasicAuthenticationHandler : AuthenticationHandler<AuthenticationSc
     private readonly IRecommendedEventService _recommendedEventService;
 
     public BasicAuthenticationHandler(
-        IUserService userService, 
+        IUserService userService,
         IRecommendedEventService recommendedEventService,
         IOptionsMonitor<AuthenticationSchemeOptions> options,
-        ILoggerFactory logger, 
-        UrlEncoder encoder, 
+        ILoggerFactory logger,
+        UrlEncoder encoder,
         ISystemClock clock) : base(options, logger, encoder, clock)
     {
         _userService = userService;
@@ -28,29 +28,19 @@ public class BasicAuthenticationHandler : AuthenticationHandler<AuthenticationSc
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
         if (!Request.Headers.TryGetValue("Authorization", out var authHeaderValue))
-        {
             return AuthenticateResult.Fail("Missing authorization header");
-        }
 
         if (!AuthenticationHeaderValue.TryParse(authHeaderValue, out var authHeader) ||
             !authHeader.Scheme.Equals("Basic", StringComparison.OrdinalIgnoreCase))
-        {
             return AuthenticateResult.Fail("Invalid authorization header");
-        }
 
         var credentials = DecodeCredentials(authHeader.Parameter);
-        if (credentials == null)
-        {
-            return AuthenticateResult.Fail("Invalid authorization header");
-        }
+        if (credentials == null) return AuthenticateResult.Fail("Invalid authorization header");
 
         var (email, password) = credentials.Value;
         var user = await _userService.Login(email, password);
 
-        if (user == null)
-        {
-            return AuthenticateResult.Fail("Incorrect email or password");
-        }
+        if (user == null) return AuthenticateResult.Fail("Incorrect email or password");
 
 
         var claims = CreateClaims(user);

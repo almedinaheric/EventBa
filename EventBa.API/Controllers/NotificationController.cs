@@ -8,13 +8,15 @@ using Microsoft.AspNetCore.Mvc;
 namespace EventBa.API.Controllers;
 
 [ApiController]
-public class NotificationController : BaseCRUDController<NotificationResponseDto, NotificationSearchObject, NotificationInsertRequestDto,
+public class NotificationController : BaseCRUDController<NotificationResponseDto, NotificationSearchObject,
+    NotificationInsertRequestDto,
     NotificationUpdateRequestDto>
 {
     private readonly INotificationService _notificationService;
 
-    public NotificationController(ILogger<BaseCRUDController<NotificationResponseDto, NotificationSearchObject, NotificationInsertRequestDto,
-        NotificationUpdateRequestDto>> logger, INotificationService service) : base(logger, service)
+    public NotificationController(
+        ILogger<BaseCRUDController<NotificationResponseDto, NotificationSearchObject, NotificationInsertRequestDto,
+            NotificationUpdateRequestDto>> logger, INotificationService service) : base(logger, service)
     {
         _notificationService = service;
     }
@@ -26,7 +28,7 @@ public class NotificationController : BaseCRUDController<NotificationResponseDto
         var notifications = await _notificationService.GetMyNotifications();
         return Ok(notifications);
     }
-    
+
     [HttpGet("unread-count")]
     [Authorize]
     public async Task<IActionResult> GetUnreadNotificationCount()

@@ -15,7 +15,8 @@ public class EventController : BaseCRUDController<EventResponseDto, EventSearchO
     private readonly IRecommendedEventService _recommendedEventService;
 
     public EventController(ILogger<BaseCRUDController<EventResponseDto, EventSearchObject, EventInsertRequestDto,
-        EventUpdateRequestDto>> logger, IEventService service, IRecommendedEventService recommendedEventService) : base(logger, service)
+            EventUpdateRequestDto>> logger, IEventService service,
+        IRecommendedEventService recommendedEventService) : base(logger, service)
     {
         _eventService = service;
         _recommendedEventService = recommendedEventService;
@@ -37,9 +38,10 @@ public class EventController : BaseCRUDController<EventResponseDto, EventSearchO
         var events = await _eventService.GetMyEvents();
         return Ok(new { count = events.Count });
     }
-    
+
     [HttpGet("organizer/{organizerId}")]
-    public async Task<ActionResult<List<EventResponseDto>>> GetEventsByOrganizer(Guid organizerId, [FromQuery] bool? isUpcoming = null)
+    public async Task<ActionResult<List<EventResponseDto>>> GetEventsByOrganizer(Guid organizerId,
+        [FromQuery] bool? isUpcoming = null)
     {
         var events = await _eventService.GetEventsByOrganizer(organizerId, isUpcoming);
         return Ok(events);
@@ -52,7 +54,7 @@ public class EventController : BaseCRUDController<EventResponseDto, EventSearchO
         var events = await _eventService.GetRecommendedEvents();
         return Ok(events);
     }
-    
+
     [HttpGet("public")]
     [Authorize]
     public async Task<IActionResult> GetPublicEvents()
@@ -60,7 +62,7 @@ public class EventController : BaseCRUDController<EventResponseDto, EventSearchO
         var events = await _eventService.GetPublicEvents();
         return Ok(events);
     }
-    
+
     [HttpGet("private")]
     [Authorize]
     public async Task<IActionResult> GetPrivateEvents()
@@ -68,7 +70,7 @@ public class EventController : BaseCRUDController<EventResponseDto, EventSearchO
         var events = await _eventService.GetPrivateEvents();
         return Ok(events);
     }
-    
+
     [HttpGet("category/{categoryId}")]
     [Authorize]
     public async Task<IActionResult> GetEventsByCategoryId(Guid categoryId)
@@ -84,7 +86,7 @@ public class EventController : BaseCRUDController<EventResponseDto, EventSearchO
         var statistics = await _eventService.GetEventStatistics(id);
         return Ok(statistics);
     }
-    
+
     [HttpGet("favorites")]
     [Authorize]
     public async Task<IActionResult> GetFavoriteEvents()
@@ -112,7 +114,6 @@ public class EventController : BaseCRUDController<EventResponseDto, EventSearchO
         }
         catch (Exception ex)
         {
-            // ErrorFilter will handle this, but we can add more context
             return StatusCode(500, new { message = $"Failed to train model: {ex.Message}" });
         }
     }
@@ -128,7 +129,6 @@ public class EventController : BaseCRUDController<EventResponseDto, EventSearchO
         }
         catch (Exception ex)
         {
-            // ErrorFilter will handle this, but we can add more context
             return StatusCode(500, new { message = $"Failed to retrain model: {ex.Message}" });
         }
     }

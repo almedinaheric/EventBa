@@ -16,7 +16,7 @@ public partial class TicketPurchase
     public DateTime? UsedAt { get; set; }
     public bool IsValid { get; set; }
     public DateTime? InvalidatedAt { get; set; }
-    public decimal PricePaid { get; set; } // Store the price paid at purchase time for reporting
+    public decimal PricePaid { get; set; }
     public virtual Event Event { get; set; } = null!;
     public virtual Ticket Ticket { get; set; } = null!;
     public virtual User User { get; set; } = null!;

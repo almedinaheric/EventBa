@@ -7,4 +7,3 @@ public class EmailModel
     public string Subject { get; set; } = null!;
     public string Content { get; set; } = null!;
 }
-

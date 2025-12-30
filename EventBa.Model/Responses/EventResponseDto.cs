@@ -26,32 +26,29 @@ public class EventResponseDto
     public bool IsPaid { get; set; }
 
     public CategoryResponseDto Category { get; set; } = null!;
-    
-    [JsonIgnore]
-    public ImageResponseDto? CoverImage { get; set; }
-    
+
+    [JsonIgnore] public ImageResponseDto? CoverImage { get; set; }
+
     [JsonPropertyName("coverImage")]
     public string? CoverImageData => CoverImage?.Data != null && CoverImage.Data.Length > 0
         ? $"data:image/jpeg;base64,{Convert.ToBase64String(CoverImage.Data)}"
         : null;
-    
-    [JsonPropertyName("coverImageId")]
-    public Guid? CoverImageId => CoverImage?.Id;
-    
-    [JsonIgnore]
-    public List<ImageResponseDto> GalleryImages { get; set; } = new();
-    
+
+    [JsonPropertyName("coverImageId")] public Guid? CoverImageId => CoverImage?.Id;
+
+    [JsonIgnore] public List<ImageResponseDto> GalleryImages { get; set; } = new();
+
     [JsonPropertyName("galleryImages")]
     public List<string> GalleryImageData => GalleryImages
         .Where(img => img != null && img.Data != null && img.Data.Length > 0)
         .Select(img => $"data:image/jpeg;base64,{Convert.ToBase64String(img.Data!)}")
         .ToList();
-    
+
     [JsonPropertyName("galleryImageIds")]
     public List<Guid> GalleryImageIds => GalleryImages
         .Where(img => img != null && img.Id != Guid.Empty)
         .Select(img => img.Id)
         .ToList();
-    
+
     public Guid OrganizerId { get; set; }
 }

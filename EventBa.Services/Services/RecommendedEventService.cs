@@ -44,11 +44,7 @@ public class RecommendedEventService : IRecommendedEventService
             _ml ??= new MLContext();
 
             var trainingData = CollectTrainingData();
-            if (trainingData.Count < 2)
-            {
-                Console.WriteLine("Insufficient training data. Skipping model training.");
-                return;
-            }
+            if (trainingData.Count < 2) return;
 
             var mappedData = MapEventsToIndices(trainingData);
             if (mappedData.Count < 2)
@@ -58,8 +54,6 @@ public class RecommendedEventService : IRecommendedEventService
             var trainer = _ml.Recommendation().Trainers.MatrixFactorization(CreateTrainerOptions());
 
             _model = trainer.Fit(dataView);
-
-            Console.WriteLine($"Model trained with {mappedData.Count} entries.");
         }
     }
 
@@ -107,14 +101,8 @@ public class RecommendedEventService : IRecommendedEventService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error in GetRecommendedEventsForUser for user {userId}: {ex.Message}");
-
             var fallbackCached = await LoadCachedRecommendations(userId);
-            if (fallbackCached.Any())
-            {
-                Console.WriteLine($"Returning cached recommendations as fallback for user {userId}");
-                return _mapper.Map<List<EventResponseDto>>(fallbackCached);
-            }
+            if (fallbackCached.Any()) return _mapper.Map<List<EventResponseDto>>(fallbackCached);
 
             return [];
         }
@@ -136,10 +124,7 @@ public class RecommendedEventService : IRecommendedEventService
             ? await RankEventsWithMl(user, candidateEvents, excludedEventIds)
             : candidateEvents.Take(MaxRecommendations).ToList();
 
-        if (recommendedEvents.Any())
-        {
-            await CacheRecommendationsSafely(userId, recommendedEvents);
-        }
+        if (recommendedEvents.Any()) await CacheRecommendationsSafely(userId, recommendedEvents);
 
         return recommendedEvents;
     }
@@ -180,7 +165,7 @@ public class RecommendedEventService : IRecommendedEventService
             return DefaultScore;
 
         float totalScore = 0;
-        int predictionCount = 0;
+        var predictionCount = 0;
 
         foreach (var seed in seedEvents)
         {
@@ -229,14 +214,9 @@ public class RecommendedEventService : IRecommendedEventService
     {
         if (multipliers.FavoriteCategoryIds.Contains(candidate.CategoryId) ||
             multipliers.PurchasedCategoryIds.Contains(candidate.CategoryId))
-        {
             return FavoritePurchaseWeight;
-        }
 
-        if (multipliers.InterestCategoryIds.Contains(candidate.CategoryId))
-        {
-            return InterestWeight;
-        }
+        if (multipliers.InterestCategoryIds.Contains(candidate.CategoryId)) return InterestWeight;
 
         return 1.0f;
     }
@@ -260,10 +240,10 @@ public class RecommendedEventService : IRecommendedEventService
         return await _context.Users
             .Include(u => u.Categories)
             .Include(u => u.FavoriteEvents)
-                .ThenInclude(e => e.Category)
+            .ThenInclude(e => e.Category)
             .Include(u => u.TicketPurchases)
-                .ThenInclude(tp => tp.Event)
-                    .ThenInclude(e => e.Category)
+            .ThenInclude(tp => tp.Event)
+            .ThenInclude(e => e.Category)
             .FirstOrDefaultAsync(u => u.Id == userId);
     }
 
@@ -272,13 +252,13 @@ public class RecommendedEventService : IRecommendedEventService
         var cached = await _context.RecommendedEvents
             .Where(r => r.UserId == userId)
             .Include(r => r.Event)
-                .ThenInclude(e => e.Category)
+            .ThenInclude(e => e.Category)
             .Include(r => r.Event)
-                .ThenInclude(e => e.CoverImage)
+            .ThenInclude(e => e.CoverImage)
             .Include(r => r.Event)
-                .ThenInclude(e => e.EventGalleryImages)
+            .ThenInclude(e => e.EventGalleryImages)
             .Include(r => r.Event)
-                .ThenInclude(e => e.Tickets)
+            .ThenInclude(e => e.Tickets)
             .ToListAsync();
 
         return cached
@@ -349,7 +329,6 @@ public class RecommendedEventService : IRecommendedEventService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error caching recommendations for user {userId}: {ex.Message}");
         }
     }
 
@@ -490,22 +469,20 @@ public class RecommendedEventService : IRecommendedEventService
         var eventList = events.ToList();
 
         foreach (var event1 in eventList)
+        foreach (var event2 in eventList.Where(e => e.Id != event1.Id))
         {
-            foreach (var event2 in eventList.Where(e => e.Id != event1.Id))
+            var id1 = Hash(event1.Id);
+            var id2 = Hash(event2.Id);
+
+            if (id1 == id2)
+                continue;
+
+            data.Add(new EventEntry
             {
-                var id1 = Hash(event1.Id);
-                var id2 = Hash(event2.Id);
-
-                if (id1 == id2)
-                    continue;
-
-                data.Add(new EventEntry
-                {
-                    EventID = id1,
-                    CoEventID = id2,
-                    Label = label
-                });
-            }
+                EventID = id1,
+                CoEventID = id2,
+                Label = label
+            });
         }
     }
 
@@ -531,17 +508,20 @@ public class RecommendedEventService : IRecommendedEventService
         }).ToList();
     }
 
-    private static MatrixFactorizationTrainer.Options CreateTrainerOptions() => new()
+    private static MatrixFactorizationTrainer.Options CreateTrainerOptions()
     {
-        MatrixColumnIndexColumnName = nameof(EventEntry.EventID),
-        MatrixRowIndexColumnName = nameof(EventEntry.CoEventID),
-        LabelColumnName = nameof(EventEntry.Label),
-        LossFunction = MatrixFactorizationTrainer.LossFunctionType.SquareLossOneClass,
-        Alpha = 0.01,
-        Lambda = 0.025,
-        NumberOfIterations = 100,
-        C = 0.00001
-    };
+        return new MatrixFactorizationTrainer.Options
+        {
+            MatrixColumnIndexColumnName = nameof(EventEntry.EventID),
+            MatrixRowIndexColumnName = nameof(EventEntry.CoEventID),
+            LabelColumnName = nameof(EventEntry.Label),
+            LossFunction = MatrixFactorizationTrainer.LossFunctionType.SquareLossOneClass,
+            Alpha = 0.01,
+            Lambda = 0.025,
+            NumberOfIterations = 100,
+            C = 0.00001
+        };
+    }
 
     private static uint Hash(Guid id)
     {
@@ -558,11 +538,9 @@ public class RecommendedEventService : IRecommendedEventService
 
     public class EventEntry
     {
-        [KeyType(count: MaxEvents)]
-        public uint EventID { get; set; }
+        [KeyType(MaxEvents)] public uint EventID { get; set; }
 
-        [KeyType(count: MaxEvents)]
-        public uint CoEventID { get; set; }
+        [KeyType(MaxEvents)] public uint CoEventID { get; set; }
 
         public float Label { get; set; }
     }

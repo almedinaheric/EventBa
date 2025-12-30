@@ -15,14 +15,16 @@ using QRCoder;
 
 namespace EventBa.Services.Services;
 
-public class TicketPurchaseService : BaseCRUDService<TicketPurchaseResponseDto, TicketPurchase, TicketPurchaseSearchObject,
+public class TicketPurchaseService : BaseCRUDService<TicketPurchaseResponseDto, TicketPurchase,
+    TicketPurchaseSearchObject,
     TicketPurchaseInsertRequestDto, TicketPurchaseUpdateRequestDto>, ITicketPurchaseService
 {
     private readonly EventBaDbContext _context;
     public IMapper _mapper { get; set; }
     private readonly IUserService _userService;
 
-    public TicketPurchaseService(EventBaDbContext context, IMapper mapper, IUserService userService) : base(context, mapper)
+    public TicketPurchaseService(EventBaDbContext context, IMapper mapper, IUserService userService) : base(context,
+        mapper)
     {
         _context = context;
         _mapper = mapper;
@@ -32,11 +34,11 @@ public class TicketPurchaseService : BaseCRUDService<TicketPurchaseResponseDto, 
     public override async Task BeforeInsert(TicketPurchase entity, TicketPurchaseInsertRequestDto insert)
     {
         var currentUser = await _userService.GetUserEntityAsync();
-        
+
         entity.EventId = insert.EventId;
         entity.TicketId = insert.TicketId;
         entity.UserId = currentUser.Id;
-        
+
         var ticket = await _context.Tickets
             .AsNoTracking()
             .Include(t => t.Event)
@@ -63,7 +65,7 @@ public class TicketPurchaseService : BaseCRUDService<TicketPurchaseResponseDto, 
 
         entity.PricePaid = ticket.Price;
         entity.IsValid = true;
-        
+
         var ticketToUpdate = await _context.Tickets
             .Include(t => t.Event)
             .FirstOrDefaultAsync(t => t.Id == insert.TicketId);
@@ -72,9 +74,7 @@ public class TicketPurchaseService : BaseCRUDService<TicketPurchaseResponseDto, 
             throw new UserException("Ticket not found");
 
         if (entity.EventId == Guid.Empty)
-        {
             entity.EventId = insert.EventId != Guid.Empty ? insert.EventId : ticketToUpdate.EventId;
-        }
 
         ticketToUpdate.QuantityAvailable--;
         ticketToUpdate.QuantitySold++;
@@ -86,17 +86,14 @@ public class TicketPurchaseService : BaseCRUDService<TicketPurchaseResponseDto, 
             if (eventEntity == null)
                 throw new UserException("Event not found");
         }
-        
+
         eventEntity.AvailableTicketsCount = await _context.Tickets
             .Where(t => t.EventId == eventEntity.Id)
             .SumAsync(t => t.QuantityAvailable);
-        
+
         var entityEntryFinal = _context.Entry(entity);
-        
-        if (entityEntryFinal.State == EntityState.Detached)
-        {
-            _context.Entry(entity).State = EntityState.Added;
-        }
+
+        if (entityEntryFinal.State == EntityState.Detached) _context.Entry(entity).State = EntityState.Added;
     }
 
     public override async Task<TicketPurchaseResponseDto> Insert(TicketPurchaseInsertRequestDto insert)
@@ -105,13 +102,13 @@ public class TicketPurchaseService : BaseCRUDService<TicketPurchaseResponseDto, 
         {
             var set = _context.Set<TicketPurchase>();
             var entity = _mapper.Map<TicketPurchase>(insert);
-            
+
             set.Add(entity);
-            
+
             await BeforeInsert(entity, insert);
-            
+
             var entityEntry = _context.Entry(entity);
-            
+
             if (entityEntry.State == EntityState.Detached)
             {
                 var eventId = entity.EventId;
@@ -123,7 +120,7 @@ public class TicketPurchaseService : BaseCRUDService<TicketPurchaseResponseDto, 
                 var qrCodeImage = entity.QrCodeImage;
                 var pricePaid = entity.PricePaid;
                 var isValid = entity.IsValid;
-                
+
                 var newEntity = new TicketPurchase
                 {
                     EventId = eventId,
@@ -136,27 +133,21 @@ public class TicketPurchaseService : BaseCRUDService<TicketPurchaseResponseDto, 
                     PricePaid = pricePaid,
                     IsValid = isValid
                 };
-                
+
                 set.Add(newEntity);
                 entity = newEntity;
                 entityEntry = _context.Entry(entity);
             }
-            
-            if (entityEntry.State != EntityState.Added)
-            {
-                entityEntry.State = EntityState.Added;
-            }
-            
+
+            if (entityEntry.State != EntityState.Added) entityEntry.State = EntityState.Added;
+
             await _context.SaveChangesAsync();
-            
+
             var entityWithIncludes = await AddInclude(_context.Set<TicketPurchase>().Where(tp => tp.Id == entity.Id))
                 .FirstOrDefaultAsync();
-            
-            if (entityWithIncludes != null)
-            {
-                return _mapper.Map<TicketPurchaseResponseDto>(entityWithIncludes);
-            }
-            
+
+            if (entityWithIncludes != null) return _mapper.Map<TicketPurchaseResponseDto>(entityWithIncludes);
+
             return _mapper.Map<TicketPurchaseResponseDto>(entity);
         }
         catch (DbUpdateException dbEx)
@@ -186,14 +177,15 @@ public class TicketPurchaseService : BaseCRUDService<TicketPurchaseResponseDto, 
         return Convert.ToBase64String(hash);
     }
 
-    public override IQueryable<TicketPurchase> AddInclude(IQueryable<TicketPurchase> query, TicketPurchaseSearchObject? search = null)
+    public override IQueryable<TicketPurchase> AddInclude(IQueryable<TicketPurchase> query,
+        TicketPurchaseSearchObject? search = null)
     {
         query = query.Include(x => x.User)
-                    .Include(x => x.Ticket)
-                    .ThenInclude(x => x.Event);
+            .Include(x => x.Ticket)
+            .ThenInclude(x => x.Event);
         return query;
     }
-    
+
     public async Task<List<TicketPurchaseResponseDto>> GetMyPurchases()
     {
         var currentUser = await _userService.GetUserEntityAsync();
@@ -230,7 +222,7 @@ public class TicketPurchaseService : BaseCRUDService<TicketPurchaseResponseDto, 
         purchase.InvalidatedAt = now;
 
         var ticket = purchase.Ticket;
-        
+
         var eventEntity = ticket.Event;
         if (eventEntity == null)
         {
@@ -238,12 +230,10 @@ public class TicketPurchaseService : BaseCRUDService<TicketPurchaseResponseDto, 
             if (eventEntity == null)
                 throw new UserException("Event not found");
         }
-        
+
         if (eventEntity.CurrentAttendees >= eventEntity.Capacity)
-        {
             throw new UserException("Event has reached maximum capacity");
-        }
-        
+
         eventEntity.CurrentAttendees++;
         eventEntity.AvailableTicketsCount--;
 

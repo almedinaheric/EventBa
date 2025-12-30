@@ -8,13 +8,15 @@ using Microsoft.AspNetCore.Mvc;
 namespace EventBa.API.Controllers;
 
 [ApiController]
-public class CategoryController : BaseCRUDController<CategoryResponseDto, CategorySearchObject, CategoryInsertRequestDto,
+public class CategoryController : BaseCRUDController<CategoryResponseDto, CategorySearchObject, CategoryInsertRequestDto
+    ,
     CategoryUpdateRequestDto>
 {
     private readonly ICategoryService _categoryService;
 
-    public CategoryController(ILogger<BaseCRUDController<CategoryResponseDto, CategorySearchObject, CategoryInsertRequestDto,
-        CategoryUpdateRequestDto>> logger, ICategoryService service) : base(logger, service)
+    public CategoryController(
+        ILogger<BaseCRUDController<CategoryResponseDto, CategorySearchObject, CategoryInsertRequestDto,
+            CategoryUpdateRequestDto>> logger, ICategoryService service) : base(logger, service)
     {
         _categoryService = service;
     }
@@ -32,7 +34,7 @@ public class CategoryController : BaseCRUDController<CategoryResponseDto, Catego
     {
         return await _service.GetById(id);
     }
-    
+
     [HttpPost]
     [Authorize(Roles = "Admin")]
     public override async Task<CategoryResponseDto> Insert([FromBody] CategoryInsertRequestDto insert)

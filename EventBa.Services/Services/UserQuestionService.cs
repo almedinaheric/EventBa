@@ -18,7 +18,8 @@ public class UserQuestionService : BaseCRUDService<UserQuestionResponseDto, User
     public IMapper _mapper { get; set; }
     private readonly IUserService _userService;
 
-    public UserQuestionService(EventBaDbContext context, IMapper mapper, IUserService userService) : base(context, mapper)
+    public UserQuestionService(EventBaDbContext context, IMapper mapper, IUserService userService) : base(context,
+        mapper)
     {
         _context = context;
         _mapper = mapper;
@@ -28,17 +29,17 @@ public class UserQuestionService : BaseCRUDService<UserQuestionResponseDto, User
     public override async Task BeforeInsert(UserQuestion entity, UserQuestionInsertRequestDto insert)
     {
         entity.User = await _userService.GetUserEntityAsync();
-        
+
         if (insert.EventId.HasValue)
         {
             entity.EventId = insert.EventId.Value;
-            
+
             var eventEntity = await _context.Events
                 .FirstOrDefaultAsync(e => e.Id == insert.EventId.Value);
-            
+
             if (eventEntity == null)
                 throw new UserException("Event not found.");
-            
+
             entity.ReceiverId = eventEntity.OrganizerId;
             entity.IsQuestionForAdmin = false;
         }
@@ -46,19 +47,19 @@ public class UserQuestionService : BaseCRUDService<UserQuestionResponseDto, User
         {
             var allRoles = await _context.Roles.ToListAsync();
             var adminRole = allRoles.FirstOrDefault(r => r.Name == RoleName.Admin);
-            
+
             if (adminRole == null)
             {
                 var roleInfo = string.Join(", ", allRoles.Select(r => $"{r.Name} ({r.Id})"));
                 throw new UserException($"Admin role not found. Available roles: {roleInfo}");
             }
-            
+
             var adminUser = await _context.Users
                 .FirstOrDefaultAsync(u => u.RoleId == adminRole.Id);
-            
+
             if (adminUser == null)
                 throw new UserException($"No user found with Admin role (RoleId: {adminRole.Id}).");
-            
+
             entity.ReceiverId = adminUser.Id;
             entity.EventId = null;
             entity.IsQuestionForAdmin = true;
@@ -69,7 +70,8 @@ public class UserQuestionService : BaseCRUDService<UserQuestionResponseDto, User
         }
         else
         {
-            throw new UserException("Either EventId or ReceiverId must be provided, or IsQuestionForAdmin must be true.");
+            throw new UserException(
+                "Either EventId or ReceiverId must be provided, or IsQuestionForAdmin must be true.");
         }
     }
 
@@ -80,18 +82,18 @@ public class UserQuestionService : BaseCRUDService<UserQuestionResponseDto, User
         set.Add(entity);
         await BeforeInsert(entity, insert);
         await _context.SaveChangesAsync();
-        
+
         var loadedEntity = await _context.UserQuestions
             .Include(x => x.User)
             .Include(x => x.Receiver)
             .FirstOrDefaultAsync(x => x.Id == entity.Id);
-        
+
         if (loadedEntity != null)
         {
             await AfterInsert(loadedEntity, insert);
             return _mapper.Map<UserQuestionResponseDto>(loadedEntity);
         }
-        
+
         return _mapper.Map<UserQuestionResponseDto>(entity);
     }
 
@@ -120,10 +122,11 @@ public class UserQuestionService : BaseCRUDService<UserQuestionResponseDto, User
         await _context.SaveChangesAsync();
     }
 
-    public override IQueryable<UserQuestion> AddInclude(IQueryable<UserQuestion> query, UserQuestionSearchObject? search = null)
+    public override IQueryable<UserQuestion> AddInclude(IQueryable<UserQuestion> query,
+        UserQuestionSearchObject? search = null)
     {
         query = query.Include(x => x.User)
-                    .Include(x => x.Receiver);
+            .Include(x => x.Receiver);
         return query;
     }
 
@@ -182,20 +185,20 @@ public class UserQuestionService : BaseCRUDService<UserQuestionResponseDto, User
             .Include(x => x.User)
             .Include(x => x.Receiver)
             .FirstOrDefaultAsync(x => x.Id == id);
-        
+
         if (entity == null)
             throw new UserException("Question not found");
-        
+
         var wasAlreadyAnswered = entity.IsAnswered;
-        
+
         _mapper.Map(update, entity);
-        
+
         if (!wasAlreadyAnswered && update.IsAnswered && !string.IsNullOrEmpty(update.Answer))
         {
             var notification = new Notification
             {
-                Title = entity.EventId.HasValue 
-                    ? "Your question about an event was answered" 
+                Title = entity.EventId.HasValue
+                    ? "Your question about an event was answered"
                     : "Your support question was answered",
                 Content = $"your question: {entity.Question} answer: {entity.Answer}",
                 IsImportant = false,
@@ -215,7 +218,7 @@ public class UserQuestionService : BaseCRUDService<UserQuestionResponseDto, User
 
             _context.UserNotifications.Add(userNotification);
         }
-        
+
         await _context.SaveChangesAsync();
         return _mapper.Map<UserQuestionResponseDto>(entity);
     }

@@ -15,8 +15,10 @@ public class PaymentController : BaseCRUDController<PaymentResponseDto, PaymentS
     private readonly IPaymentService _paymentService;
     private readonly IConfiguration _configuration;
 
-    public PaymentController(ILogger<BaseCRUDController<PaymentResponseDto, PaymentSearchObject, PaymentInsertRequestDto,
-        PaymentUpdateRequestDto>> logger, IPaymentService service, IConfiguration configuration) : base(logger, service)
+    public PaymentController(
+        ILogger<BaseCRUDController<PaymentResponseDto, PaymentSearchObject, PaymentInsertRequestDto,
+            PaymentUpdateRequestDto>> logger, IPaymentService service, IConfiguration configuration) : base(logger,
+        service)
     {
         _paymentService = service;
         _configuration = configuration;
@@ -32,13 +34,13 @@ public class PaymentController : BaseCRUDController<PaymentResponseDto, PaymentS
 
     [HttpPost("create-payment-intent")]
     [Authorize]
-    public async Task<IActionResult> CreatePaymentIntent([FromBody] CreatePaymentIntentRequest request)
+    public async Task<IActionResult> CreatePaymentIntent([FromBody] CreatePaymentIntentRequestDto request)
     {
         try
         {
             var options = new PaymentIntentCreateOptions
             {
-                Amount = (long)(request.Amount * 100), // Convert to cents
+                Amount = (long)(request.Amount * 100),
                 Currency = request.Currency.ToLower(),
                 PaymentMethodTypes = new List<string> { "card" },
                 Metadata = new Dictionary<string, string>
@@ -64,12 +66,3 @@ public class PaymentController : BaseCRUDController<PaymentResponseDto, PaymentS
         }
     }
 }
-
-public class CreatePaymentIntentRequest
-{
-    public decimal Amount { get; set; }
-    public string Currency { get; set; } = "USD";
-    public string TicketId { get; set; } = string.Empty;
-    public string EventId { get; set; } = string.Empty;
-    public int Quantity { get; set; }
-} 

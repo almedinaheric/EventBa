@@ -8,13 +8,15 @@ using Microsoft.AspNetCore.Mvc;
 namespace EventBa.API.Controllers;
 
 [ApiController]
-public class UserQuestionController : BaseCRUDController<UserQuestionResponseDto, UserQuestionSearchObject, UserQuestionInsertRequestDto,
+public class UserQuestionController : BaseCRUDController<UserQuestionResponseDto, UserQuestionSearchObject,
+    UserQuestionInsertRequestDto,
     UserQuestionUpdateRequestDto>
 {
     private readonly IUserQuestionService _userQuestionService;
 
-    public UserQuestionController(ILogger<BaseCRUDController<UserQuestionResponseDto, UserQuestionSearchObject, UserQuestionInsertRequestDto,
-        UserQuestionUpdateRequestDto>> logger, IUserQuestionService service) : base(logger, service)
+    public UserQuestionController(
+        ILogger<BaseCRUDController<UserQuestionResponseDto, UserQuestionSearchObject, UserQuestionInsertRequestDto,
+            UserQuestionUpdateRequestDto>> logger, IUserQuestionService service) : base(logger, service)
     {
         _userQuestionService = service;
     }

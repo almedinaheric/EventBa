@@ -19,7 +19,8 @@ public class NotificationService : BaseCRUDService<NotificationResponseDto, Noti
     private readonly IUserService _userService;
     private readonly IRabbitMQProducer _rabbitMQProducer;
 
-    public NotificationService(EventBaDbContext context, IMapper mapper, IUserService userService, IRabbitMQProducer rabbitMQProducer) : base(context, mapper)
+    public NotificationService(EventBaDbContext context, IMapper mapper, IUserService userService,
+        IRabbitMQProducer rabbitMQProducer) : base(context, mapper)
     {
         _context = context;
         _mapper = mapper;
@@ -30,12 +31,9 @@ public class NotificationService : BaseCRUDService<NotificationResponseDto, Noti
     public override async Task<NotificationResponseDto> Insert(NotificationInsertRequestDto insert)
     {
         var result = await base.Insert(insert);
-        
+
         var notification = await _context.Notifications.FindAsync(Guid.Parse(result.Id.ToString()));
-        if (notification == null)
-        {
-            throw new UserException("Failed to create notification");
-        }
+        if (notification == null) throw new UserException("Failed to create notification");
 
         if (insert.IsSystemNotification)
         {
@@ -54,7 +52,7 @@ public class NotificationService : BaseCRUDService<NotificationResponseDto, Noti
         else
         {
             var targetUserIds = new List<Guid>();
-            
+
             if (insert.UserId.HasValue)
             {
                 targetUserIds.Add(insert.UserId.Value);
@@ -78,9 +76,9 @@ public class NotificationService : BaseCRUDService<NotificationResponseDto, Noti
         }
 
         await _context.SaveChangesAsync();
-        var recipientUserIds = insert.IsSystemNotification 
+        var recipientUserIds = insert.IsSystemNotification
             ? await _context.Users.Select(u => u.Id).ToListAsync()
-            : insert.UserId.HasValue 
+            : insert.UserId.HasValue
                 ? new List<Guid> { insert.UserId.Value }
                 : new List<Guid> { (await _userService.GetUserEntityAsync()).Id };
 
@@ -89,7 +87,6 @@ public class NotificationService : BaseCRUDService<NotificationResponseDto, Noti
             .ToListAsync();
 
         foreach (var recipient in recipientUsers)
-        {
             try
             {
                 var emailModel = new EmailModel
@@ -115,14 +112,13 @@ EventBa Team
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Failed to send email notification to {recipient.Email}: {ex.Message}");
             }
-        }
 
         return result;
     }
 
-    public override IQueryable<Notification> AddInclude(IQueryable<Notification> query, NotificationSearchObject? search = null)
+    public override IQueryable<Notification> AddInclude(IQueryable<Notification> query,
+        NotificationSearchObject? search = null)
     {
         query = query.Include(x => x.UserNotifications).ThenInclude(x => x.User);
         return query;
@@ -133,7 +129,7 @@ EventBa Team
         var currentUser = await _userService.GetUserEntityAsync();
         var userNotifications = await _context.UserNotifications
             .Include(un => un.Notification)
-                .ThenInclude(n => n.Event)
+            .ThenInclude(n => n.Event)
             .Where(un => un.UserId == currentUser.Id)
             .OrderByDescending(un => un.Notification.CreatedAt)
             .ToListAsync();
@@ -153,7 +149,7 @@ EventBa Team
 
         return responseDtos;
     }
-    
+
     public async Task<int> GetUnreadNotificationCount()
     {
         var currentUser = await _userService.GetUserEntityAsync();
@@ -167,7 +163,7 @@ EventBa Team
         var currentUser = await _userService.GetUserEntityAsync();
         var userNotification = await _context.UserNotifications
             .FirstOrDefaultAsync(un => un.NotificationId == notificationId && un.UserId == currentUser.Id);
-        
+
         if (userNotification != null)
         {
             userNotification.Status = NotificationStatus.Read;
@@ -182,10 +178,7 @@ EventBa Team
             .Where(un => un.UserId == currentUser.Id && un.Status != NotificationStatus.Read)
             .ToListAsync();
 
-        foreach (var userNotification in userNotifications)
-        {
-            userNotification.Status = NotificationStatus.Read;
-        }
+        foreach (var userNotification in userNotifications) userNotification.Status = NotificationStatus.Read;
 
         await _context.SaveChangesAsync();
     }
@@ -214,17 +207,17 @@ EventBa Team
     public override async Task<NotificationResponseDto> Delete(Guid id)
     {
         var currentUser = await _userService.GetUserEntityAsync();
-        
+
         var userNotification = await _context.UserNotifications
             .Include(un => un.Notification)
             .FirstOrDefaultAsync(un => un.NotificationId == id && un.UserId == currentUser.Id);
-        
+
         if (userNotification != null)
         {
             var notification = userNotification.Notification;
             _context.UserNotifications.Remove(userNotification);
             await _context.SaveChangesAsync();
-            
+
             return new NotificationResponseDto
             {
                 Id = notification.Id,
@@ -238,7 +231,7 @@ EventBa Team
                 Status = userNotification.Status
             };
         }
-        
+
         throw new UserException("Notification not found");
     }
 }

@@ -8,13 +8,15 @@ using Microsoft.AspNetCore.Mvc;
 namespace EventBa.API.Controllers;
 
 [ApiController]
-public class EventReviewController : BaseCRUDController<EventReviewResponseDto, EventReviewSearchObject, EventReviewInsertRequestDto,
+public class EventReviewController : BaseCRUDController<EventReviewResponseDto, EventReviewSearchObject,
+    EventReviewInsertRequestDto,
     EventReviewUpdateRequestDto>
 {
     private readonly IEventReviewService _eventReviewService;
 
-    public EventReviewController(ILogger<BaseCRUDController<EventReviewResponseDto, EventReviewSearchObject, EventReviewInsertRequestDto,
-        EventReviewUpdateRequestDto>> logger, IEventReviewService service) : base(logger, service)
+    public EventReviewController(
+        ILogger<BaseCRUDController<EventReviewResponseDto, EventReviewSearchObject, EventReviewInsertRequestDto,
+            EventReviewUpdateRequestDto>> logger, IEventReviewService service) : base(logger, service)
     {
         _eventReviewService = service;
     }
