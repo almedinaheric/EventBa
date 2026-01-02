@@ -53,8 +53,6 @@
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
       - API_HOST=localhost
       - API_PORT=5187
-      - Stripe__SecretKey=${STRIPE_SECRET_KEY}
-      - Stripe__PublishableKey=${STRIPE_PUBLISHABLE_KEY}
     ports:
       - "5187:5187"
     volumes:
