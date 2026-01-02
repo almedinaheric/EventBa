@@ -17,7 +17,16 @@ import 'package:flutter_stripe/flutter_stripe.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  Stripe.publishableKey = AppConfig.stripePublishableKey;
+  try {
+    Stripe.publishableKey = AppConfig.stripePublishableKey;
+
+    if (!AppConfig.stripePublishableKey.startsWith('pk_test_') &&
+        !AppConfig.stripePublishableKey.startsWith('pk_live_')) {
+      throw Exception('Invalid Stripe PublishableKey format in AppConfig');
+    }
+  } catch (e) {
+    // Stripe initialization error - app will fail if key is invalid
+  }
 
   runApp(
     MultiProvider(

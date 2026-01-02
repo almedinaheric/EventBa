@@ -244,6 +244,7 @@ public class RecommendedEventService : IRecommendedEventService
             .Include(u => u.TicketPurchases)
             .ThenInclude(tp => tp.Event)
             .ThenInclude(e => e.Category)
+            .Include(u => u.Events)
             .FirstOrDefaultAsync(u => u.Id == userId);
     }
 
@@ -291,9 +292,12 @@ public class RecommendedEventService : IRecommendedEventService
     {
         var favoriteIds = user.FavoriteEvents?.Select(e => e.Id) ?? Enumerable.Empty<Guid>();
         var purchasedIds = user.TicketPurchases?.Select(tp => tp.EventId) ?? Enumerable.Empty<Guid>();
+        // Exclude events where user is the organizer
+        var organizerEventIds = user.Events?.Select(e => e.Id) ?? Enumerable.Empty<Guid>();
 
         return favoriteIds
             .Concat(purchasedIds)
+            .Concat(organizerEventIds)
             .Distinct()
             .ToList();
     }

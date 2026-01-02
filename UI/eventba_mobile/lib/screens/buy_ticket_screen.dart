@@ -169,24 +169,29 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
         quantity: totalQuantity,
       );
 
-      if (paymentIntentData['clientSecret'] == null) {
+      final publishableKeyToUse = stripe.Stripe.publishableKey;
+
+      if (publishableKeyToUse.isEmpty) {
+        throw Exception(
+          'PublishableKey is not configured. Please contact support.',
+        );
+      }
+
+      if (!publishableKeyToUse.startsWith('pk_test_') &&
+          !publishableKeyToUse.startsWith('pk_live_')) {
+        throw Exception('Invalid PublishableKey format: $publishableKeyToUse');
+      }
+
+      final clientSecret = paymentIntentData['clientSecret'] as String?;
+      if (clientSecret == null || clientSecret.isEmpty) {
         throw Exception(
           'Invalid payment intent response: missing clientSecret',
         );
       }
 
-      if (paymentIntentData['publishableKey'] != null) {
-        final backendPublishableKey =
-            paymentIntentData['publishableKey'] as String;
-        if (backendPublishableKey.isNotEmpty &&
-            stripe.Stripe.publishableKey != backendPublishableKey) {
-          stripe.Stripe.publishableKey = backendPublishableKey;
-        }
-      }
-
       await stripe.Stripe.instance.initPaymentSheet(
         paymentSheetParameters: stripe.SetupPaymentSheetParameters(
-          paymentIntentClientSecret: paymentIntentData['clientSecret'],
+          paymentIntentClientSecret: clientSecret,
           merchantDisplayName: 'EventBa',
           style: ThemeMode.light,
         ),
@@ -209,12 +214,20 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
       });
 
       if (e.error.code != stripe.FailureCode.Canceled) {
+        String errorMessage =
+            e.error.localizedMessage ?? e.error.message ?? 'Unknown error';
+
+        if (errorMessage.toLowerCase().contains('invalid api key') ||
+            errorMessage.toLowerCase().contains('invalid_request_error')) {
+          errorMessage =
+              'Stripe configuration error. Please contact support. Error: $errorMessage';
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             behavior: SnackBarBehavior.floating,
-            content: Text(
-              "Payment failed: ${e.error.localizedMessage ?? e.error.message ?? 'Unknown error'}",
-            ),
+            content: Text("Payment failed: $errorMessage"),
+            duration: const Duration(seconds: 5),
           ),
         );
       }
@@ -224,10 +237,17 @@ class _BuyTicketScreenState extends State<BuyTicketScreen> {
         _isProcessing = false;
       });
 
+      String errorMessage = e.toString();
+      if (errorMessage.toLowerCase().contains('invalid api key') ||
+          errorMessage.toLowerCase().contains('publishablekey')) {
+        errorMessage = 'Stripe configuration error. Please contact support.';
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           behavior: SnackBarBehavior.floating,
-          content: Text("Payment error: ${e.toString()}"),
+          content: Text("Payment error: $errorMessage"),
+          duration: const Duration(seconds: 5),
         ),
       );
       rethrow;

@@ -18,7 +18,24 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<EventBaDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-StripeConfiguration.ApiKey = builder.Configuration["Stripe:SecretKey"];
+// Initialize Stripe
+var stripeSecretKey = builder.Configuration["Stripe:SecretKey"];
+if (string.IsNullOrEmpty(stripeSecretKey))
+{
+    Console.WriteLine("WARNING: Stripe SecretKey is not configured!");
+}
+else
+{
+    if (!stripeSecretKey.StartsWith("sk_test_") && !stripeSecretKey.StartsWith("sk_live_"))
+    {
+        Console.WriteLine($"WARNING: Invalid Stripe SecretKey format: {stripeSecretKey.Substring(0, Math.Min(20, stripeSecretKey.Length))}...");
+    }
+    else
+    {
+        Console.WriteLine($"Stripe initialized with SecretKey: {stripeSecretKey.Substring(0, Math.Min(20, stripeSecretKey.Length))}...");
+    }
+    StripeConfiguration.ApiKey = stripeSecretKey;
+}
 
 builder.Services.AddTransient<ICategoryService, CategoryService>();
 builder.Services.AddTransient<IEventService, EventService>();
