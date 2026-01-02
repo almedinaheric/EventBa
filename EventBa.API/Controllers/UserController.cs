@@ -85,7 +85,7 @@ public class UserController : BaseCRUDController<UserResponseDto, UserSearchObje
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto request)
     {
         await _userService.ForgotPasswordAsync(request.Email);
-        return Ok(new { message = "If an account with that email exists, a password reset link has been sent." });
+        return Ok(new { message = "Password reset code has been sent to your email." });
     }
 
     [HttpPost("validate-reset-code")]

@@ -321,7 +321,8 @@ public class UserService :
     {
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
 
-        if (user == null) return;
+        if (user == null)
+            throw new UserException("No account found with this email address.");
 
         var random = new Random();
         var code = random.Next(100000, 999999).ToString();

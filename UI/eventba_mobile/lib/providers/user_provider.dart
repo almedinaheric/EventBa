@@ -21,10 +21,32 @@ class UserProvider extends BaseProvider<User> {
     var jsonRequest = jsonEncode(requestBody);
     var response = await http.post(uri, headers: headers, body: jsonRequest);
 
-    if (isValidResponse(response)) {
+    if (response.statusCode >= 200 && response.statusCode < 300) {
       return true;
     } else {
-      throw Exception("Forgot password request failed");
+      try {
+        var errorData = jsonDecode(response.body);
+        if (errorData is Map && errorData.containsKey('errors')) {
+          var errors = errorData['errors'];
+          if (errors is Map) {
+            var errorMessages = <String>[];
+            errors.forEach((key, value) {
+              if (value is List) {
+                errorMessages.addAll(value.map((e) => e.toString()));
+              } else {
+                errorMessages.add(value.toString());
+              }
+            });
+            throw Exception(errorMessages.join(', '));
+          }
+        }
+        if (errorData is Map && errorData.containsKey('message')) {
+          throw Exception(errorData['message'].toString());
+        }
+      } catch (e) {
+        if (e is Exception) rethrow;
+      }
+      throw Exception("Failed to send reset code. Please try again.");
     }
   }
 

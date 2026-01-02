@@ -51,7 +51,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         ),
       );
     } catch (e) {
-      _showError('Failed to send reset link. Please try again.');
+      String errorMessage = 'Failed to send reset code. Please try again.';
+      if (e is Exception && e.toString().isNotEmpty) {
+        errorMessage = e.toString().replaceFirst('Exception: ', '');
+      }
+      _showError(errorMessage);
     } finally {
       if (mounted) {
         setState(() {
