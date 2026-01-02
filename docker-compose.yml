@@ -1,12 +1,49 @@
 ﻿services:
-  eventba.api:
-    image: eventba.api
+  postgres:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-eventba_db}
+      - POSTGRES_USER=${POSTGRES_USER:-eventba_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-eventba_password}
+    ports:
+      - "5432:5432"
+    networks:
+      - eventba-network
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: 'rabbitmq_container'
+    restart: unless-stopped
+    hostname: ${RABBITMQ_HOST:-rabbitmq}
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USERNAME:-guest}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD:-guest}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    expose:
+      - 5672
+    networks:
+      - eventba-network
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    depends_on:
+      - postgres
+
+  eventba-api:
+    restart: unless-stopped
     build:
       context: .
-      dockerfile: EventBa.API/Dockerfile
+      dockerfile: Dockerfile
     environment:
-      - RABBITMQ_HOST=${RABBITMQ_HOST:-rabbitmq}
-      - RABBITMQ_PORT=${RABBITMQ_PORT:-5672}
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5187
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=${POSTGRES_DB:-eventba_db};Username=${POSTGRES_USER:-eventba_user};Password=${POSTGRES_PASSWORD:-eventba_password}
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
       - RABBITMQ_USERNAME=${RABBITMQ_USERNAME:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - SMTP_SERVER=${SMTP_SERVER:-smtp.gmail.com}
@@ -14,33 +51,19 @@
       - SMTP_USERNAME=${SMTP_USERNAME:-eventba2025@gmail.com}
       - SMTP_PASSWORD=${SMTP_PASSWORD:-tddm zstf uyzh bhnr}
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
-    depends_on:
-      - rabbitmq
-
-  eventba.model:
-    image: eventba.model
-    build:
-      context: .
-      dockerfile: EventBa.Model/Dockerfile
-
-  eventba.services:
-    image: eventba.services
-    build:
-      context: .
-      dockerfile: EventBa.Services/Dockerfile
-
-  rabbitmq:
-    image: rabbitmq:3-management
-    restart: unless-stopped
-    hostname: ${RABBITMQ_HOST:-rabbitmq}
-    environment:
-      - RABBITMQ_USERNAME=${RABBITMQ_USERNAME:-guest}
-      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
+      - API_HOST=localhost
+      - API_PORT=5187
+      - Stripe__SecretKey=${STRIPE_SECRET_KEY}
+      - Stripe__PublishableKey=${STRIPE_PUBLISHABLE_KEY}
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "5187:5187"
+    volumes:
+      - ./Data/seed.sql:/app/Data/seed.sql:ro
     networks:
       - eventba-network
+    depends_on:
+      - postgres
+      - rabbitmq
 
   rabbitmq-service:
     restart: unless-stopped
@@ -48,19 +71,26 @@
       context: .
       dockerfile: EventBa.Subscriber/Dockerfile
     environment:
-      - RABBITMQ_HOST=${RABBITMQ_HOST:-rabbitmq}
-      - RABBITMQ_PORT=${RABBITMQ_PORT:-5672}
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
       - RABBITMQ_USERNAME=${RABBITMQ_USERNAME:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
       - SMTP_SERVER=${SMTP_SERVER:-smtp.gmail.com}
       - SMTP_PORT=${SMTP_PORT:-587}
       - SMTP_USERNAME=${SMTP_USERNAME:-eventba2025@gmail.com}
       - SMTP_PASSWORD=${SMTP_PASSWORD:-tddm zstf uyzh bhnr}
+      - API_HOST=localhost
+      - API_PORT=5187
     depends_on:
       - rabbitmq
-      - eventba.api
+      - eventba-api
+      - postgres
     networks:
       - eventba-network
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
 
 networks:
   eventba-network:

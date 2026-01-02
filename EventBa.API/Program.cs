@@ -4,12 +4,14 @@ using Microsoft.EntityFrameworkCore;
 using EventBa.API.Auth;
 using EventBa.API.Filters;
 using EventBa.Services.Database.Context;
+using EventBa.Services.Database;
 using EventBa.Services.Mapper;
 using EventBa.Services.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.OpenApi.Models;
 using Stripe;
 using EventService = EventBa.Services.Services.EventService;
+using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -91,16 +93,75 @@ app.MapControllers();
 using (var scope = app.Services.CreateScope())
 {
     var dataContext = scope.ServiceProvider.GetRequiredService<EventBaDbContext>();
-    dataContext.Database.EnsureCreated();
-    dataContext.Database.Migrate();
-    var recommenderService = scope.ServiceProvider.GetRequiredService<IRecommendedEventService>();
-    try
+    
+    if (dataContext.Database.CanConnect())
     {
-        recommenderService.TrainModel();
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Error training recommendation model: {ex.Message}");
+        dataContext.Database.Migrate();
+
+        // Seed database if empty
+        try
+        {
+            var hasData = dataContext.Set<Role>().Any();
+            if (!hasData)
+            {
+                // Try multiple paths: Docker (/app/Data/seed.sql), local development (../Data/seed.sql), or current directory
+                var possiblePaths = new[]
+                {
+                    Path.Combine("/app", "Data", "seed.sql"), // Docker
+                    Path.Combine(Directory.GetCurrentDirectory(), "Data", "seed.sql"), // Local
+                    Path.Combine(Directory.GetCurrentDirectory(), "..", "Data", "seed.sql") // Alternative local
+                };
+                
+                string? seedScriptPath = possiblePaths.FirstOrDefault(System.IO.File.Exists);
+                
+                if (seedScriptPath != null && System.IO.File.Exists(seedScriptPath))
+                {
+                    var seedScript = System.IO.File.ReadAllText(seedScriptPath);
+                    // Use NpgsqlConnection directly for executing the seed script
+                    // ExecuteSqlRaw has issues with multi-statement SQL files
+                    try
+                    {
+                        var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+                        using (var connection = new NpgsqlConnection(connectionString))
+                        {
+                            connection.Open();
+                            using (var command = new NpgsqlCommand(seedScript, connection))
+                            {
+                                command.CommandTimeout = 120; // 2 minutes timeout for large scripts
+                                command.ExecuteNonQuery();
+                            }
+                        }
+                        Console.WriteLine("Database seeded successfully.");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error executing seed script: {ex.Message}");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"Warning: Seed script not found at {seedScriptPath}");
+                }
+            }
+            else
+            {
+                Console.WriteLine("Database already contains data. Skipping seed.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error seeding database: {ex.Message}");
+        }
+
+        var recommenderService = scope.ServiceProvider.GetRequiredService<IRecommendedEventService>();
+        try
+        {
+            recommenderService.TrainModel();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error training recommendation model: {ex.Message}");
+        }
     }
 }
 
