@@ -43,16 +43,16 @@ class _PublicEventsScreenState extends State<PublicEventsScreen> {
 
     try {
       final eventProvider = Provider.of<EventProvider>(context, listen: false);
-      final newEvents = await eventProvider.getPublicEvents(
+      final result = await eventProvider.getPublicEvents(
         page: _currentPage,
         pageSize: _pageSize,
       );
 
       setState(() {
-        if (newEvents.isEmpty || newEvents.length < _pageSize) {
+        if (result.meta.hasNext == false || result.result.isEmpty) {
           _hasMore = false;
         }
-        _events.addAll(newEvents);
+        _events.addAll(result.result);
         _currentPage++;
         _isLoading = false;
       });

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/event/event.dart';
 import '../models/event/basic_event.dart';
+import '../models/search_result.dart';
 import 'base_provider.dart';
 
 class EventProvider extends BaseProvider<Event> {
@@ -92,46 +93,42 @@ class EventProvider extends BaseProvider<Event> {
     }
   }
 
-  Future<List<BasicEvent>> getPublicEvents({
+  Future<SearchResult<BasicEvent>> getPublicEvents({
     int page = 1,
     int pageSize = 10,
   }) async {
-    var url = "${baseUrl}Event/public";
-    var uri = Uri.parse(url);
-    var headers = createHeaders();
-    var response = await http.get(uri, headers: headers);
-    if (isValidResponse(response)) {
-      var data = jsonDecode(response.body);
-      List<BasicEvent> events = [];
-
-      for (var item in data) {
-        events.add(basicEventFromJson(item));
-      }
-      return events;
-    } else {
-      throw Exception("Unknown error in a GET request");
-    }
+    final result = await get(
+      filter: {
+        'Type': 0, // EventType.Public
+        'Page': page,
+        'PageSize': pageSize,
+        'IsUpcoming': true,
+      },
+    );
+    return SearchResult<BasicEvent>()
+      ..result = result.result
+          .map((e) => BasicEvent.fromJson(e.toJson()))
+          .toList()
+      ..meta = result.meta;
   }
 
-  Future<List<BasicEvent>> getPrivateEvents({
+  Future<SearchResult<BasicEvent>> getPrivateEvents({
     int page = 1,
     int pageSize = 10,
   }) async {
-    var url = "${baseUrl}Event/private";
-    var uri = Uri.parse(url);
-    var headers = createHeaders();
-    var response = await http.get(uri, headers: headers);
-    if (isValidResponse(response)) {
-      var data = jsonDecode(response.body);
-      List<BasicEvent> events = [];
-
-      for (var item in data) {
-        events.add(basicEventFromJson(item));
-      }
-      return events;
-    } else {
-      throw Exception("Unknown error in a GET request");
-    }
+    final result = await get(
+      filter: {
+        'Type': 1, // EventType.Private
+        'Page': page,
+        'PageSize': pageSize,
+        'IsUpcoming': true,
+      },
+    );
+    return SearchResult<BasicEvent>()
+      ..result = result.result
+          .map((e) => BasicEvent.fromJson(e.toJson()))
+          .toList()
+      ..meta = result.meta;
   }
 
   Future<List<BasicEvent>> getEventsByCategory(

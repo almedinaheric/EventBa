@@ -596,12 +596,16 @@ class _EditEventScreenState extends State<EditEventScreen> {
 
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
+    final tomorrow = today.add(const Duration(days: 1));
     DateTimeRange? picked = await showDateRangePicker(
       context: context,
       initialDateRange:
           initialDateRange ??
-          DateTimeRange(start: today, end: today.add(const Duration(days: 1))),
-      firstDate: today,
+          DateTimeRange(
+            start: tomorrow,
+            end: tomorrow.add(const Duration(days: 1)),
+          ),
+      firstDate: tomorrow,
       lastDate: DateTime(2100),
     );
     if (picked != null) {

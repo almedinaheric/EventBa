@@ -609,10 +609,11 @@ class _EditEventScreenState extends State<EditEventScreen> {
   Future<void> _pickDate() async {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
+    final tomorrow = today.add(const Duration(days: 1));
     DateTime? pickedDate = await showDatePicker(
       context: context,
-      initialDate: today,
-      firstDate: today,
+      initialDate: tomorrow,
+      firstDate: tomorrow,
       lastDate: DateTime(2100),
     );
     if (pickedDate != null) {

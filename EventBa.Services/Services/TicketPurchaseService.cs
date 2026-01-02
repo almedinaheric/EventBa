@@ -87,9 +87,7 @@ public class TicketPurchaseService : BaseCRUDService<TicketPurchaseResponseDto, 
                 throw new UserException("Event not found");
         }
 
-        eventEntity.AvailableTicketsCount = await _context.Tickets
-            .Where(t => t.EventId == eventEntity.Id)
-            .SumAsync(t => t.QuantityAvailable);
+        eventEntity.AvailableTicketsCount--;
 
         var entityEntryFinal = _context.Entry(entity);
 
@@ -235,7 +233,6 @@ public class TicketPurchaseService : BaseCRUDService<TicketPurchaseResponseDto, 
             throw new UserException("Event has reached maximum capacity");
 
         eventEntity.CurrentAttendees++;
-        eventEntity.AvailableTicketsCount--;
 
         await _context.SaveChangesAsync();
 

@@ -73,7 +73,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<List<BasicEvent>> _fetchPublicEvents(EventProvider provider) async {
     try {
       final result = await provider.getPublicEvents();
-      return result;
+      return result.result;
     } catch (e) {
       return [];
     }
@@ -82,7 +82,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<List<BasicEvent>> _fetchPrivateEvents(EventProvider provider) async {
     try {
       final result = await provider.getPrivateEvents();
-      return result;
+      return result.result;
     } catch (e) {
       return [];
     }

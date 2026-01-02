@@ -403,7 +403,7 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
                 "Scan QR Code",
                 Icons.qr_code_scanner,
                 Colors.green,
-                () {
+                () async {
                   if (_event == null) return;
 
                   try {
@@ -443,7 +443,7 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
                     return;
                   }
 
-                  Navigator.push(
+                  await Navigator.push(
                     context,
                     PageRouteBuilder(
                       pageBuilder: (_, __, ___) => TicketScannerScreen(
@@ -454,6 +454,11 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
                       reverseTransitionDuration: Duration.zero,
                     ),
                   );
+
+                  // Reload event data when returning from scanner
+                  if (mounted) {
+                    await _loadEventData();
+                  }
                 },
               ),
             ),
@@ -602,7 +607,7 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
                             "Scan Tickets",
                             Icons.qr_code_scanner,
                             Colors.green,
-                            () {
+                            () async {
                               if (_event == null) return;
 
                               try {
@@ -646,7 +651,7 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
                                 return;
                               }
 
-                              Navigator.push(
+                              await Navigator.push(
                                 context,
                                 PageRouteBuilder(
                                   pageBuilder: (_, __, ___) =>
@@ -658,6 +663,11 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
                                   reverseTransitionDuration: Duration.zero,
                                 ),
                               );
+
+                              // Reload event data when returning from scanner
+                              if (mounted) {
+                                await _loadEventData();
+                              }
                             },
                           ),
                         if (!_isPast)
