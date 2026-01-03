@@ -11,7 +11,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- ============================================
 INSERT INTO roles (id, created_at, updated_at, name) VALUES
     ('00000000-0000-0000-0000-000000000001', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Admin'),
-    ('00000000-0000-0000-0000-000000000002', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Customer')
+    ('5cf91d15-a804-4565-972f-be337f156455', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Customer')
 ON CONFLICT (id) DO NOTHING;
 
 -- ============================================
@@ -66,25 +66,25 @@ INSERT INTO users (id, created_at, updated_at, first_name, last_name, email, pho
     ('10000000-0000-0000-0000-000000000001', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Admin', 'EventBa', 'admin@eventba.com', '+38761000001', 'EventBa System Administrator', 'BOjALeGkRX/cFktSVJFV4VlmSqykKGoIRSJnu/HLwR0=', 'PbnnyPWTsbzdQFw/MgrwAQ==', '00000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000001'),
     
     -- Customers (organizers for PRIVATE events)
-    ('10000000-0000-0000-0000-000000000002', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'John', 'Doe', 'john@eventba.com', '+38761000002', 'Tech enthusiast and event organizer', 'BOjALeGkRX/cFktSVJFV4VlmSqykKGoIRSJnu/HLwR0=', 'PbnnyPWTsbzdQFw/MgrwAQ==', '00000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000002'),
-    ('10000000-0000-0000-0000-000000000003', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Jane', 'Smith', 'jane@eventba.com', '+38761000003', 'Food lover and culinary event host', 'BOjALeGkRX/cFktSVJFV4VlmSqykKGoIRSJnu/HLwR0=', 'PbnnyPWTsbzdQFw/MgrwAQ==', '00000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000003'),
-    ('10000000-0000-0000-0000-000000000004', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Marko', 'Markovic', 'marko@eventba.com', '+38761000004', 'Sports event organizer', 'BOjALeGkRX/cFktSVJFV4VlmSqykKGoIRSJnu/HLwR0=', 'PbnnyPWTsbzdQFw/MgrwAQ==', '00000000-0000-0000-0000-000000000002', NULL),
-    ('10000000-0000-0000-0000-000000000005', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Ana', 'Anic', 'ana@eventba.com', '+38761000005', 'Music and arts promoter', 'BOjALeGkRX/cFktSVJFV4VlmSqykKGoIRSJnu/HLwR0=', 'PbnnyPWTsbzdQFw/MgrwAQ==', '00000000-0000-0000-0000-000000000002', NULL),
-    ('10000000-0000-0000-0000-000000000006', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Sara', 'Saric', 'sara@eventba.com', '+38761000006', 'Health and wellness advocate', 'BOjALeGkRX/cFktSVJFV4VlmSqykKGoIRSJnu/HLwR0=', 'PbnnyPWTsbzdQFw/MgrwAQ==', '00000000-0000-0000-0000-000000000002', NULL),
-    ('10000000-0000-0000-0000-000000000007', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Kenan', 'Kenic', 'kenan@eventba.com', '+38761000007', 'Business networking enthusiast', 'BOjALeGkRX/cFktSVJFV4VlmSqykKGoIRSJnu/HLwR0=', 'PbnnyPWTsbzdQFw/MgrwAQ==', '00000000-0000-0000-0000-000000000002', NULL),
-    ('10000000-0000-0000-0000-000000000008', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Emina', 'Eminovic', 'emina@eventba.com', '+38761000008', 'Education and workshop coordinator', 'BOjALeGkRX/cFktSVJFV4VlmSqykKGoIRSJnu/HLwR0=', 'PbnnyPWTsbzdQFw/MgrwAQ==', '00000000-0000-0000-0000-000000000002', NULL),
-    ('10000000-0000-0000-0000-000000000009', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Maja', 'Majic', 'maja@eventba.com', '+38761000009', 'Tourism and travel expert', 'BOjALeGkRX/cFktSVJFV4VlmSqykKGoIRSJnu/HLwR0=', 'PbnnyPWTsbzdQFw/MgrwAQ==', '00000000-0000-0000-0000-000000000002', NULL),
-    ('10000000-0000-0000-0000-000000000010', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Nina', 'Ninic', 'nina@eventba.com', '+38761000010', 'Recreation activity planner', 'BOjALeGkRX/cFktSVJFV4VlmSqykKGoIRSJnu/HLwR0=', 'PbnnyPWTsbzdQFw/MgrwAQ==', '00000000-0000-0000-0000-000000000002', NULL),
-    ('10000000-0000-0000-0000-000000000011', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Amra', 'Amric', 'amra@eventba.com', '+38761000011', 'Art gallery curator', 'BOjALeGkRX/cFktSVJFV4VlmSqykKGoIRSJnu/HLwR0=', 'PbnnyPWTsbzdQFw/MgrwAQ==', '00000000-0000-0000-0000-000000000002', NULL),
-    ('10000000-0000-0000-0000-000000000012', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Haris', 'Haric', 'haris@eventba.com', '+38761000012', 'Fitness trainer and marathon organizer', 'BOjALeGkRX/cFktSVJFV4VlmSqykKGoIRSJnu/HLwR0=', 'PbnnyPWTsbzdQFw/MgrwAQ==', '00000000-0000-0000-0000-000000000002', NULL),
-    ('10000000-0000-0000-0000-000000000013', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Lejla', 'Lejlic', 'lejla@eventba.com', '+38761000013', 'Photography and visual arts specialist', 'BOjALeGkRX/cFktSVJFV4VlmSqykKGoIRSJnu/HLwR0=', 'PbnnyPWTsbzdQFw/MgrwAQ==', '00000000-0000-0000-0000-000000000002', NULL),
-    ('10000000-0000-0000-0000-000000000014', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Emir', 'Emiric', 'emir@eventba.com', '+38761000014', 'AI and machine learning researcher', 'BOjALeGkRX/cFktSVJFV4VlmSqykKGoIRSJnu/HLwR0=', 'PbnnyPWTsbzdQFw/MgrwAQ==', '00000000-0000-0000-0000-000000000002', NULL),
-    ('10000000-0000-0000-0000-000000000015', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Lana', 'Lanic', 'lana@eventba.com', '+38761000015', 'Community event organizer', 'BOjALeGkRX/cFktSVJFV4VlmSqykKGoIRSJnu/HLwR0=', 'PbnnyPWTsbzdQFw/MgrwAQ==', '00000000-0000-0000-0000-000000000002', NULL),
-    ('10000000-0000-0000-0000-000000000016', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Dino', 'Dinic', 'dino@eventba.com', '+38761000016', 'Jazz music promoter', 'BOjALeGkRX/cFktSVJFV4VlmSqykKGoIRSJnu/HLwR0=', 'PbnnyPWTsbzdQFw/MgrwAQ==', '00000000-0000-0000-0000-000000000002', NULL),
-    ('10000000-0000-0000-0000-000000000017', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Selma', 'Selmic', 'selma@eventba.com', '+38761000017', 'Corporate training specialist', 'BOjALeGkRX/cFktSVJFV4VlmSqykKGoIRSJnu/HLwR0=', 'PbnnyPWTsbzdQFw/MgrwAQ==', '00000000-0000-0000-0000-000000000002', NULL),
-    ('10000000-0000-0000-0000-000000000018', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Adnan', 'Adnanic', 'adnan@eventba.com', '+38761000018', 'Startup founder and entrepreneur', 'BOjALeGkRX/cFktSVJFV4VlmSqykKGoIRSJnu/HLwR0=', 'PbnnyPWTsbzdQFw/MgrwAQ==', '00000000-0000-0000-0000-000000000002', NULL),
-    ('10000000-0000-0000-0000-000000000019', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Belma', 'Belmic', 'belma@eventba.com', '+38761000019', 'Yoga and meditation instructor', 'BOjALeGkRX/cFktSVJFV4VlmSqykKGoIRSJnu/HLwR0=', 'PbnnyPWTsbzdQFw/MgrwAQ==', '00000000-0000-0000-0000-000000000002', NULL),
-    ('10000000-0000-0000-0000-000000000020', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Tarik', 'Tarikic', 'tarik@eventba.com', '+38761000020', 'Food truck festival coordinator', 'BOjALeGkRX/cFktSVJFV4VlmSqykKGoIRSJnu/HLwR0=', 'PbnnyPWTsbzdQFw/MgrwAQ==', '00000000-0000-0000-0000-000000000002', NULL)
+    ('10000000-0000-0000-0000-000000000002', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'John', 'Doe', 'john@eventba.com', '+38761000002', 'Tech enthusiast and event organizer', 'BOjALeGkRX/cFktSVJFV4VlmSqykKGoIRSJnu/HLwR0=', 'PbnnyPWTsbzdQFw/MgrwAQ==', '5cf91d15-a804-4565-972f-be337f156455', '30000000-0000-0000-0000-000000000002'),
+    ('10000000-0000-0000-0000-000000000003', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Jane', 'Smith', 'jane@eventba.com', '+38761000003', 'Food lover and culinary event host', 'BOjALeGkRX/cFktSVJFV4VlmSqykKGoIRSJnu/HLwR0=', 'PbnnyPWTsbzdQFw/MgrwAQ==', '5cf91d15-a804-4565-972f-be337f156455', '30000000-0000-0000-0000-000000000003'),
+    ('10000000-0000-0000-0000-000000000004', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Marko', 'Markovic', 'marko@eventba.com', '+38761000004', 'Sports event organizer', 'BOjALeGkRX/cFktSVJFV4VlmSqykKGoIRSJnu/HLwR0=', 'PbnnyPWTsbzdQFw/MgrwAQ==', '5cf91d15-a804-4565-972f-be337f156455', NULL),
+    ('10000000-0000-0000-0000-000000000005', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Ana', 'Anic', 'ana@eventba.com', '+38761000005', 'Music and arts promoter', 'BOjALeGkRX/cFktSVJFV4VlmSqykKGoIRSJnu/HLwR0=', 'PbnnyPWTsbzdQFw/MgrwAQ==', '5cf91d15-a804-4565-972f-be337f156455', NULL),
+    ('10000000-0000-0000-0000-000000000006', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Sara', 'Saric', 'sara@eventba.com', '+38761000006', 'Health and wellness advocate', 'BOjALeGkRX/cFktSVJFV4VlmSqykKGoIRSJnu/HLwR0=', 'PbnnyPWTsbzdQFw/MgrwAQ==', '5cf91d15-a804-4565-972f-be337f156455', NULL),
+    ('10000000-0000-0000-0000-000000000007', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Kenan', 'Kenic', 'kenan@eventba.com', '+38761000007', 'Business networking enthusiast', 'BOjALeGkRX/cFktSVJFV4VlmSqykKGoIRSJnu/HLwR0=', 'PbnnyPWTsbzdQFw/MgrwAQ==', '5cf91d15-a804-4565-972f-be337f156455', NULL),
+    ('10000000-0000-0000-0000-000000000008', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Emina', 'Eminovic', 'emina@eventba.com', '+38761000008', 'Education and workshop coordinator', 'BOjALeGkRX/cFktSVJFV4VlmSqykKGoIRSJnu/HLwR0=', 'PbnnyPWTsbzdQFw/MgrwAQ==', '5cf91d15-a804-4565-972f-be337f156455', NULL),
+    ('10000000-0000-0000-0000-000000000009', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Maja', 'Majic', 'maja@eventba.com', '+38761000009', 'Tourism and travel expert', 'BOjALeGkRX/cFktSVJFV4VlmSqykKGoIRSJnu/HLwR0=', 'PbnnyPWTsbzdQFw/MgrwAQ==', '5cf91d15-a804-4565-972f-be337f156455', NULL),
+    ('10000000-0000-0000-0000-000000000010', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Nina', 'Ninic', 'nina@eventba.com', '+38761000010', 'Recreation activity planner', 'BOjALeGkRX/cFktSVJFV4VlmSqykKGoIRSJnu/HLwR0=', 'PbnnyPWTsbzdQFw/MgrwAQ==', '5cf91d15-a804-4565-972f-be337f156455', NULL),
+    ('10000000-0000-0000-0000-000000000011', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Amra', 'Amric', 'amra@eventba.com', '+38761000011', 'Art gallery curator', 'BOjALeGkRX/cFktSVJFV4VlmSqykKGoIRSJnu/HLwR0=', 'PbnnyPWTsbzdQFw/MgrwAQ==', '5cf91d15-a804-4565-972f-be337f156455', NULL),
+    ('10000000-0000-0000-0000-000000000012', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Haris', 'Haric', 'haris@eventba.com', '+38761000012', 'Fitness trainer and marathon organizer', 'BOjALeGkRX/cFktSVJFV4VlmSqykKGoIRSJnu/HLwR0=', 'PbnnyPWTsbzdQFw/MgrwAQ==', '5cf91d15-a804-4565-972f-be337f156455', NULL),
+    ('10000000-0000-0000-0000-000000000013', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Lejla', 'Lejlic', 'lejla@eventba.com', '+38761000013', 'Photography and visual arts specialist', 'BOjALeGkRX/cFktSVJFV4VlmSqykKGoIRSJnu/HLwR0=', 'PbnnyPWTsbzdQFw/MgrwAQ==', '5cf91d15-a804-4565-972f-be337f156455', NULL),
+    ('10000000-0000-0000-0000-000000000014', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Emir', 'Emiric', 'emir@eventba.com', '+38761000014', 'AI and machine learning researcher', 'BOjALeGkRX/cFktSVJFV4VlmSqykKGoIRSJnu/HLwR0=', 'PbnnyPWTsbzdQFw/MgrwAQ==', '5cf91d15-a804-4565-972f-be337f156455', NULL),
+    ('10000000-0000-0000-0000-000000000015', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Lana', 'Lanic', 'lana@eventba.com', '+38761000015', 'Community event organizer', 'BOjALeGkRX/cFktSVJFV4VlmSqykKGoIRSJnu/HLwR0=', 'PbnnyPWTsbzdQFw/MgrwAQ==', '5cf91d15-a804-4565-972f-be337f156455', NULL),
+    ('10000000-0000-0000-0000-000000000016', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Dino', 'Dinic', 'dino@eventba.com', '+38761000016', 'Jazz music promoter', 'BOjALeGkRX/cFktSVJFV4VlmSqykKGoIRSJnu/HLwR0=', 'PbnnyPWTsbzdQFw/MgrwAQ==', '5cf91d15-a804-4565-972f-be337f156455', NULL),
+    ('10000000-0000-0000-0000-000000000017', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Selma', 'Selmic', 'selma@eventba.com', '+38761000017', 'Corporate training specialist', 'BOjALeGkRX/cFktSVJFV4VlmSqykKGoIRSJnu/HLwR0=', 'PbnnyPWTsbzdQFw/MgrwAQ==', '5cf91d15-a804-4565-972f-be337f156455', NULL),
+    ('10000000-0000-0000-0000-000000000018', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Adnan', 'Adnanic', 'adnan@eventba.com', '+38761000018', 'Startup founder and entrepreneur', 'BOjALeGkRX/cFktSVJFV4VlmSqykKGoIRSJnu/HLwR0=', 'PbnnyPWTsbzdQFw/MgrwAQ==', '5cf91d15-a804-4565-972f-be337f156455', NULL),
+    ('10000000-0000-0000-0000-000000000019', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Belma', 'Belmic', 'belma@eventba.com', '+38761000019', 'Yoga and meditation instructor', 'BOjALeGkRX/cFktSVJFV4VlmSqykKGoIRSJnu/HLwR0=', 'PbnnyPWTsbzdQFw/MgrwAQ==', '5cf91d15-a804-4565-972f-be337f156455', NULL),
+    ('10000000-0000-0000-0000-000000000020', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Tarik', 'Tarikic', 'tarik@eventba.com', '+38761000020', 'Food truck festival coordinator', 'BOjALeGkRX/cFktSVJFV4VlmSqykKGoIRSJnu/HLwR0=', 'PbnnyPWTsbzdQFw/MgrwAQ==', '5cf91d15-a804-4565-972f-be337f156455', NULL)
 ON CONFLICT (id) DO NOTHING;
 
 -- ============================================
@@ -92,11 +92,11 @@ ON CONFLICT (id) DO NOTHING;
 -- ============================================
 INSERT INTO events (id, created_at, updated_at, title, description, location, start_date, start_time, end_date, end_time, capacity, current_attendees, available_tickets_count, is_published, is_featured, is_paid, status, type, organizer_id, category_id, cover_image_id, social_media_links) VALUES
     -- PUBLIC EVENTS (by Admin) - Mix of Free and Paid
-    ('20000000-0000-0000-0000-000000000001', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Tech Conference 2026', 'Annual technology conference with keynote speakers and workshops', 'Sarajevo Convention Center', '2026-03-15', '09:00:00', '2026-03-17', '18:00:00', 500, 0, 380, true, true, true, 'Upcoming', 'Public', '10000000-0000-0000-0000-000000000001', '33333333-3333-3333-3333-333333333333', '30000000-0000-0000-0000-000000000011', '{"facebook": "techconf2026", "twitter": "@techconf"}'),
+    ('20000000-0000-0000-0000-000000000001', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Tech Conference 2026', 'Annual technology conference with keynote speakers and workshops', 'Sarajevo Convention Center', '2026-03-15', '09:00:00', '2026-03-17', '18:00:00', 500, 0, 496, true, true, true, 'Upcoming', 'Public', '10000000-0000-0000-0000-000000000001', '33333333-3333-3333-3333-333333333333', '30000000-0000-0000-0000-000000000011', '{"facebook": "techconf2026", "twitter": "@techconf"}'),
     
-    ('20000000-0000-0000-0000-000000000002', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Summer Music Festival', 'Three-day outdoor music festival featuring local and international artists', 'Zetra Olympic Hall', '2026-07-10', '16:00:00', '2026-07-12', '23:00:00', 5000, 0, 3500, true, true, true, 'Upcoming', 'Public', '10000000-0000-0000-0000-000000000001', '77777777-7777-7777-7777-777777777777', '30000000-0000-0000-0000-000000000012', '{"instagram": "@summerfest", "website": "summerfest.ba"}'),
+    ('20000000-0000-0000-0000-000000000002', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Summer Music Festival', 'Three-day outdoor music festival featuring local and international artists', 'Zetra Olympic Hall', '2026-07-10', '16:00:00', '2026-07-12', '23:00:00', 5000, 0, 4999, true, true, true, 'Upcoming', 'Public', '10000000-0000-0000-0000-000000000001', '77777777-7777-7777-7777-777777777777', '30000000-0000-0000-0000-000000000012', '{"instagram": "@summerfest", "website": "summerfest.ba"}'),
     
-    ('20000000-0000-0000-0000-000000000003', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Street Food Festival', 'Taste amazing street food from around the world', 'Bascarsija Square', '2026-05-20', '11:00:00', '2026-05-22', '22:00:00', 3000, 0, 3000, true, true, false, 'Upcoming', 'Public', '10000000-0000-0000-0000-000000000001', '44444444-4444-4444-4444-444444444444', '30000000-0000-0000-0000-000000000013', '{"facebook": "streetfoodfestsa"}'),
+    ('20000000-0000-0000-0000-000000000003', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Street Food Festival', 'Taste amazing street food from around the world', 'Bascarsija Square', '2026-05-20', '11:00:00', '2026-05-22', '22:00:00', 3000, 0, 2999, true, true, false, 'Upcoming', 'Public', '10000000-0000-0000-0000-000000000001', '44444444-4444-4444-4444-444444444444', '30000000-0000-0000-0000-000000000013', '{"facebook": "streetfoodfestsa"}'),
     
     ('20000000-0000-0000-0000-000000000004', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Art Exhibition: Modern Bosnia', 'Contemporary art exhibition showcasing Bosnian artists', 'National Gallery', '2026-04-01', '10:00:00', '2026-04-30', '20:00:00', 150, 0, 105, true, true, false, 'Upcoming', 'Public', '10000000-0000-0000-0000-000000000001', '55555555-5555-5555-5555-555555555555', '30000000-0000-0000-0000-000000000014', NULL),
     
@@ -113,15 +113,15 @@ INSERT INTO events (id, created_at, updated_at, title, description, location, st
     ('20000000-0000-0000-0000-000000000010', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Outdoor Adventure Weekend', 'Hiking, camping, and outdoor activities in Bjelasnica', 'Bjelasnica Mountain', '2026-06-01', '08:00:00', '2026-06-02', '18:00:00', 100, 0, 100, true, false, true, 'Upcoming', 'Public', '10000000-0000-0000-0000-000000000001', '88888888-8888-8888-8888-888888888888', '30000000-0000-0000-0000-000000000011', NULL),
     
     -- PRIVATE EVENTS (by Customers) - Mix of Free and Paid
-    ('20000000-0000-0000-0000-000000000011', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'AI Workshop for Beginners', 'Introduction to artificial intelligence and machine learning', 'TechHub Sarajevo', '2026-02-20', '14:00:00', '2026-02-20', '17:00:00', 50, 0, 15, true, false, true, 'Upcoming', 'Private', '10000000-0000-0000-0000-000000000014', '33333333-3333-3333-3333-333333333333', '30000000-0000-0000-0000-000000000018', NULL),
+    ('20000000-0000-0000-0000-000000000011', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'AI Workshop for Beginners', 'Introduction to artificial intelligence and machine learning', 'TechHub Sarajevo', '2026-02-20', '14:00:00', '2026-02-20', '17:00:00', 50, 0, 43, true, false, true, 'Upcoming', 'Private', '10000000-0000-0000-0000-000000000014', '33333333-3333-3333-3333-333333333333', '30000000-0000-0000-0000-000000000018', NULL),
     
-    ('20000000-0000-0000-0000-000000000012', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Jazz Night at The Blue Room', 'Intimate jazz performance with local musicians', 'The Blue Room Club', '2026-04-05', '20:00:00', '2026-04-05', '23:30:00', 80, 0, 30, true, false, true, 'Upcoming', 'Private', '10000000-0000-0000-0000-000000000016', '77777777-7777-7777-7777-777777777777', '30000000-0000-0000-0000-000000000017', NULL),
+    ('20000000-0000-0000-0000-000000000012', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Jazz Night at The Blue Room', 'Intimate jazz performance with local musicians', 'The Blue Room Club', '2026-04-05', '20:00:00', '2026-04-05', '23:30:00', 80, 0, 68, true, false, true, 'Upcoming', 'Private', '10000000-0000-0000-0000-000000000016', '77777777-7777-7777-7777-777777777777', '30000000-0000-0000-0000-000000000017', NULL),
     
     ('20000000-0000-0000-0000-000000000013', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Photography Exhibition: Urban Life', 'Black and white photography capturing city moments', 'Art Space Gallery', '2026-03-10', '11:00:00', '2026-03-25', '19:00:00', 60, 0, 45, true, false, false, 'Upcoming', 'Private', '10000000-0000-0000-0000-000000000013', '55555555-5555-5555-5555-555555555555', '30000000-0000-0000-0000-000000000019', NULL),
     
     ('20000000-0000-0000-0000-000000000014', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Startup Pitch Night', 'Local entrepreneurs pitch their ideas to investors', 'Innovation Hub', '2026-05-15', '18:00:00', '2026-05-15', '21:00:00', 100, 0, 100, true, false, false, 'Upcoming', 'Private', '10000000-0000-0000-0000-000000000018', '11111111-1111-1111-1111-111111111111', '30000000-0000-0000-0000-000000000011', NULL),
     
-    ('20000000-0000-0000-0000-000000000015', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Yoga & Meditation Retreat', 'Weekend wellness retreat in nature', 'Vrelo Bosne', '2026-07-18', '09:00:00', '2026-07-19', '17:00:00', 30, 0, 10, true, false, true, 'Upcoming', 'Private', '10000000-0000-0000-0000-000000000019', '22222222-2222-2222-2222-222222222222', '30000000-0000-0000-0000-000000000011', NULL),
+    ('20000000-0000-0000-0000-000000000015', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Yoga & Meditation Retreat', 'Weekend wellness retreat in nature', 'Vrelo Bosne', '2026-07-18', '09:00:00', '2026-07-19', '17:00:00', 30, 0, 27, true, false, true, 'Upcoming', 'Private', '10000000-0000-0000-0000-000000000019', '22222222-2222-2222-2222-222222222222', '30000000-0000-0000-0000-000000000011', NULL),
     
     ('20000000-0000-0000-0000-000000000016', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Culinary Workshop: Traditional Bosnian Cuisine', 'Learn to cook traditional Bosnian dishes', 'Cooking Studio Centar', '2026-03-28', '15:00:00', '2026-03-28', '19:00:00', 20, 0, 2, true, false, true, 'Upcoming', 'Private', '10000000-0000-0000-0000-000000000003', '44444444-4444-4444-4444-444444444444', '30000000-0000-0000-0000-000000000020', NULL),
     
@@ -135,7 +135,7 @@ INSERT INTO events (id, created_at, updated_at, title, description, location, st
     
     ('20000000-0000-0000-0000-000000000021', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Acoustic Music Night', 'Unplugged performances in an intimate setting', 'Café Tito', '2026-03-18', '19:00:00', '2026-03-18', '22:00:00', 40, 0, 40, true, false, false, 'Upcoming', 'Private', '10000000-0000-0000-0000-000000000005', '77777777-7777-7777-7777-777777777777', '30000000-0000-0000-0000-000000000012', NULL),
     
-    ('20000000-0000-0000-0000-000000000022', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Tech Meetup: Mobile Development', 'Monthly meetup for mobile app developers', 'Coworking Space Downtown', '2026-04-22', '18:30:00', '2026-04-22', '21:00:00', 50, 0, 50, true, false, false, 'Upcoming', 'Private', '10000000-0000-0000-0000-000000000002', '33333333-3333-3333-3333-333333333333', '30000000-0000-0000-0000-000000000011', NULL),
+    ('20000000-0000-0000-0000-000000000022', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Tech Meetup: Mobile Development', 'Monthly meetup for mobile app developers', 'Coworking Space Downtown', '2026-04-22', '18:30:00', '2026-04-22', '21:00:00', 50, 0, 46, true, false, false, 'Upcoming', 'Private', '10000000-0000-0000-0000-000000000002', '33333333-3333-3333-3333-333333333333', '30000000-0000-0000-0000-000000000011', NULL),
     
     ('20000000-0000-0000-0000-000000000023', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Networking Breakfast for Entrepreneurs', 'Morning networking event with coffee and pastries', 'Business Hub Marijin Dvor', '2026-05-08', '08:00:00', '2026-05-08', '10:00:00', 30, 0, 30, true, false, false, 'Upcoming', 'Private', '10000000-0000-0000-0000-000000000007', '11111111-1111-1111-1111-111111111111', '30000000-0000-0000-0000-000000000011', NULL),
     
@@ -144,23 +144,23 @@ INSERT INTO events (id, created_at, updated_at, title, description, location, st
     ('20000000-0000-0000-0000-000000000025', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Film Screening: Bosnian Cinema', 'Screening of award-winning Bosnian films', 'Cinema Meeting Point', '2026-07-25', '20:00:00', '2026-07-25', '23:00:00', 100, 0, 100, true, false, true, 'Upcoming', 'Private', '10000000-0000-0000-0000-000000000015', '88888888-8888-8888-8888-888888888888', '30000000-0000-0000-0000-000000000011', NULL),
     
     -- Additional UPCOMING event for John (so he has 2 upcoming)
-    ('20000000-0000-0000-0000-000000000033', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Cloud Computing Workshop', 'Learn about cloud platforms and deployment strategies', 'TechHub Sarajevo', '2026-05-10', '14:00:00', '2026-05-10', '17:00:00', 60, 0, 35, true, false, true, 'Upcoming', 'Private', '10000000-0000-0000-0000-000000000002', '33333333-3333-3333-3333-333333333333', '30000000-0000-0000-0000-000000000018', NULL),
+    ('20000000-0000-0000-0000-000000000033', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Cloud Computing Workshop', 'Learn about cloud platforms and deployment strategies', 'TechHub Sarajevo', '2026-05-10', '14:00:00', '2026-05-10', '17:00:00', 60, 0, 59, true, false, true, 'Upcoming', 'Private', '10000000-0000-0000-0000-000000000002', '33333333-3333-3333-3333-333333333333', '30000000-0000-0000-0000-000000000018', NULL),
     
     -- PAST EVENTS (2025) - by John and others
-    ('20000000-0000-0000-0000-000000000026', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Tech Meetup: Web Development 2025', 'Monthly meetup for web developers discussing latest trends', 'Coworking Space Downtown', '2025-11-15', '18:30:00', '2025-11-15', '21:00:00', 50, 1, 5, true, false, false, 'Past', 'Private', '10000000-0000-0000-0000-000000000002', '33333333-3333-3333-3333-333333333333', '30000000-0000-0000-0000-000000000011', NULL),
+    ('20000000-0000-0000-0000-000000000026', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Tech Meetup: Web Development 2025', 'Monthly meetup for web developers discussing latest trends', 'Coworking Space Downtown', '2025-11-15', '18:30:00', '2025-11-15', '21:00:00', 50, 1, 49, true, false, false, 'Past', 'Private', '10000000-0000-0000-0000-000000000002', '33333333-3333-3333-3333-333333333333', '30000000-0000-0000-0000-000000000011', NULL),
     
-    ('20000000-0000-0000-0000-000000000027', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Blockchain Workshop 2025', 'Introduction to blockchain technology and cryptocurrencies', 'TechHub Sarajevo', '2025-10-20', '14:00:00', '2025-10-20', '17:00:00', 40, 1, 2, true, false, true, 'Past', 'Private', '10000000-0000-0000-0000-000000000002', '33333333-3333-3333-3333-333333333333', '30000000-0000-0000-0000-000000000018', NULL),
+    ('20000000-0000-0000-0000-000000000027', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Blockchain Workshop 2025', 'Introduction to blockchain technology and cryptocurrencies', 'TechHub Sarajevo', '2025-10-20', '14:00:00', '2025-10-20', '17:00:00', 40, 1, 29, true, false, true, 'Past', 'Private', '10000000-0000-0000-0000-000000000002', '33333333-3333-3333-3333-333333333333', '30000000-0000-0000-0000-000000000018', NULL),
     
-    ('20000000-0000-0000-0000-000000000028', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Data Science Conference 2025', 'Conference on data science, machine learning and AI', 'Sarajevo Convention Center', '2025-09-10', '09:00:00', '2025-09-11', '18:00:00', 200, 1, 20, true, true, true, 'Past', 'Private', '10000000-0000-0000-0000-000000000002', '33333333-3333-3333-3333-333333333333', '30000000-0000-0000-0000-000000000011', NULL),
+    ('20000000-0000-0000-0000-000000000028', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Data Science Conference 2025', 'Conference on data science, machine learning and AI', 'Sarajevo Convention Center', '2025-09-10', '09:00:00', '2025-09-11', '18:00:00', 200, 1, 149, true, true, true, 'Past', 'Private', '10000000-0000-0000-0000-000000000002', '33333333-3333-3333-3333-333333333333', '30000000-0000-0000-0000-000000000011', NULL),
     
-    ('20000000-0000-0000-0000-000000000029', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Cybersecurity Seminar 2025', 'Learn about cybersecurity best practices and threats', 'Business Hub Marijin Dvor', '2025-12-05', '10:00:00', '2025-12-05', '16:00:00', 80, 1, 5, true, false, true, 'Past', 'Private', '10000000-0000-0000-0000-000000000002', '33333333-3333-3333-3333-333333333333', '30000000-0000-0000-0000-000000000011', NULL),
+    ('20000000-0000-0000-0000-000000000029', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Cybersecurity Seminar 2025', 'Learn about cybersecurity best practices and threats', 'Business Hub Marijin Dvor', '2025-12-05', '10:00:00', '2025-12-05', '16:00:00', 80, 1, 59, true, false, true, 'Past', 'Private', '10000000-0000-0000-0000-000000000002', '33333333-3333-3333-3333-333333333333', '30000000-0000-0000-0000-000000000011', NULL),
     
     -- Additional PAST events by other users
-    ('20000000-0000-0000-0000-000000000030', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Summer Jazz Festival 2025', 'Outdoor jazz festival in the park', 'Vrelo Bosne Park', '2025-07-20', '18:00:00', '2025-07-20', '23:00:00', 300, 1, 20, true, true, true, 'Past', 'Private', '10000000-0000-0000-0000-000000000016', '77777777-7777-7777-7777-777777777777', '30000000-0000-0000-0000-000000000017', NULL),
+    ('20000000-0000-0000-0000-000000000030', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Summer Jazz Festival 2025', 'Outdoor jazz festival in the park', 'Vrelo Bosne Park', '2025-07-20', '18:00:00', '2025-07-20', '23:00:00', 300, 1, 248, true, true, true, 'Past', 'Private', '10000000-0000-0000-0000-000000000016', '77777777-7777-7777-7777-777777777777', '30000000-0000-0000-0000-000000000017', NULL),
     
-    ('20000000-0000-0000-0000-000000000031', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Food & Wine Tasting 2025', 'Traditional Bosnian food and local wine tasting', 'Restaurant Kibe', '2025-08-15', '19:00:00', '2025-08-15', '22:00:00', 50, 1, 2, true, false, true, 'Past', 'Private', '10000000-0000-0000-0000-000000000003', '44444444-4444-4444-4444-444444444444', '30000000-0000-0000-0000-000000000020', NULL),
+    ('20000000-0000-0000-0000-000000000031', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Food & Wine Tasting 2025', 'Traditional Bosnian food and local wine tasting', 'Restaurant Kibe', '2025-08-15', '19:00:00', '2025-08-15', '22:00:00', 50, 1, 38, true, false, true, 'Past', 'Private', '10000000-0000-0000-0000-000000000003', '44444444-4444-4444-4444-444444444444', '30000000-0000-0000-0000-000000000020', NULL),
     
-    ('20000000-0000-0000-0000-000000000032', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Fitness Challenge 2025', 'Community fitness challenge and competition', 'Olympic Park', '2025-06-10', '08:00:00', '2025-06-10', '12:00:00', 100, 0, 5, true, false, false, 'Past', 'Private', '10000000-0000-0000-0000-000000000012', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '30000000-0000-0000-0000-000000000016', NULL)
+    ('20000000-0000-0000-0000-000000000032', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Fitness Challenge 2025', 'Community fitness challenge and competition', 'Olympic Park', '2025-06-10', '08:00:00', '2025-06-10', '12:00:00', 100, 0, 4, true, false, false, 'Past', 'Private', '10000000-0000-0000-0000-000000000012', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '30000000-0000-0000-0000-000000000016', NULL)
 ON CONFLICT (id) DO NOTHING;
 
 -- Update images with event_id for cover images
@@ -191,15 +191,15 @@ ON CONFLICT DO NOTHING;
 -- ============================================
 INSERT INTO tickets (id, created_at, updated_at, event_id, ticket_type, price, quantity, quantity_available, quantity_sold, sale_start_date, sale_end_date) VALUES
     -- Event 1: Tech Conference (Paid) - Economy + Vip
-    ('40000000-0000-0000-0000-000000000001', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000001', 'Economy', 75.00, 400, 320, 80, '2026-01-01', '2026-03-14'),
-    ('40000000-0000-0000-0000-000000000002', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000001', 'Vip', 200.00, 100, 60, 40, '2026-01-01', '2026-03-14'),
+    ('40000000-0000-0000-0000-000000000001', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000001', 'Economy', 75.00, 400, 397, 3, '2026-01-01', '2026-03-14'),
+    ('40000000-0000-0000-0000-000000000002', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000001', 'Vip', 200.00, 100, 99, 1, '2026-01-01', '2026-03-14'),
     
     -- Event 2: Summer Music Festival (Paid) - Economy + Vip
-    ('40000000-0000-0000-0000-000000000003', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000002', 'Economy', 50.00, 4000, 2500, 1500, '2026-03-01', '2026-07-09'),
+    ('40000000-0000-0000-0000-000000000003', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000002', 'Economy', 50.00, 4000, 3999, 1, '2026-03-01', '2026-07-09'),
     ('40000000-0000-0000-0000-000000000004', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000002', 'Vip', 150.00, 1000, 1000, 0, '2026-03-01', '2026-07-09'),
     
     -- Event 3: Street Food Festival (Free) - Free only
-    ('40000000-0000-0000-0000-000000000005', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000003', 'Free', 0.00, 3000, 3000, 0, '2026-04-01', '2026-05-22'),
+    ('40000000-0000-0000-0000-000000000005', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000003', 'Free', 0.00, 3000, 2999, 1, '2026-04-01', '2026-05-22'),
     
     -- Event 4: Art Exhibition (Free) - Free only
     ('40000000-0000-0000-0000-000000000006', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000004', 'Free', 0.00, 150, 105, 45, '2026-03-01', '2026-04-30'),
@@ -227,11 +227,11 @@ INSERT INTO tickets (id, created_at, updated_at, event_id, ticket_type, price, q
     ('40000000-0000-0000-0000-000000000016', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000010', 'Vip', 120.00, 20, 20, 0, '2026-04-01', '2026-06-01'),
     
     -- Event 11: AI Workshop (Paid) - Economy + Vip
-    ('40000000-0000-0000-0000-000000000017', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000011', 'Economy', 40.00, 40, 10, 30, '2026-01-01', '2026-02-19'),
+    ('40000000-0000-0000-0000-000000000017', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000011', 'Economy', 40.00, 40, 38, 2, '2026-01-01', '2026-02-19'),
     ('40000000-0000-0000-0000-000000000018', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000011', 'Vip', 75.00, 10, 5, 5, '2026-01-01', '2026-02-19'),
     
     -- Event 12: Jazz Night (Paid) - Economy + Vip
-    ('40000000-0000-0000-0000-000000000019', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000012', 'Economy', 30.00, 60, 20, 40, '2026-02-01', '2026-04-04'),
+    ('40000000-0000-0000-0000-000000000019', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000012', 'Economy', 30.00, 60, 58, 2, '2026-02-01', '2026-04-04'),
     ('40000000-0000-0000-0000-000000000020', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000012', 'Vip', 60.00, 20, 10, 10, '2026-02-01', '2026-04-04'),
     
     -- Event 13: Photography Exhibition (Free) - Free only
@@ -241,7 +241,7 @@ INSERT INTO tickets (id, created_at, updated_at, event_id, ticket_type, price, q
     ('40000000-0000-0000-0000-000000000022', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000014', 'Free', 0.00, 100, 100, 0, '2026-04-01', '2026-05-15'),
     
     -- Event 15: Yoga Retreat (Paid) - Economy + Vip
-    ('40000000-0000-0000-0000-000000000023', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000015', 'Economy', 100.00, 25, 7, 18, '2026-05-01', '2026-07-17'),
+    ('40000000-0000-0000-0000-000000000023', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000015', 'Economy', 100.00, 25, 24, 1, '2026-05-01', '2026-07-17'),
     ('40000000-0000-0000-0000-000000000024', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000015', 'Vip', 180.00, 5, 3, 2, '2026-05-01', '2026-07-17'),
     
     -- Event 16: Culinary Workshop (Paid) - Economy + Vip
@@ -267,7 +267,7 @@ INSERT INTO tickets (id, created_at, updated_at, event_id, ticket_type, price, q
     ('40000000-0000-0000-0000-000000000034', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000021', 'Free', 0.00, 40, 40, 0, '2026-02-01', '2026-03-18'),
     
     -- Event 22: Tech Meetup (Free) - Free only
-    ('40000000-0000-0000-0000-000000000035', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000022', 'Free', 0.00, 50, 50, 0, '2026-03-01', '2026-04-22'),
+    ('40000000-0000-0000-0000-000000000035', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000022', 'Free', 0.00, 50, 46, 4, '2026-03-01', '2026-04-22'),
     
     -- Event 23: Networking Breakfast (Free) - Free only
     ('40000000-0000-0000-0000-000000000036', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000023', 'Free', 0.00, 30, 30, 0, '2026-04-01', '2026-05-08'),
@@ -280,33 +280,33 @@ INSERT INTO tickets (id, created_at, updated_at, event_id, ticket_type, price, q
     ('40000000-0000-0000-0000-000000000039', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000025', 'Vip', 25.00, 20, 20, 0, '2026-06-01', '2026-07-25'),
     
     -- PAST Event 26: Tech Meetup Web Dev (Free) - Free only
-    ('40000000-0000-0000-0000-000000000040', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000026', 'Free', 0.00, 50, 5, 45, '2025-10-01', '2025-11-15'),
+    ('40000000-0000-0000-0000-000000000040', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000026', 'Free', 0.00, 50, 49, 1, '2025-10-01', '2025-11-15'),
     
     -- PAST Event 27: Blockchain Workshop (Paid) - Economy + Vip
-    ('40000000-0000-0000-0000-000000000041', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000027', 'Economy', 50.00, 30, 2, 28, '2025-09-01', '2025-10-19'),
+    ('40000000-0000-0000-0000-000000000041', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000027', 'Economy', 50.00, 30, 29, 1, '2025-09-01', '2025-10-19'),
     ('40000000-0000-0000-0000-000000000042', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000027', 'Vip', 100.00, 10, 0, 10, '2025-09-01', '2025-10-19'),
     
     -- PAST Event 28: Data Science Conference (Paid) - Economy + Vip
-    ('40000000-0000-0000-0000-000000000043', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000028', 'Economy', 120.00, 150, 20, 130, '2025-07-01', '2025-09-10'),
+    ('40000000-0000-0000-0000-000000000043', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000028', 'Economy', 120.00, 150, 149, 1, '2025-07-01', '2025-09-10'),
     ('40000000-0000-0000-0000-000000000044', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000028', 'Vip', 250.00, 50, 0, 50, '2025-07-01', '2025-09-10'),
     
     -- PAST Event 29: Cybersecurity Seminar (Paid) - Economy + Vip
-    ('40000000-0000-0000-0000-000000000045', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000029', 'Economy', 80.00, 60, 5, 55, '2025-10-01', '2025-12-04'),
+    ('40000000-0000-0000-0000-000000000045', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000029', 'Economy', 80.00, 60, 59, 1, '2025-10-01', '2025-12-04'),
     ('40000000-0000-0000-0000-000000000046', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000029', 'Vip', 150.00, 20, 0, 20, '2025-10-01', '2025-12-04'),
     
     -- PAST Event 30: Summer Jazz Festival (Paid) - Economy + Vip
-    ('40000000-0000-0000-0000-000000000047', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000030', 'Economy', 40.00, 250, 20, 230, '2025-06-01', '2025-07-19'),
+    ('40000000-0000-0000-0000-000000000047', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000030', 'Economy', 40.00, 250, 248, 2, '2025-06-01', '2025-07-19'),
     ('40000000-0000-0000-0000-000000000048', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000030', 'Vip', 100.00, 50, 0, 50, '2025-06-01', '2025-07-19'),
     
     -- PAST Event 31: Food & Wine Tasting (Paid) - Economy + Vip
-    ('40000000-0000-0000-0000-000000000049', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000031', 'Economy', 60.00, 40, 2, 38, '2025-07-01', '2025-08-14'),
+    ('40000000-0000-0000-0000-000000000049', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000031', 'Economy', 60.00, 40, 38, 2, '2025-07-01', '2025-08-14'),
     ('40000000-0000-0000-0000-000000000050', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000031', 'Vip', 120.00, 10, 0, 10, '2025-07-01', '2025-08-14'),
     
     -- PAST Event 32: Fitness Challenge (Free) - Free only
-    ('40000000-0000-0000-0000-000000000051', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000032', 'Free', 0.00, 100, 5, 95, '2025-05-01', '2025-06-10'),
+    ('40000000-0000-0000-0000-000000000051', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000032', 'Free', 0.00, 100, 4, 96, '2025-05-01', '2025-06-10'),
     
     -- UPCOMING Event 33: Cloud Computing Workshop (Paid) - Economy + Vip
-    ('40000000-0000-0000-0000-000000000052', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000033', 'Economy', 55.00, 50, 25, 25, '2026-03-01', '2026-05-09'),
+    ('40000000-0000-0000-0000-000000000052', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000033', 'Economy', 55.00, 50, 49, 1, '2026-03-01', '2026-05-09'),
     ('40000000-0000-0000-0000-000000000053', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000033', 'Vip', 100.00, 10, 10, 0, '2026-03-01', '2026-05-09')
 ON CONFLICT (id) DO NOTHING;
 
@@ -553,44 +553,20 @@ INSERT INTO event_reviews (id, created_at, updated_at, user_id, event_id, rating
 ON CONFLICT (id) DO NOTHING;
 
 -- ============================================
--- 15. EVENT STATISTICS (For PRIVATE events)
--- ============================================
-INSERT INTO event_statistics (id, created_at, updated_at, event_id, total_views, total_favorites, total_tickets_sold, total_revenue, average_rating) VALUES
-    -- Statistics for John's PRIVATE events
-    ('a0000000-0000-0000-0000-000000000001', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000022', 450, 12, 35, 0.00, 0.00),
-    ('a0000000-0000-0000-0000-000000000018', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000033', 380, 9, 25, 1375.00, 0.00),
-    ('a0000000-0000-0000-0000-000000000002', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000026', 320, 8, 45, 0.00, 4.50),
-    ('a0000000-0000-0000-0000-000000000003', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000027', 280, 6, 38, 1900.00, 4.50),
-    ('a0000000-0000-0000-0000-000000000004', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000028', 650, 15, 180, 21600.00, 4.67),
-    ('a0000000-0000-0000-0000-000000000005', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000029', 420, 10, 75, 6000.00, 4.50),
-    
-    -- Statistics for other PRIVATE events
-    ('a0000000-0000-0000-0000-000000000006', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000011', 380, 9, 35, 1400.00, 0.00),
-    ('a0000000-0000-0000-0000-000000000007', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000012', 520, 14, 50, 1500.00, 0.00),
-    ('a0000000-0000-0000-0000-000000000008', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000013', 290, 7, 15, 0.00, 0.00),
-    ('a0000000-0000-0000-0000-000000000009', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000014', 410, 11, 0, 0.00, 0.00),
-    ('a0000000-0000-0000-0000-000000000010', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000015', 350, 8, 20, 2000.00, 0.00),
-    ('a0000000-0000-0000-0000-000000000011', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000016', 180, 5, 18, 900.00, 0.00),
-    ('a0000000-0000-0000-0000-000000000012', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000017', 220, 6, 0, 0.00, 0.00),
-    ('a0000000-0000-0000-0000-000000000013', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000019', 310, 9, 25, 2250.00, 0.00),
-    ('a0000000-0000-0000-0000-000000000014', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000020', 150, 4, 8, 360.00, 0.00),
-    ('a0000000-0000-0000-0000-000000000015', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000030', 580, 16, 280, 11200.00, 4.50),
-    ('a0000000-0000-0000-0000-000000000016', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000031', 340, 8, 48, 2880.00, 4.50),
-    ('a0000000-0000-0000-0000-000000000017', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '20000000-0000-0000-0000-000000000032', 260, 6, 95, 0.00, 4.50)
-ON CONFLICT (id) DO NOTHING;
-
--- ============================================
 -- 16. TICKET PURCHASES (John has 3 past + 2 upcoming, other events have several)
 -- ============================================
 INSERT INTO ticket_purchases (id, created_at, updated_at, ticket_id, event_id, user_id, ticket_code, qr_data, qr_verification_hash, price_paid, is_used, is_valid, used_at, invalidated_at, qr_code_image) VALUES
-    -- John's PAST purchases (3)
-    ('b0000000-0000-0000-0000-000000000001', CURRENT_TIMESTAMP - INTERVAL '60 days', CURRENT_TIMESTAMP - INTERVAL '60 days', '40000000-0000-0000-0000-000000000040', '20000000-0000-0000-0000-000000000026', '10000000-0000-0000-0000-000000000002', 'TECH2025-001', 'Event:20000000-0000-0000-0000-000000000026|User:10000000-0000-0000-0000-000000000002|Code:TECH2025-001', 'hash001', 0.00, true, true, CURRENT_TIMESTAMP - INTERVAL '50 days', NULL, NULL),
-    ('b0000000-0000-0000-0000-000000000002', CURRENT_TIMESTAMP - INTERVAL '55 days', CURRENT_TIMESTAMP - INTERVAL '55 days', '40000000-0000-0000-0000-000000000041', '20000000-0000-0000-0000-000000000027', '10000000-0000-0000-0000-000000000002', 'BLOCK2025-001', 'Event:20000000-0000-0000-0000-000000000027|User:10000000-0000-0000-0000-000000000002|Code:BLOCK2025-001', 'hash002', 50.00, true, true, CURRENT_TIMESTAMP - INTERVAL '45 days', NULL, NULL),
-    ('b0000000-0000-0000-0000-000000000003', CURRENT_TIMESTAMP - INTERVAL '80 days', CURRENT_TIMESTAMP - INTERVAL '80 days', '40000000-0000-0000-0000-000000000043', '20000000-0000-0000-0000-000000000028', '10000000-0000-0000-0000-000000000002', 'DATA2025-001', 'Event:20000000-0000-0000-0000-000000000028|User:10000000-0000-0000-0000-000000000002|Code:DATA2025-001', 'hash003', 120.00, true, true, CURRENT_TIMESTAMP - INTERVAL '70 days', NULL, NULL),
+    -- PAST purchases for John's events (but NOT by John - organizers can't buy their own tickets)
+    ('b0000000-0000-0000-0000-000000000001', CURRENT_TIMESTAMP - INTERVAL '60 days', CURRENT_TIMESTAMP - INTERVAL '60 days', '40000000-0000-0000-0000-000000000040', '20000000-0000-0000-0000-000000000026', '10000000-0000-0000-0000-000000000003', 'TECH2025-001', 'Event:20000000-0000-0000-0000-000000000026|User:10000000-0000-0000-0000-000000000003|Code:TECH2025-001', 'hash001', 0.00, true, true, CURRENT_TIMESTAMP - INTERVAL '50 days', NULL, NULL),
+    ('b0000000-0000-0000-0000-000000000002', CURRENT_TIMESTAMP - INTERVAL '55 days', CURRENT_TIMESTAMP - INTERVAL '55 days', '40000000-0000-0000-0000-000000000041', '20000000-0000-0000-0000-000000000027', '10000000-0000-0000-0000-000000000004', 'BLOCK2025-001', 'Event:20000000-0000-0000-0000-000000000027|User:10000000-0000-0000-0000-000000000004|Code:BLOCK2025-001', 'hash002', 50.00, true, true, CURRENT_TIMESTAMP - INTERVAL '45 days', NULL, NULL),
+    ('b0000000-0000-0000-0000-000000000003', CURRENT_TIMESTAMP - INTERVAL '80 days', CURRENT_TIMESTAMP - INTERVAL '80 days', '40000000-0000-0000-0000-000000000043', '20000000-0000-0000-0000-000000000028', '10000000-0000-0000-0000-000000000005', 'DATA2025-001', 'Event:20000000-0000-0000-0000-000000000028|User:10000000-0000-0000-0000-000000000005|Code:DATA2025-001', 'hash003', 120.00, true, true, CURRENT_TIMESTAMP - INTERVAL '70 days', NULL, NULL),
     
-    -- John's UPCOMING purchases (2)
-    ('b0000000-0000-0000-0000-000000000004', CURRENT_TIMESTAMP - INTERVAL '10 days', CURRENT_TIMESTAMP - INTERVAL '10 days', '40000000-0000-0000-0000-000000000035', '20000000-0000-0000-0000-000000000022', '10000000-0000-0000-0000-000000000002', 'TECH2026-001', 'Event:20000000-0000-0000-0000-000000000022|User:10000000-0000-0000-0000-000000000002|Code:TECH2026-001', 'hash004', 0.00, false, true, NULL, NULL, NULL),
-    ('b0000000-0000-0000-0000-000000000005', CURRENT_TIMESTAMP - INTERVAL '5 days', CURRENT_TIMESTAMP - INTERVAL '5 days', '40000000-0000-0000-0000-000000000052', '20000000-0000-0000-0000-000000000033', '10000000-0000-0000-0000-000000000002', 'CLOUD2026-001', 'Event:20000000-0000-0000-0000-000000000033|User:10000000-0000-0000-0000-000000000002|Code:CLOUD2026-001', 'hash005', 55.00, false, true, NULL, NULL, NULL),
+    -- UPCOMING purchases for John's events (but NOT by John - organizers can't buy their own tickets)
+    ('b0000000-0000-0000-0000-000000000004', CURRENT_TIMESTAMP - INTERVAL '10 days', CURRENT_TIMESTAMP - INTERVAL '10 days', '40000000-0000-0000-0000-000000000035', '20000000-0000-0000-0000-000000000022', '10000000-0000-0000-0000-000000000006', 'TECH2026-001', 'Event:20000000-0000-0000-0000-000000000022|User:10000000-0000-0000-0000-000000000006|Code:TECH2026-001', 'hash004', 0.00, false, true, NULL, NULL, NULL),
+    ('b0000000-0000-0000-0000-000000000016', CURRENT_TIMESTAMP - INTERVAL '9 days', CURRENT_TIMESTAMP - INTERVAL '9 days', '40000000-0000-0000-0000-000000000035', '20000000-0000-0000-0000-000000000022', '10000000-0000-0000-0000-000000000003', 'TECH2026-002', 'Event:20000000-0000-0000-0000-000000000022|User:10000000-0000-0000-0000-000000000003|Code:TECH2026-002', 'hash016', 0.00, false, true, NULL, NULL, NULL),
+    ('b0000000-0000-0000-0000-000000000017', CURRENT_TIMESTAMP - INTERVAL '8 days', CURRENT_TIMESTAMP - INTERVAL '8 days', '40000000-0000-0000-0000-000000000035', '20000000-0000-0000-0000-000000000022', '10000000-0000-0000-0000-000000000004', 'TECH2026-003', 'Event:20000000-0000-0000-0000-000000000022|User:10000000-0000-0000-0000-000000000004|Code:TECH2026-003', 'hash017', 0.00, false, true, NULL, NULL, NULL),
+    ('b0000000-0000-0000-0000-000000000018', CURRENT_TIMESTAMP - INTERVAL '7 days', CURRENT_TIMESTAMP - INTERVAL '7 days', '40000000-0000-0000-0000-000000000035', '20000000-0000-0000-0000-000000000022', '10000000-0000-0000-0000-000000000005', 'TECH2026-004', 'Event:20000000-0000-0000-0000-000000000022|User:10000000-0000-0000-0000-000000000005|Code:TECH2026-004', 'hash018', 0.00, false, true, NULL, NULL, NULL),
+    ('b0000000-0000-0000-0000-000000000005', CURRENT_TIMESTAMP - INTERVAL '5 days', CURRENT_TIMESTAMP - INTERVAL '5 days', '40000000-0000-0000-0000-000000000052', '20000000-0000-0000-0000-000000000033', '10000000-0000-0000-0000-000000000007', 'CLOUD2026-001', 'Event:20000000-0000-0000-0000-000000000033|User:10000000-0000-0000-0000-000000000007|Code:CLOUD2026-001', 'hash005', 55.00, false, true, NULL, NULL, NULL),
     
     -- Other users' purchases for various events
     ('b0000000-0000-0000-0000-000000000006', CURRENT_TIMESTAMP - INTERVAL '30 days', CURRENT_TIMESTAMP - INTERVAL '30 days', '40000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000003', 'TECHC2026-002', 'Event:20000000-0000-0000-0000-000000000001|User:10000000-0000-0000-0000-000000000003|Code:TECHC2026-002', 'hash006', 75.00, false, true, NULL, NULL, NULL),
@@ -598,25 +574,39 @@ INSERT INTO ticket_purchases (id, created_at, updated_at, ticket_id, event_id, u
     ('b0000000-0000-0000-0000-000000000008', CURRENT_TIMESTAMP - INTERVAL '20 days', CURRENT_TIMESTAMP - INTERVAL '20 days', '40000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000005', 'MUSIC2026-001', 'Event:20000000-0000-0000-0000-000000000002|User:10000000-0000-0000-0000-000000000005|Code:MUSIC2026-001', 'hash008', 50.00, false, true, NULL, NULL, NULL),
     ('b0000000-0000-0000-0000-000000000009', CURRENT_TIMESTAMP - INTERVAL '15 days', CURRENT_TIMESTAMP - INTERVAL '15 days', '40000000-0000-0000-0000-000000000005', '20000000-0000-0000-0000-000000000003', '10000000-0000-0000-0000-000000000006', 'FOOD2026-001', 'Event:20000000-0000-0000-0000-000000000003|User:10000000-0000-0000-0000-000000000006|Code:FOOD2026-001', 'hash009', 0.00, false, true, NULL, NULL, NULL),
     ('b0000000-0000-0000-0000-000000000010', CURRENT_TIMESTAMP - INTERVAL '70 days', CURRENT_TIMESTAMP - INTERVAL '70 days', '40000000-0000-0000-0000-000000000047', '20000000-0000-0000-0000-000000000030', '10000000-0000-0000-0000-000000000012', 'JAZZ2025-001', 'Event:20000000-0000-0000-0000-000000000030|User:10000000-0000-0000-0000-000000000012|Code:JAZZ2025-001', 'hash010', 40.00, true, true, CURRENT_TIMESTAMP - INTERVAL '60 days', NULL, NULL),
-    ('b0000000-0000-0000-0000-000000000011', CURRENT_TIMESTAMP - INTERVAL '65 days', CURRENT_TIMESTAMP - INTERVAL '65 days', '40000000-0000-0000-0000-000000000049', '20000000-0000-0000-0000-000000000031', '10000000-0000-0000-0000-000000000003', 'FOOD2025-001', 'Event:20000000-0000-0000-0000-000000000031|User:10000000-0000-0000-0000-000000000003|Code:FOOD2025-001', 'hash011', 60.00, true, true, CURRENT_TIMESTAMP - INTERVAL '55 days', NULL, NULL),
+    ('b0000000-0000-0000-0000-000000000011', CURRENT_TIMESTAMP - INTERVAL '65 days', CURRENT_TIMESTAMP - INTERVAL '65 days', '40000000-0000-0000-0000-000000000049', '20000000-0000-0000-0000-000000000031', '10000000-0000-0000-0000-000000000004', 'FOOD2025-001', 'Event:20000000-0000-0000-0000-000000000031|User:10000000-0000-0000-0000-000000000004|Code:FOOD2025-001', 'hash011', 60.00, true, true, CURRENT_TIMESTAMP - INTERVAL '55 days', NULL, NULL),
     ('b0000000-0000-0000-0000-000000000012', CURRENT_TIMESTAMP - INTERVAL '12 days', CURRENT_TIMESTAMP - INTERVAL '12 days', '40000000-0000-0000-0000-000000000019', '20000000-0000-0000-0000-000000000012', '10000000-0000-0000-0000-000000000007', 'JAZZ2026-001', 'Event:20000000-0000-0000-0000-000000000012|User:10000000-0000-0000-0000-000000000007|Code:JAZZ2026-001', 'hash012', 30.00, false, true, NULL, NULL, NULL),
     ('b0000000-0000-0000-0000-000000000013', CURRENT_TIMESTAMP - INTERVAL '8 days', CURRENT_TIMESTAMP - INTERVAL '8 days', '40000000-0000-0000-0000-000000000017', '20000000-0000-0000-0000-000000000011', '10000000-0000-0000-0000-000000000008', 'AI2026-001', 'Event:20000000-0000-0000-0000-000000000011|User:10000000-0000-0000-0000-000000000008|Code:AI2026-001', 'hash013', 40.00, false, true, NULL, NULL, NULL),
     ('b0000000-0000-0000-0000-000000000014', CURRENT_TIMESTAMP - INTERVAL '50 days', CURRENT_TIMESTAMP - INTERVAL '50 days', '40000000-0000-0000-0000-000000000045', '20000000-0000-0000-0000-000000000029', '10000000-0000-0000-0000-000000000009', 'CYBER2025-001', 'Event:20000000-0000-0000-0000-000000000029|User:10000000-0000-0000-0000-000000000009|Code:CYBER2025-001', 'hash014', 80.00, true, true, CURRENT_TIMESTAMP - INTERVAL '40 days', NULL, NULL),
-    ('b0000000-0000-0000-0000-000000000015', CURRENT_TIMESTAMP - INTERVAL '3 days', CURRENT_TIMESTAMP - INTERVAL '3 days', '40000000-0000-0000-0000-000000000023', '20000000-0000-0000-0000-000000000015', '10000000-0000-0000-0000-000000000010', 'YOGA2026-001', 'Event:20000000-0000-0000-0000-000000000015|User:10000000-0000-0000-0000-000000000010|Code:YOGA2026-001', 'hash015', 100.00, false, true, NULL, NULL, NULL)
+    ('b0000000-0000-0000-0000-000000000015', CURRENT_TIMESTAMP - INTERVAL '3 days', CURRENT_TIMESTAMP - INTERVAL '3 days', '40000000-0000-0000-0000-000000000023', '20000000-0000-0000-0000-000000000015', '10000000-0000-0000-0000-000000000010', 'YOGA2026-001', 'Event:20000000-0000-0000-0000-000000000015|User:10000000-0000-0000-0000-000000000010|Code:YOGA2026-001', 'hash015', 100.00, false, true, NULL, NULL, NULL),
+    
+    -- John's purchases for events where he is NOT the organizer
+    -- PAST purchases (3)
+    ('b0000000-0000-0000-0000-000000000019', CURRENT_TIMESTAMP - INTERVAL '75 days', CURRENT_TIMESTAMP - INTERVAL '75 days', '40000000-0000-0000-0000-000000000047', '20000000-0000-0000-0000-000000000030', '10000000-0000-0000-0000-000000000002', 'JAZZ2025-JOHN', 'Event:20000000-0000-0000-0000-000000000030|User:10000000-0000-0000-0000-000000000002|Code:JAZZ2025-JOHN', 'hash019', 40.00, true, true, CURRENT_TIMESTAMP - INTERVAL '65 days', NULL, NULL),
+    ('b0000000-0000-0000-0000-000000000020', CURRENT_TIMESTAMP - INTERVAL '68 days', CURRENT_TIMESTAMP - INTERVAL '68 days', '40000000-0000-0000-0000-000000000049', '20000000-0000-0000-0000-000000000031', '10000000-0000-0000-0000-000000000002', 'FOOD2025-JOHN', 'Event:20000000-0000-0000-0000-000000000031|User:10000000-0000-0000-0000-000000000002|Code:FOOD2025-JOHN', 'hash020', 60.00, true, true, CURRENT_TIMESTAMP - INTERVAL '58 days', NULL, NULL),
+    ('b0000000-0000-0000-0000-000000000021', CURRENT_TIMESTAMP - INTERVAL '45 days', CURRENT_TIMESTAMP - INTERVAL '45 days', '40000000-0000-0000-0000-000000000051', '20000000-0000-0000-0000-000000000032', '10000000-0000-0000-0000-000000000002', 'FITNESS2025-JOHN', 'Event:20000000-0000-0000-0000-000000000032|User:10000000-0000-0000-0000-000000000002|Code:FITNESS2025-JOHN', 'hash021', 0.00, true, true, CURRENT_TIMESTAMP - INTERVAL '35 days', NULL, NULL),
+    
+    -- UPCOMING purchases (3)
+    ('b0000000-0000-0000-0000-000000000022', CURRENT_TIMESTAMP - INTERVAL '28 days', CURRENT_TIMESTAMP - INTERVAL '28 days', '40000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000002', 'TECHC2026-JOHN', 'Event:20000000-0000-0000-0000-000000000001|User:10000000-0000-0000-0000-000000000002|Code:TECHC2026-JOHN', 'hash022', 75.00, false, true, NULL, NULL, NULL),
+    ('b0000000-0000-0000-0000-000000000023', CURRENT_TIMESTAMP - INTERVAL '18 days', CURRENT_TIMESTAMP - INTERVAL '18 days', '40000000-0000-0000-0000-000000000017', '20000000-0000-0000-0000-000000000011', '10000000-0000-0000-0000-000000000002', 'AI2026-JOHN', 'Event:20000000-0000-0000-0000-000000000011|User:10000000-0000-0000-0000-000000000002|Code:AI2026-JOHN', 'hash023', 40.00, false, true, NULL, NULL, NULL),
+    ('b0000000-0000-0000-0000-000000000024', CURRENT_TIMESTAMP - INTERVAL '14 days', CURRENT_TIMESTAMP - INTERVAL '14 days', '40000000-0000-0000-0000-000000000019', '20000000-0000-0000-0000-000000000012', '10000000-0000-0000-0000-000000000002', 'JAZZ2026-JOHN', 'Event:20000000-0000-0000-0000-000000000012|User:10000000-0000-0000-0000-000000000002|Code:JAZZ2026-JOHN', 'hash024', 30.00, false, true, NULL, NULL, NULL)
 ON CONFLICT (id) DO NOTHING;
 
 -- ============================================
 -- 16b. PAYMENTS (One payment for each ticket purchase)
 -- ============================================
 INSERT INTO payments (id, created_at, updated_at, user_id, event_id, amount, currency, status) VALUES
-    -- Payments for John's PAST purchases (3)
-    ('c0000000-0000-0000-0000-000000000001', CURRENT_TIMESTAMP - INTERVAL '60 days', CURRENT_TIMESTAMP - INTERVAL '60 days', '10000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000026', 0.00, 'USD', 'Paid'),
-    ('c0000000-0000-0000-0000-000000000002', CURRENT_TIMESTAMP - INTERVAL '55 days', CURRENT_TIMESTAMP - INTERVAL '55 days', '10000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000027', 50.00, 'USD', 'Paid'),
-    ('c0000000-0000-0000-0000-000000000003', CURRENT_TIMESTAMP - INTERVAL '80 days', CURRENT_TIMESTAMP - INTERVAL '80 days', '10000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000028', 120.00, 'USD', 'Paid'),
+    -- Payments for PAST purchases (for John's events but NOT by John)
+    ('c0000000-0000-0000-0000-000000000001', CURRENT_TIMESTAMP - INTERVAL '60 days', CURRENT_TIMESTAMP - INTERVAL '60 days', '10000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000026', 0.00, 'USD', 'Paid'),
+    ('c0000000-0000-0000-0000-000000000002', CURRENT_TIMESTAMP - INTERVAL '55 days', CURRENT_TIMESTAMP - INTERVAL '55 days', '10000000-0000-0000-0000-000000000004', '20000000-0000-0000-0000-000000000027', 50.00, 'USD', 'Paid'),
+    ('c0000000-0000-0000-0000-000000000003', CURRENT_TIMESTAMP - INTERVAL '80 days', CURRENT_TIMESTAMP - INTERVAL '80 days', '10000000-0000-0000-0000-000000000005', '20000000-0000-0000-0000-000000000028', 120.00, 'USD', 'Paid'),
     
-    -- Payments for John's UPCOMING purchases (2)
-    ('c0000000-0000-0000-0000-000000000004', CURRENT_TIMESTAMP - INTERVAL '10 days', CURRENT_TIMESTAMP - INTERVAL '10 days', '10000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000022', 0.00, 'USD', 'Paid'),
-    ('c0000000-0000-0000-0000-000000000005', CURRENT_TIMESTAMP - INTERVAL '5 days', CURRENT_TIMESTAMP - INTERVAL '5 days', '10000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000033', 55.00, 'USD', 'Paid'),
+    -- Payments for UPCOMING purchases (for John's events but NOT by John)
+    ('c0000000-0000-0000-0000-000000000004', CURRENT_TIMESTAMP - INTERVAL '10 days', CURRENT_TIMESTAMP - INTERVAL '10 days', '10000000-0000-0000-0000-000000000006', '20000000-0000-0000-0000-000000000022', 0.00, 'USD', 'Paid'),
+    ('c0000000-0000-0000-0000-000000000016', CURRENT_TIMESTAMP - INTERVAL '9 days', CURRENT_TIMESTAMP - INTERVAL '9 days', '10000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000022', 0.00, 'USD', 'Paid'),
+    ('c0000000-0000-0000-0000-000000000017', CURRENT_TIMESTAMP - INTERVAL '8 days', CURRENT_TIMESTAMP - INTERVAL '8 days', '10000000-0000-0000-0000-000000000004', '20000000-0000-0000-0000-000000000022', 0.00, 'USD', 'Paid'),
+    ('c0000000-0000-0000-0000-000000000018', CURRENT_TIMESTAMP - INTERVAL '7 days', CURRENT_TIMESTAMP - INTERVAL '7 days', '10000000-0000-0000-0000-000000000005', '20000000-0000-0000-0000-000000000022', 0.00, 'USD', 'Paid'),
+    ('c0000000-0000-0000-0000-000000000005', CURRENT_TIMESTAMP - INTERVAL '5 days', CURRENT_TIMESTAMP - INTERVAL '5 days', '10000000-0000-0000-0000-000000000007', '20000000-0000-0000-0000-000000000033', 55.00, 'USD', 'Paid'),
     
     -- Payments for other users' purchases
     ('c0000000-0000-0000-0000-000000000006', CURRENT_TIMESTAMP - INTERVAL '30 days', CURRENT_TIMESTAMP - INTERVAL '30 days', '10000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000001', 75.00, 'USD', 'Paid'),
@@ -624,11 +614,22 @@ INSERT INTO payments (id, created_at, updated_at, user_id, event_id, amount, cur
     ('c0000000-0000-0000-0000-000000000008', CURRENT_TIMESTAMP - INTERVAL '20 days', CURRENT_TIMESTAMP - INTERVAL '20 days', '10000000-0000-0000-0000-000000000005', '20000000-0000-0000-0000-000000000002', 50.00, 'USD', 'Paid'),
     ('c0000000-0000-0000-0000-000000000009', CURRENT_TIMESTAMP - INTERVAL '15 days', CURRENT_TIMESTAMP - INTERVAL '15 days', '10000000-0000-0000-0000-000000000006', '20000000-0000-0000-0000-000000000003', 0.00, 'USD', 'Paid'),
     ('c0000000-0000-0000-0000-000000000010', CURRENT_TIMESTAMP - INTERVAL '70 days', CURRENT_TIMESTAMP - INTERVAL '70 days', '10000000-0000-0000-0000-000000000012', '20000000-0000-0000-0000-000000000030', 40.00, 'USD', 'Paid'),
-    ('c0000000-0000-0000-0000-000000000011', CURRENT_TIMESTAMP - INTERVAL '65 days', CURRENT_TIMESTAMP - INTERVAL '65 days', '10000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000031', 60.00, 'USD', 'Paid'),
+    ('c0000000-0000-0000-0000-000000000011', CURRENT_TIMESTAMP - INTERVAL '65 days', CURRENT_TIMESTAMP - INTERVAL '65 days', '10000000-0000-0000-0000-000000000004', '20000000-0000-0000-0000-000000000031', 60.00, 'USD', 'Paid'),
     ('c0000000-0000-0000-0000-000000000012', CURRENT_TIMESTAMP - INTERVAL '12 days', CURRENT_TIMESTAMP - INTERVAL '12 days', '10000000-0000-0000-0000-000000000007', '20000000-0000-0000-0000-000000000012', 30.00, 'USD', 'Paid'),
     ('c0000000-0000-0000-0000-000000000013', CURRENT_TIMESTAMP - INTERVAL '8 days', CURRENT_TIMESTAMP - INTERVAL '8 days', '10000000-0000-0000-0000-000000000008', '20000000-0000-0000-0000-000000000011', 40.00, 'USD', 'Paid'),
     ('c0000000-0000-0000-0000-000000000014', CURRENT_TIMESTAMP - INTERVAL '50 days', CURRENT_TIMESTAMP - INTERVAL '50 days', '10000000-0000-0000-0000-000000000009', '20000000-0000-0000-0000-000000000029', 80.00, 'USD', 'Paid'),
-    ('c0000000-0000-0000-0000-000000000015', CURRENT_TIMESTAMP - INTERVAL '3 days', CURRENT_TIMESTAMP - INTERVAL '3 days', '10000000-0000-0000-0000-000000000010', '20000000-0000-0000-0000-000000000015', 100.00, 'USD', 'Paid')
+    ('c0000000-0000-0000-0000-000000000015', CURRENT_TIMESTAMP - INTERVAL '3 days', CURRENT_TIMESTAMP - INTERVAL '3 days', '10000000-0000-0000-0000-000000000010', '20000000-0000-0000-0000-000000000015', 100.00, 'USD', 'Paid'),
+    
+    -- Payments for John's purchases (for events where he is NOT the organizer)
+    -- PAST purchases (3)
+    ('c0000000-0000-0000-0000-000000000019', CURRENT_TIMESTAMP - INTERVAL '75 days', CURRENT_TIMESTAMP - INTERVAL '75 days', '10000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000030', 40.00, 'USD', 'Paid'),
+    ('c0000000-0000-0000-0000-000000000020', CURRENT_TIMESTAMP - INTERVAL '68 days', CURRENT_TIMESTAMP - INTERVAL '68 days', '10000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000031', 60.00, 'USD', 'Paid'),
+    ('c0000000-0000-0000-0000-000000000021', CURRENT_TIMESTAMP - INTERVAL '45 days', CURRENT_TIMESTAMP - INTERVAL '45 days', '10000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000032', 0.00, 'USD', 'Paid'),
+    
+    -- UPCOMING purchases (3)
+    ('c0000000-0000-0000-0000-000000000022', CURRENT_TIMESTAMP - INTERVAL '28 days', CURRENT_TIMESTAMP - INTERVAL '28 days', '10000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000001', 75.00, 'USD', 'Paid'),
+    ('c0000000-0000-0000-0000-000000000023', CURRENT_TIMESTAMP - INTERVAL '18 days', CURRENT_TIMESTAMP - INTERVAL '18 days', '10000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000011', 40.00, 'USD', 'Paid'),
+    ('c0000000-0000-0000-0000-000000000024', CURRENT_TIMESTAMP - INTERVAL '14 days', CURRENT_TIMESTAMP - INTERVAL '14 days', '10000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000012', 30.00, 'USD', 'Paid')
 ON CONFLICT (id) DO NOTHING;
 
 -- ============================================

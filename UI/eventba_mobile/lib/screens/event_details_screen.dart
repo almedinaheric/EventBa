@@ -138,23 +138,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       setState(() {
         isFollowing = !isFollowing;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          content: Text(
-            isFollowing
-                ? "Following ${_organizer!.fullName}"
-                : "Unfollowed ${_organizer!.fullName}",
-          ),
-        ),
-      );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          content: Text("Failed to update follow status: $e"),
-        ),
-      );
+      // Error handling without showing snackbar
     }
   }
 

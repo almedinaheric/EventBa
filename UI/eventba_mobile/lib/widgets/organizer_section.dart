@@ -41,30 +41,11 @@ class _OrganizerSectionState extends State<OrganizerSection> {
         await _userProvider.followUser(widget.organizerId);
       }
 
-      final wasFollowing = isFollowing;
       setState(() {
         isFollowing = !isFollowing;
       });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          content: Text(
-            !wasFollowing
-                ? "Following ${widget.name}"
-                : "Unfollowed ${widget.name}",
-          ),
-        ),
-      );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          content: Text(
-            "Failed to ${isFollowing ? 'unfollow' : 'follow'} user.",
-          ),
-        ),
-      );
+      // Error handling without showing snackbar
     }
   }
 

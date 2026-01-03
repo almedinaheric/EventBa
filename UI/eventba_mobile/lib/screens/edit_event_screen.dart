@@ -63,7 +63,13 @@ class _EditEventScreenState extends State<EditEventScreen> {
     _nameController = TextEditingController(text: event['name']);
     _selectedCategory = event['categoryId'];
     _venueController = TextEditingController(text: event['venue']);
-    _dateController = TextEditingController(text: event['date']);
+    final startDate = event['startDate'] ?? event['date'];
+    final endDate = event['endDate'] ?? event['date'];
+    final dateText = startDate != null && endDate != null
+        ? "$startDate - $endDate"
+        : (event['date'] ?? '');
+    _dateController = TextEditingController(text: dateText);
+
     _startTimeController = TextEditingController(text: event['startTime']);
     _endTimeController = TextEditingController(text: event['endTime']);
     _descriptionController = TextEditingController(text: event['description']);
@@ -610,15 +616,55 @@ class _EditEventScreenState extends State<EditEventScreen> {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final tomorrow = today.add(const Duration(days: 1));
-    DateTime? pickedDate = await showDatePicker(
+
+    // Parse existing date range if available
+    DateTimeRange? initialDateRange;
+    final currentDateText = _dateController.text;
+    if (currentDateText.contains(' - ')) {
+      final parts = currentDateText.split(' - ');
+      if (parts.length == 2) {
+        try {
+          final startDate = DateTime.parse(parts[0].trim());
+          final endDate = DateTime.parse(parts[1].trim());
+          initialDateRange = DateTimeRange(start: startDate, end: endDate);
+        } catch (e) {
+          // If parsing fails, use default range
+          initialDateRange = DateTimeRange(
+            start: tomorrow,
+            end: tomorrow.add(const Duration(days: 1)),
+          );
+        }
+      }
+    } else if (currentDateText.isNotEmpty) {
+      try {
+        final singleDate = DateTime.parse(currentDateText.trim());
+        initialDateRange = DateTimeRange(
+          start: singleDate,
+          end: singleDate.add(const Duration(days: 1)),
+        );
+      } catch (e) {
+        initialDateRange = DateTimeRange(
+          start: tomorrow,
+          end: tomorrow.add(const Duration(days: 1)),
+        );
+      }
+    } else {
+      initialDateRange = DateTimeRange(
+        start: tomorrow,
+        end: tomorrow.add(const Duration(days: 1)),
+      );
+    }
+
+    DateTimeRange? picked = await showDateRangePicker(
       context: context,
-      initialDate: tomorrow,
+      initialDateRange: initialDateRange,
       firstDate: tomorrow,
       lastDate: DateTime(2100),
     );
-    if (pickedDate != null) {
+    if (picked != null) {
       setState(() {
-        _dateController.text = pickedDate.toLocal().toString().split(' ')[0];
+        _dateController.text =
+            "${picked.start.toLocal().toString().split(' ')[0]} - ${picked.end.toLocal().toString().split(' ')[0]}";
       });
     }
   }
@@ -684,22 +730,79 @@ class _EditEventScreenState extends State<EditEventScreen> {
     if (_dateController.text.trim().isNotEmpty &&
         _startTimeController.text.trim().isNotEmpty &&
         _endTimeController.text.trim().isNotEmpty) {
-      final startTimeMinutes = _parseTimeToMinutes(
-        _startTimeController.text.trim(),
-      );
-      final endTimeMinutes = _parseTimeToMinutes(
-        _endTimeController.text.trim(),
-      );
+      // Validate date range format
+      final dateRangeText = _dateController.text.trim();
+      if (dateRangeText.contains(' - ')) {
+        final parts = dateRangeText.split(' - ');
+        if (parts.length == 2) {
+          try {
+            final startDate = DateTime.parse(parts[0].trim());
+            final endDate = DateTime.parse(parts[1].trim());
 
-      if (startTimeMinutes >= 0 && endTimeMinutes >= 0) {
-        if (startTimeMinutes >= endTimeMinutes) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Start time must be before end time'),
-              backgroundColor: Colors.red,
-            ),
-          );
-          return;
+            if (endDate.isBefore(startDate)) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('End date must be after start date'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+              return;
+            }
+
+            // If same date, validate times
+            if (startDate.year == endDate.year &&
+                startDate.month == endDate.month &&
+                startDate.day == endDate.day) {
+              final startTimeMinutes = _parseTimeToMinutes(
+                _startTimeController.text.trim(),
+              );
+              final endTimeMinutes = _parseTimeToMinutes(
+                _endTimeController.text.trim(),
+              );
+
+              if (startTimeMinutes >= 0 && endTimeMinutes >= 0) {
+                if (startTimeMinutes >= endTimeMinutes) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Start time must be before end time when dates are the same',
+                      ),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+              }
+            }
+          } catch (e) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Invalid date format: $e'),
+                backgroundColor: Colors.red,
+              ),
+            );
+            return;
+          }
+        }
+      } else {
+        // Single date format - validate times
+        final startTimeMinutes = _parseTimeToMinutes(
+          _startTimeController.text.trim(),
+        );
+        final endTimeMinutes = _parseTimeToMinutes(
+          _endTimeController.text.trim(),
+        );
+
+        if (startTimeMinutes >= 0 && endTimeMinutes >= 0) {
+          if (startTimeMinutes >= endTimeMinutes) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Start time must be before end time'),
+                backgroundColor: Colors.red,
+              ),
+            );
+            return;
+          }
         }
       }
     }
@@ -712,13 +815,49 @@ class _EditEventScreenState extends State<EditEventScreen> {
       final eventProvider = Provider.of<EventProvider>(context, listen: false);
       final event = widget.event;
 
-      String dateStr = _dateController.text;
-      if (dateStr.contains('/')) {
-        final parts = dateStr.split('/');
-        if (parts.length == 3) {
-          dateStr =
-              '${parts[2]}-${parts[1].padLeft(2, '0')}-${parts[0].padLeft(2, '0')}';
+      // Parse date range: "YYYY-MM-DD - YYYY-MM-DD"
+      String startDateStr;
+      String endDateStr;
+
+      final dateRangeText = _dateController.text.trim();
+      if (dateRangeText.contains(' - ')) {
+        final parts = dateRangeText.split(' - ');
+        if (parts.length == 2) {
+          startDateStr = parts[0].trim();
+          endDateStr = parts[1].trim();
+
+          // Handle date format conversion if needed
+          if (startDateStr.contains('/')) {
+            final startParts = startDateStr.split('/');
+            if (startParts.length == 3) {
+              startDateStr =
+                  '${startParts[2]}-${startParts[1].padLeft(2, '0')}-${startParts[0].padLeft(2, '0')}';
+            }
+          }
+          if (endDateStr.contains('/')) {
+            final endParts = endDateStr.split('/');
+            if (endParts.length == 3) {
+              endDateStr =
+                  '${endParts[2]}-${endParts[1].padLeft(2, '0')}-${endParts[0].padLeft(2, '0')}';
+            }
+          }
+        } else {
+          // Fallback to single date
+          startDateStr = dateRangeText;
+          endDateStr = dateRangeText;
         }
+      } else {
+        // Single date format
+        String dateStr = dateRangeText;
+        if (dateStr.contains('/')) {
+          final parts = dateStr.split('/');
+          if (parts.length == 3) {
+            dateStr =
+                '${parts[2]}-${parts[1].padLeft(2, '0')}-${parts[0].padLeft(2, '0')}';
+          }
+        }
+        startDateStr = dateStr;
+        endDateStr = dateStr;
       }
 
       int calculatedCapacity;
@@ -799,8 +938,8 @@ class _EditEventScreenState extends State<EditEventScreen> {
         'title': _nameController.text,
         'description': _descriptionController.text,
         'location': _venueController.text,
-        'startDate': dateStr,
-        'endDate': dateStr,
+        'startDate': startDateStr,
+        'endDate': endDateStr,
         'startTime': startTimeFormatted,
         'endTime': endTimeFormatted,
         'capacity': calculatedCapacity,
@@ -850,7 +989,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
 
       await _replaceGalleryImages(event['id'], finalGalleryImageIds);
 
-      await _handleTicketTypeChange(event['id'], dateStr);
+      await _handleTicketTypeChange(event['id'], startDateStr);
 
       if (!mounted) return;
 

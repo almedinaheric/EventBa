@@ -84,14 +84,9 @@ class _FollowingScreenState extends State<FollowingScreen> {
         setState(() {
           following.removeWhere((user) => user.id == userId);
         });
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Unfollowed successfully')));
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to unfollow: $e')));
+      // Error handling without showing snackbar
     }
   }
 
