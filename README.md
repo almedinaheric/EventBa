@@ -3,13 +3,13 @@
 ## Credentials:
 
 **Admin:**
-- email: admin@admin.com
-- password: Admin123?
+- email: admin@eventba.com
+- password: Password123!
 
 
 **Customer:**
-- email: customer@customer.com
-- password: Customer123?
+- email: john@eventba.com
+- password: Password123!
 
 
 **Stripe Test Card:**
