@@ -244,7 +244,8 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                   );
                   _loadCategories();
                 }
-              } catch (e) {if (mounted) {
+              } catch (e) {
+                if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('Error adding category: $e'),
@@ -386,23 +387,13 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
 
           // Category Info
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  category.name,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: Colors.black,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${category.eventCount ?? 0} events',
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
-                ),
-              ],
+            child: Text(
+              category.name,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: Colors.black,
+              ),
             ),
           ),
 

@@ -826,23 +826,36 @@ class _EventCreationScreenState extends State<EventCreationScreen> {
       final endDateFormatted = dateRangeParts[1];
 
       String formatTime(String timeStr) {
-        final parts = timeStr.split(' ');
-        final timePart = parts[0];
-        final timeParts = timePart.split(':');
+        try {
+          if (timeStr.contains('AM') || timeStr.contains('PM')) {
+            final parts = timeStr
+                .replaceAll(' AM', '')
+                .replaceAll(' PM', '')
+                .split(':');
+            if (parts.length >= 2) {
+              int hour = int.parse(parts[0]);
+              int minute = int.parse(parts[1]);
 
-        int hour = int.parse(timeParts[0]);
-        final minute = timeParts[1];
+              if (timeStr.contains('PM') && hour != 12) {
+                hour += 12;
+              } else if (timeStr.contains('AM') && hour == 12) {
+                hour = 0;
+              }
 
-        if (parts.length > 1) {
-          final period = parts[1].toUpperCase();
-          if (period == 'PM' && hour != 12) {
-            hour += 12;
-          } else if (period == 'AM' && hour == 12) {
-            hour = 0;
+              return '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}:00';
+            }
+          } else {
+            final parts = timeStr.split(':');
+            if (parts.length >= 2) {
+              final hour = parts[0].padLeft(2, '0');
+              final minute = parts[1].padLeft(2, '0');
+              return '$hour:$minute:00';
+            }
           }
+          return timeStr;
+        } catch (e) {
+          return timeStr;
         }
-
-        return '${hour.toString().padLeft(2, '0')}:$minute';
       }
 
       final startTimeFormatted = formatTime(_startTimeController.text);
