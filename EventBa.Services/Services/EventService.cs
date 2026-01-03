@@ -136,8 +136,13 @@ public class EventService : BaseCRUDService<EventResponseDto, Event, EventSearch
             var userEmail = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.Email)?.Value;
             if (!string.IsNullOrEmpty(userEmail))
             {
-                var currentUser = _context.Users.FirstOrDefault(u => u.Email.Equals(userEmail));
-                if (currentUser != null) query = query.Where(x => x.OrganizerId != currentUser.Id);
+                var currentUser = _context.Users
+                    .Include(u => u.Role)
+                    .FirstOrDefault(u => u.Email.Equals(userEmail));
+                if (currentUser != null && currentUser.Role?.Name != RoleName.Admin)
+                {
+                    query = query.Where(x => x.OrganizerId != currentUser.Id);
+                }
             }
         }
         catch
