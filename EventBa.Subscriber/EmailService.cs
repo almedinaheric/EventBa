@@ -1,16 +1,27 @@
 using Newtonsoft.Json;
 using System.Net;
 using System.Net.Mail;
+using System.Net.Security;
+using System.Security.Cryptography.X509Certificates;
 using EventBa.Model.Helpers;
 
 namespace EventBa.Subscriber;
 
-public class EmailService
-{
-    public void SendEmail(string message)
+    public class EmailService
     {
-        try
+        public EmailService()
         {
+            ServicePointManager.ServerCertificateValidationCallback = 
+                delegate (object s, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
+                {
+                    return true;
+                };
+        }
+
+        public void SendEmail(string message)
+        {
+            try
+            {
             string smtpServer = Environment.GetEnvironmentVariable("SMTP_SERVER") ?? "smtp.gmail.com";
             int smtpPort = int.Parse(Environment.GetEnvironmentVariable("SMTP_PORT") ?? "587");
             string fromMail = Environment.GetEnvironmentVariable("SMTP_USERNAME");
@@ -60,7 +71,9 @@ public class EmailService
                 Host = smtpServer,
                 Port = smtpPort,
                 Credentials = new NetworkCredential(fromMail, password),
-                EnableSsl = true
+                EnableSsl = true,
+                UseDefaultCredentials = false,
+                DeliveryMethod = SmtpDeliveryMethod.Network
             };
 
             smtpClient.Send(MailMessageObj);

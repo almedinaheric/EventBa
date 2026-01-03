@@ -54,7 +54,7 @@
       - SMTP_SERVER=${SMTP_SERVER:-smtp.gmail.com}
       - SMTP_PORT=${SMTP_PORT:-587}
       - SMTP_USERNAME=${SMTP_USERNAME:-eventba2025@gmail.com}
-      - SMTP_PASSWORD=${SMTP_PASSWORD:-lweu xtsh moab mitl}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-lweuxtshmoabmitl}
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
       - API_HOST=localhost
       - API_PORT=5187
@@ -83,7 +83,7 @@
       - SMTP_SERVER=${SMTP_SERVER:-smtp.gmail.com}
       - SMTP_PORT=${SMTP_PORT:-587}
       - SMTP_USERNAME=${SMTP_USERNAME:-eventba2025@gmail.com}
-      - SMTP_PASSWORD=${SMTP_PASSWORD:-lweu xtsh moab mitl}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-lweuxtshmoabmitl}
       - API_HOST=localhost
       - API_PORT=5187
     depends_on:
