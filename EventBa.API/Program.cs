@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using System.Threading.Tasks;
 using EventBa.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using EventBa.API.Auth;
@@ -111,9 +112,52 @@ using (var scope = app.Services.CreateScope())
 {
     var dataContext = scope.ServiceProvider.GetRequiredService<EventBaDbContext>();
     
-    if (dataContext.Database.CanConnect())
+    // Wait for database to be ready with retry logic
+    int maxRetries = 30;
+    int retryCount = 0;
+    bool canConnect = false;
+    
+    while (retryCount < maxRetries && !canConnect)
     {
-        dataContext.Database.Migrate();
+        try
+        {
+            canConnect = dataContext.Database.CanConnect();
+            if (!canConnect)
+            {
+                retryCount++;
+                Console.WriteLine($"Waiting for database to be ready... (Attempt {retryCount}/{maxRetries})");
+                Task.Delay(2000).Wait(); // Wait 2 seconds between retries
+            }
+        }
+        catch (Exception ex)
+        {
+            retryCount++;
+            Console.WriteLine($"Database connection attempt {retryCount}/{maxRetries} failed: {ex.Message}");
+            if (retryCount < maxRetries)
+            {
+                Task.Delay(2000).Wait();
+            }
+        }
+    }
+    
+    if (!canConnect)
+    {
+        Console.WriteLine("ERROR: Could not connect to database after multiple attempts. Application may not function correctly.");
+    }
+    else
+    {
+        Console.WriteLine("Database connection established. Running migrations...");
+        
+        try
+        {
+            dataContext.Database.Migrate();
+            Console.WriteLine("Migrations completed successfully.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error running migrations: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+        }
 
         // Seed database if empty
         try
@@ -121,6 +165,7 @@ using (var scope = app.Services.CreateScope())
             var hasData = dataContext.Set<Role>().Any();
             if (!hasData)
             {
+                Console.WriteLine("Database is empty. Starting seed process...");
                 // Try multiple paths: Docker (/app/Data/seed.sql), local development (../Data/seed.sql), or current directory
                 var possiblePaths = new[]
                 {
@@ -133,6 +178,7 @@ using (var scope = app.Services.CreateScope())
                 
                 if (seedScriptPath != null && System.IO.File.Exists(seedScriptPath))
                 {
+                    Console.WriteLine($"Found seed script at: {seedScriptPath}");
                     var seedScript = System.IO.File.ReadAllText(seedScriptPath);
                     // Use NpgsqlConnection directly for executing the seed script
                     // ExecuteSqlRaw has issues with multi-statement SQL files
@@ -153,11 +199,16 @@ using (var scope = app.Services.CreateScope())
                     catch (Exception ex)
                     {
                         Console.WriteLine($"Error executing seed script: {ex.Message}");
+                        Console.WriteLine($"Stack trace: {ex.StackTrace}");
                     }
                 }
                 else
                 {
-                    Console.WriteLine($"Warning: Seed script not found at {seedScriptPath}");
+                    Console.WriteLine($"Warning: Seed script not found. Searched paths:");
+                    foreach (var path in possiblePaths)
+                    {
+                        Console.WriteLine($"  - {path}");
+                    }
                 }
             }
             else
@@ -168,6 +219,7 @@ using (var scope = app.Services.CreateScope())
         catch (Exception ex)
         {
             Console.WriteLine($"Error seeding database: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
         }
 
         var recommenderService = scope.ServiceProvider.GetRequiredService<IRecommendedEventService>();

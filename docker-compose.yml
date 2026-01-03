@@ -12,6 +12,11 @@
       - eventba-network
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-eventba_user} -d ${POSTGRES_DB:-eventba_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -60,8 +65,10 @@
     networks:
       - eventba-network
     depends_on:
-      - postgres
-      - rabbitmq
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
 
   rabbitmq-service:
     restart: unless-stopped
