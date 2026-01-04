@@ -9,6 +9,7 @@ import 'package:eventba_mobile/providers/event_provider.dart';
 import 'package:eventba_mobile/providers/event_review_provider.dart';
 import 'package:eventba_mobile/providers/user_provider.dart';
 import 'package:eventba_mobile/providers/ticket_provider.dart';
+import 'package:eventba_mobile/providers/ticket_purchase_provider.dart';
 import 'package:eventba_mobile/models/event/event.dart';
 import 'package:eventba_mobile/models/event_review/event_review.dart';
 import 'package:eventba_mobile/utils/image_helpers.dart';
@@ -31,6 +32,7 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
   bool _isLoading = true;
   bool _isPast = false;
   bool _isAdmin = false;
+  List<String> _validTicketCodes = [];
 
   @override
   void initState() {
@@ -56,6 +58,10 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
         context,
         listen: false,
       );
+      final ticketPurchaseProvider = Provider.of<TicketPurchaseProvider>(
+        context,
+        listen: false,
+      );
 
       final event = await eventProvider.getById(widget.eventId);
 
@@ -76,11 +82,23 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
         } catch (e) {}
       }
 
+      List<String> validTicketCodes = [];
+      try {
+        validTicketCodes = await ticketPurchaseProvider
+            .getValidTicketCodesForEvent(widget.eventId);
+        print(
+          'Loaded ${validTicketCodes.length} valid ticket codes for event: ${widget.eventId}',
+        );
+      } catch (e) {
+        print('Error loading valid ticket codes: $e');
+      }
+
       setState(() {
         _event = event;
         _statistics = statistics;
         _reviews = reviews;
         _isPast = isPast;
+        _validTicketCodes = validTicketCodes;
         _isLoading = false;
       });
     } catch (e) {
@@ -406,43 +424,6 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
                 () async {
                   if (_event == null) return;
 
-                  try {
-                    final eventStartDateTime = DateTime.parse(
-                      '${_event!.startDate} ${_event!.startTime}',
-                    );
-                    final now = DateTime.now();
-                    final today = DateTime(now.year, now.month, now.day);
-                    final eventStartDate = DateTime(
-                      eventStartDateTime.year,
-                      eventStartDateTime.month,
-                      eventStartDateTime.day,
-                    );
-
-                    if (eventStartDate.isAfter(today)) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          behavior: SnackBarBehavior.floating,
-                          content: Text(
-                            'Cannot scan tickets. Event has not started yet.',
-                          ),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-                      return;
-                    }
-                  } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        behavior: SnackBarBehavior.floating,
-                        content: Text(
-                          'Error validating event date. Please try again.',
-                        ),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                    return;
-                  }
-
                   await Navigator.push(
                     context,
                     PageRouteBuilder(
@@ -593,6 +574,60 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
                     ],
                     const Divider(),
                     const SizedBox(height: 16),
+                    if (!_isPast)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Note: Tickets usually won\'t be able to be scanned until the day the event starts, but for testing purposes it\'s enabled. As testing is on an emulator, you won\'t be able to scan QR codes, so you can use one of these valid ticket codes (dynamically loaded from the database) for this event to test ticket validation:',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey.shade400,
+                                fontStyle: FontStyle.italic,
+                              ),
+                              textAlign: TextAlign.left,
+                            ),
+                            if (_validTicketCodes.isNotEmpty) ...[
+                              const SizedBox(height: 8),
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade50,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: Colors.grey.shade300,
+                                  ),
+                                ),
+                                child: Text(
+                                  _validTicketCodes.take(10).join(', ') +
+                                      (_validTicketCodes.length > 10
+                                          ? '... and ${_validTicketCodes.length - 10} more'
+                                          : ''),
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.grey.shade600,
+                                    fontFamily: 'monospace',
+                                  ),
+                                ),
+                              ),
+                            ] else
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4.0),
+                                child: Text(
+                                  'No valid ticket codes found for this event.',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.grey.shade500,
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    if (!_isPast) const SizedBox(height: 8),
                     GridView.count(
                       physics: const NeverScrollableScrollPhysics(),
                       shrinkWrap: true,
@@ -609,47 +644,6 @@ class _MyEventDetailsScreenState extends State<MyEventDetailsScreen> {
                             Colors.green,
                             () async {
                               if (_event == null) return;
-
-                              try {
-                                final eventStartDateTime = DateTime.parse(
-                                  '${_event!.startDate} ${_event!.startTime}',
-                                );
-                                final now = DateTime.now();
-                                final today = DateTime(
-                                  now.year,
-                                  now.month,
-                                  now.day,
-                                );
-                                final eventStartDate = DateTime(
-                                  eventStartDateTime.year,
-                                  eventStartDateTime.month,
-                                  eventStartDateTime.day,
-                                );
-
-                                if (eventStartDate.isAfter(today)) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      behavior: SnackBarBehavior.floating,
-                                      content: Text(
-                                        'Cannot scan tickets. Event has not started yet.',
-                                      ),
-                                      backgroundColor: Colors.red,
-                                    ),
-                                  );
-                                  return;
-                                }
-                              } catch (e) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    behavior: SnackBarBehavior.floating,
-                                    content: Text(
-                                      'Error validating event date. Please try again.',
-                                    ),
-                                    backgroundColor: Colors.red,
-                                  ),
-                                );
-                                return;
-                              }
 
                               await Navigator.push(
                                 context,

@@ -211,8 +211,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  void _logout() {
-    showDialog(
+  Future<void> _logout() async {
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) {
         final size = MediaQuery.of(context).size;
@@ -233,7 +233,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     outlined: false,
                     small: true,
                     onPressed: () {
-                      Navigator.pop(context);
+                      Navigator.pop(context, false);
                     },
                   ),
                   const SizedBox(width: 12),
@@ -242,36 +242,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     width: size.width * 0.3,
                     outlined: true,
                     small: true,
-                    onPressed: () async {
-                      Navigator.pop(context);
-
-                      try {
-                        final userProvider = Provider.of<UserProvider>(
-                          context,
-                          listen: false,
-                        );
-                        await userProvider.logout();
-                      } catch (e) {}
-
-                      Authorization.email = null;
-                      Authorization.password = null;
-
-                      try {
-                        Provider.of<UserProvider>(
-                          context,
-                          listen: false,
-                        ).clearUser();
-                      } catch (e) {}
-
-                      if (context.mounted) {
-                        Navigator.pushAndRemoveUntil(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const WelcomeScreen(),
-                          ),
-                          (route) => false,
-                        );
-                      }
+                    onPressed: () {
+                      Navigator.pop(context, true);
                     },
                   ),
                 ],
@@ -281,6 +253,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
       },
     );
+
+    if (confirmed != true || !mounted) return;
+
+    try {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      await userProvider.logout();
+    } catch (e) {}
+
+    Authorization.email = null;
+    Authorization.password = null;
+
+    try {
+      Provider.of<UserProvider>(context, listen: false).clearUser();
+    } catch (e) {}
+
+    if (mounted) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const WelcomeScreen()),
+        (route) => false,
+      );
+    }
   }
 
   bool get _isAdmin {

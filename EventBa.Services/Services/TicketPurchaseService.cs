@@ -238,4 +238,14 @@ public class TicketPurchaseService : BaseCRUDService<TicketPurchaseResponseDto, 
 
         return _mapper.Map<TicketPurchaseResponseDto>(purchase);
     }
+
+    public async Task<List<string>> GetValidTicketCodesForEvent(Guid eventId)
+    {
+        var validCodes = await _context.TicketPurchases
+            .Where(x => x.EventId == eventId && x.IsValid && !x.IsUsed)
+            .Select(x => x.TicketCode)
+            .ToListAsync();
+
+        return validCodes;
+    }
 }

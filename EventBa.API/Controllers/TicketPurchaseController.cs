@@ -44,4 +44,19 @@ public class TicketPurchaseController : BaseCRUDController<TicketPurchaseRespons
             return BadRequest(new { message = ex.Message });
         }
     }
+
+    [HttpGet("valid-codes/{eventId}")]
+    [Authorize]
+    public async Task<IActionResult> GetValidTicketCodesForEvent([FromRoute] Guid eventId)
+    {
+        try
+        {
+            var codes = await _ticketPurchaseService.GetValidTicketCodesForEvent(eventId);
+            return Ok(codes);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }

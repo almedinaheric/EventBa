@@ -9,4 +9,5 @@ public interface ITicketPurchaseService : ICRUDService<TicketPurchaseResponseDto
 {
     Task<List<TicketPurchaseResponseDto>> GetMyPurchases();
     Task<TicketPurchaseResponseDto> ValidateTicket(string ticketCode, Guid eventId);
+    Task<List<string>> GetValidTicketCodesForEvent(Guid eventId);
 }

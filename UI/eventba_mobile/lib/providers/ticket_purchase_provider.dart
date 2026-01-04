@@ -29,4 +29,28 @@ class TicketPurchaseProvider extends BaseProvider<TicketPurchase> {
       throw Exception("Unknown error in a GET request");
     }
   }
+
+  Future<List<String>> getValidTicketCodesForEvent(String eventId) async {
+    var url = "${baseUrl}TicketPurchase/valid-codes/$eventId";
+
+    var uri = Uri.parse(url);
+    var headers = createHeaders();
+    var response = await http.get(uri, headers: headers);
+
+    if (isValidResponse(response)) {
+      var data = jsonDecode(response.body);
+      if (data is List) {
+        return data.map((code) => code.toString()).toList();
+      }
+      return [];
+    } else {
+      var errorBody = response.body;
+      print(
+        'Error getting valid ticket codes: ${response.statusCode} - $errorBody',
+      );
+      throw Exception(
+        "Failed to get valid ticket codes: ${response.statusCode}",
+      );
+    }
+  }
 }
