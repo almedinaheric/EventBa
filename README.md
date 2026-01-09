@@ -2,12 +2,12 @@
 
 ## Credentials:
 
-**Admin:**
+**Admin (Desktop):**
 - email: admin@eventba.com
 - password: Password123!
 
 
-**Customer:**
+**Customer (Mobile):**
 - email: john@eventba.com
 - password: Password123!
 
